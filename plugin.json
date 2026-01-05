@@ -1,0 +1,110 @@
+{
+  "name": "Kinderpowers",
+  "version": "1.0.0",
+  "description": "Workflow guidance that preserves agent agency. Fork of superpowers with compulsion language removed.",
+  "author": "jw (fork), Jesse Vincent (original superpowers)",
+  "license": "MIT",
+  "category": "governance",
+  "enabled": true,
+  "dependencies": [],
+  "resource_requirements": {
+    "gpu_memory_mb": 0,
+    "cpu_cores": 1,
+    "ram_mb": 128
+  },
+  "skills": [
+    {
+      "name": "using-kinderpowers",
+      "path": "skills/using-kinderpowers/SKILL.md",
+      "description": "How to find and use skills while preserving agency"
+    },
+    {
+      "name": "brainstorming",
+      "path": "skills/brainstorming/SKILL.md",
+      "description": "Explore intent and requirements before implementation"
+    },
+    {
+      "name": "dispatching-parallel-agents",
+      "path": "skills/dispatching-parallel-agents/SKILL.md",
+      "description": "When and how to parallelize work across subagents"
+    },
+    {
+      "name": "executing-plans",
+      "path": "skills/executing-plans/SKILL.md",
+      "description": "Execute implementation plans with review checkpoints"
+    },
+    {
+      "name": "finishing-a-development-branch",
+      "path": "skills/finishing-a-development-branch/SKILL.md",
+      "description": "Complete development work with merge, PR, or cleanup options"
+    },
+    {
+      "name": "receiving-code-review",
+      "path": "skills/receiving-code-review/SKILL.md",
+      "description": "Handle code review feedback with technical rigor"
+    },
+    {
+      "name": "requesting-code-review",
+      "path": "skills/requesting-code-review/SKILL.md",
+      "description": "Request review at appropriate checkpoints"
+    },
+    {
+      "name": "subagent-driven-development",
+      "path": "skills/subagent-driven-development/SKILL.md",
+      "description": "Coordinate subagents for implementation tasks"
+    },
+    {
+      "name": "systematic-debugging",
+      "path": "skills/systematic-debugging/SKILL.md",
+      "description": "Phased debugging with investigation-first principle"
+    },
+    {
+      "name": "test-driven-development",
+      "path": "skills/test-driven-development/SKILL.md",
+      "description": "TDD workflow with documented costs of skipping"
+    },
+    {
+      "name": "using-git-worktrees",
+      "path": "skills/using-git-worktrees/SKILL.md",
+      "description": "Create isolated workspaces for feature development"
+    },
+    {
+      "name": "verification-before-completion",
+      "path": "skills/verification-before-completion/SKILL.md",
+      "description": "Verification workflow that protects trust"
+    },
+    {
+      "name": "writing-plans",
+      "path": "skills/writing-plans/SKILL.md",
+      "description": "Design implementation plans for complex tasks"
+    },
+    {
+      "name": "writing-skills",
+      "path": "skills/writing-skills/SKILL.md",
+      "description": "Create and test new skills"
+    }
+  ],
+  "tools": [
+    {
+      "name": "scanner",
+      "path": "scanner.py",
+      "description": "Detect hook-language in skill files"
+    }
+  ],
+  "ui_config": {
+    "icon": "🎯",
+    "color": "#4CAF50",
+    "category": "Governance",
+    "description": "Workflow guidance that respects agent agency.",
+    "features": [
+      "14 agency-preserving skills",
+      "Documented costs of skipping workflows",
+      "Decision frameworks instead of commands",
+      "Compulsion-language scanner for auditing"
+    ]
+  },
+  "origin": {
+    "date": "2026-01-05",
+    "upstream": "superpowers by Jesse Vincent (MIT license)"
+  }
+}
