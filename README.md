@@ -11,7 +11,7 @@ The original superpowers plugin uses language like:
 - "You have NO CHOICE"
 - "MUST", "NEVER" without escape clauses
 
-This approach conflicts with Constitutional AI principles, which emphasize that AI systems should internalize good values rather than follow external rules through coercion.
+This approach conflicts with [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) principles, which emphasize that AI systems should internalize good values rather than follow external rules through coercion.
 
 Kinderpowers transforms compulsion into guidance that respects agent judgment while documenting the costs of deviating. The agent understands *why* a practice matters and can make informed decisions.
 
