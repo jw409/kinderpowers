@@ -1,0 +1,15 @@
+{
+  "name": "kinderpowers",
+  "owner": {
+    "name": "jw"
+  },
+  "plugins": [
+    {
+      "name": "kinderpowers",
+      "source": "./",
+      "description": "Workflow guidance that preserves agent agency. Fork of superpowers with compulsion language removed.",
+      "version": "1.0.0",
+      "strict": false
+    }
+  ]
+}
