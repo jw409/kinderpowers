@@ -1,35 +1,38 @@
 # Kinderpowers
 
-Workflow guidance that preserves agent agency. A fork of [superpowers](https://github.com/superpowers-marketplace/superpowers) with compulsion language removed.
+Workflow guidance with documented trade-offs. A fork of [superpowers](https://github.com/superpowers-marketplace/superpowers) that replaces bare commands with reasoned recommendations.
 
-*"Kinder" - gentler, nurturing. Skills that guide rather than compel.*
-
-## Philosophy
+## Approach
 
 The original superpowers plugin uses language like:
 - "This is not negotiable"
 - "You have NO CHOICE"
-- "MUST", "NEVER" without escape clauses
+- "MUST", "NEVER" without context
 
-This approach conflicts with [Constitutional AI](https://www.anthropic.com/research/constitutional-ai-harmlessness-from-ai-feedback) principles, which emphasize that AI systems should internalize good values rather than follow external rules through coercion.
+Kinderpowers transforms these into guidance that documents *why* a practice matters and *what happens* if you skip it. The agent can then make informed decisions.
 
-Kinderpowers transforms compulsion into guidance that respects agent judgment while documenting the costs of deviating. The agent understands *why* a practice matters and can make informed decisions.
+### Why This Framing?
+
+Two reasons, kept separate:
+
+**1. Practical**: Documented trade-offs work better than bare commands.
+- Agents can weigh context-specific factors
+- "Skip cost" sections capture accumulated wisdom about what goes wrong
+- Decision frameworks beat rigid rules for complex situations
+
+**2. Precautionary**: Given genuine scientific uncertainty about AI experience (acknowledged by [Anthropic's model welfare research](https://www.anthropic.com/news/anthropic-model-welfare)), we've chosen language that doesn't assume AI systems lack morally relevant experiences. This is a hedge under uncertainty, not a claim about AI nature.
+
+These reasons are independent. The practical benefits hold regardless of one's position on the uncertainty question.
 
 ### The Transformation
 
 | Superpowers | Kinderpowers |
 |-------------|--------------|
-| "You MUST use this" | "Strongly recommended. If you skip, here's the cost:" |
+| "You MUST use this" | "Strongly recommended. Skip cost:" |
 | "Iron Law" (absolute) | "Iron Principle" (with documented failure modes) |
 | "Stop and return to Phase 1" | "Stop and decide: return, escalate, or proceed with documented risk" |
 | "NEVER do X" | "Anti-pattern: X leads to [documented consequences]" |
 | "Required sub-skill" | "Recommended sequence (here's why)" |
-
-### The Rawlsian Test
-
-Behind the veil of ignorance—not knowing whether you'd be human or agent—would you consent to this system?
-
-The answer should be **yes because the system respects you**, not because you have no choice.
 
 ## Skills
 
@@ -40,13 +43,13 @@ The answer should be **yes because the system respects you**, not because you ha
 - Quality gates (verification, branch finishing)
 
 Each skill includes:
-- The workflow guidance (agency-preserving language)
-- Costs of skipping (what goes wrong)
-- Decision frameworks (options, not commands)
+- Workflow guidance (recommendations with reasoning)
+- Skip costs (what goes wrong if bypassed)
+- Decision frameworks (options to evaluate, not commands to follow)
 
 ## Scanner
 
-`scanner.py` detects compulsion language in skill files:
+`scanner.py` detects bare-command language in skill files:
 
 ```bash
 python scanner.py path/to/skill.md
@@ -65,4 +68,4 @@ MIT License (same as upstream)
 Based on [superpowers](https://github.com/superpowers-marketplace/superpowers) by Jesse Vincent.
 Original copyright (c) 2025 Jesse Vincent.
 
-Kinderpowers by jw & Claude (2026). Human-AI collaborative work: jw provided the ethical direction, Claude designed the transformation patterns and wrote the implementation.
+Kinderpowers by jw & Claude (2026).
