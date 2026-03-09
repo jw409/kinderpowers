@@ -176,15 +176,15 @@ git worktree remove <worktree-path>
 - **Problem:** Accidentally delete work
 - **Fix:** Require typed "discard" confirmation
 
-## Red Flags
+## Watch For These Patterns
 
-**Never:**
-- Proceed with failing tests
-- Merge without verifying tests on result
-- Delete work without confirmation
-- Force-push without explicit request
+**Avoid these — consequences noted:**
+- Proceeding with failing tests — broken code reaches the base branch, requiring revert
+- Merging without verifying tests on result — merge conflicts can introduce silent breakage
+- Deleting work without confirmation — irreversible loss of potentially useful code
+- Force-pushing without explicit request — overwrites others' work or shared history
 
-**Always:**
+**Strong defaults:**
 - Verify tests before offering options
 - Present exactly 4 options
 - Get typed confirmation for Option 4

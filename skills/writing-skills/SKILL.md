@@ -15,7 +15,7 @@ You write test cases (pressure scenarios with subagents), watch them fail (basel
 
 **Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill teaches the right thing.
 
-**REQUIRED BACKGROUND:** You MUST understand superpowers:test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
+**REQUIRED BACKGROUND:** You should strongly consider understanding kinderpowers:test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
 
 **Official guidance:** For Anthropic's official skill authoring best practices, see anthropic-best-practices.md. This document provides additional patterns and guidelines that complement the TDD-focused approach in this skill.
 
@@ -99,7 +99,7 @@ skills/
 - `description`: Third-person, describes ONLY when to use (NOT what it does)
   - Start with "Use when..." to focus on triggering conditions
   - Include specific symptoms, situations, and contexts
-  - **NEVER summarize the skill's process or workflow** (see CSO section for why)
+  - Avoid summarizing the skill's process or workflow — agents may follow the description shortcut instead of reading the full skill (see CSO section for why)
   - Keep under 500 characters if possible
 
 ```markdown
@@ -147,7 +147,7 @@ Concrete results
 
 **Format:** Start with "Use when..." to focus on triggering conditions
 
-**CRITICAL: Description = When to Use, NOT What the Skill Does**
+**Important: Description = When to Use, NOT What the Skill Does**
 
 The description should ONLY describe triggering conditions. Do NOT summarize the skill's process or workflow in the description.
 
@@ -177,7 +177,7 @@ description: Use when implementing any feature or bugfix, before writing impleme
 - Keep triggers technology-agnostic unless the skill itself is technology-specific
 - If skill is technology-specific, make that explicit in the trigger
 - Write in third person (injected into system prompt)
-- **NEVER summarize the skill's process or workflow**
+- Avoid summarizing the skill's process or workflow — agents may follow the description shortcut instead of reading the full skill
 
 ```yaml
 # ❌ BAD: Too abstract, vague, doesn't include when to use
@@ -279,11 +279,11 @@ wc -w skills/path/SKILL.md
 
 **When writing documentation that references other skills:**
 
-Use skill name only, with explicit requirement markers:
-- ✅ Good: `**REQUIRED SUB-SKILL:** Use superpowers:test-driven-development`
-- ✅ Good: `**REQUIRED BACKGROUND:** You MUST understand superpowers:systematic-debugging`
-- ❌ Bad: `See skills/testing/test-driven-development` (unclear if required)
-- ❌ Bad: `@skills/testing/test-driven-development/SKILL.md` (force-loads, burns context)
+Use skill name only, with clear relationship markers:
+- Good: `**Recommended next skill (why it matters):** Use kinderpowers:test-driven-development — it provides the testing foundation`
+- Good: `**Recommended background:** Understanding kinderpowers:systematic-debugging helps with Phase 1`
+- Bad: `See skills/testing/test-driven-development` (unclear relationship)
+- Bad: `@skills/testing/test-driven-development/SKILL.md` (force-loads, burns context)
 
 **Why no @ links:** `@` syntax force-loads files immediately, consuming 200k+ context before you need them.
 
@@ -307,7 +307,7 @@ digraph when_flowchart {
 - Process loops where you might stop too early
 - "When to use A vs B" decisions
 
-**Never use flowcharts for:**
+**Avoid flowcharts for:**
 - Reference material → Tables, lists
 - Code examples → Markdown blocks
 - Linear instructions → Numbered lists
@@ -371,26 +371,31 @@ pptx/
 ```
 When: Reference material too large for inline
 
-## The Iron Law (Same as TDD)
+## The Core Principle (Same as TDD)
 
 ```
-NO SKILL WITHOUT A FAILING TEST FIRST
+SKILLS BENEFIT FROM FAILING TESTS FIRST
 ```
+
+Skipping baseline testing means you're guessing what the skill should prevent, rather than observing what actually goes wrong.
 
 This applies to NEW skills AND EDITS to existing skills.
 
-Write skill before testing? Delete it. Start over.
-Edit skill without testing? Same violation.
+Write skill before testing? You have options:
+1. Set it aside and write the failing test first (recommended)
+2. Keep it as a draft, but run baseline tests before finalizing
+3. If you proceed without testing, note the risk explicitly
 
-**No exceptions:**
-- Not for "simple additions"
-- Not for "just adding a section"
-- Not for "documentation updates"
-- Don't keep untested changes as "reference"
-- Don't "adapt" while running tests
-- Delete means delete
+Edit skill without testing? Same principle applies — untested changes carry risk.
 
-**REQUIRED BACKGROUND:** The superpowers:test-driven-development skill explains why this matters. Same principles apply to documentation.
+**Watch for these patterns:**
+- "Simple additions" that skip testing — simple changes still benefit from verification
+- "Just adding a section" — new sections can change agent behavior in unexpected ways
+- "Documentation updates" — documentation IS the product for skills
+- Keeping untested changes as "reference" — reference material drifts from tested reality
+- "Adapting" while running tests — conflates writing and testing phases
+
+**REQUIRED BACKGROUND:** The kinderpowers:test-driven-development skill explains why this matters. Same principles apply to documentation.
 
 ## Testing All Skill Types
 
@@ -454,7 +459,7 @@ Different skill types need different test approaches:
 | "Academic review is enough" | Reading ≠ using. Test application scenarios. |
 | "No time to test" | Deploying untested skill wastes more time fixing it later. |
 
-**All of these mean: Test before deploying. No exceptions.**
+**All of these point to the same conclusion: test before deploying. The cost of testing is low; the cost of deploying broken skills is high.**
 
 ## Bulletproofing Skills Against Rationalization
 
@@ -464,7 +469,7 @@ Skills that enforce discipline (like TDD) need to resist rationalization. Agents
 
 ### Close Every Loophole Explicitly
 
-Don't just state the rule - forbid specific workarounds:
+Don't just state the rule - address specific workarounds explicitly:
 
 <Bad>
 ```markdown
@@ -474,13 +479,12 @@ Write code before test? Delete it.
 
 <Good>
 ```markdown
-Write code before test? Delete it. Start over.
+Write code before test? Options: delete and restart with TDD (recommended), or proceed with documented risk.
 
-**No exceptions:**
-- Don't keep it as "reference"
-- Don't "adapt" it while writing tests
-- Don't look at it
-- Delete means delete
+**Why restarting is recommended:**
+- Keeping code as "reference" biases test design toward what exists
+- "Adapting" existing code bypasses the fail-first proof
+- Starting fresh from tests takes less time than you expect
 ```
 </Good>
 
@@ -489,10 +493,10 @@ Write code before test? Delete it. Start over.
 Add foundational principle early:
 
 ```markdown
-**Violating the letter of the rules is violating the spirit of the rules.**
+**The spirit matters more than the letter — but the letter exists for good reasons. Here's why this rule matters:**
 ```
 
-This cuts off entire class of "I'm following the spirit" rationalizations.
+This invites understanding while making it harder to rationalize shortcuts.
 
 ### Build Rationalization Table
 
@@ -519,7 +523,7 @@ Make it easy for agents to self-check when rationalizing:
 - "It's about spirit not ritual"
 - "This is different because..."
 
-**All of these mean: Delete code. Start over with TDD.**
+**These patterns typically indicate the TDD cycle has been broken.** The recommended path: set aside existing code and restart with test-first.
 ```
 
 ### Update CSO for Violation Symptoms
@@ -582,16 +586,16 @@ helper1, helper2, step3, pattern4
 
 ## STOP: Before Moving to Next Skill
 
-**After writing ANY skill, you MUST STOP and complete the deployment process.**
+**After writing any skill, complete the deployment process before moving on.**
 
-**Do NOT:**
-- Create multiple skills in batch without testing each
-- Move to next skill before current one is verified
-- Skip testing because "batching is more efficient"
+**Avoid these patterns — consequences noted:**
+- Creating multiple skills in batch without testing each — untested skills compound errors
+- Moving to next skill before current one is verified — verification catches issues early when they're cheap to fix
+- Skipping testing because "batching is more efficient" — batching untested work amplifies risk
 
-**The deployment checklist below is MANDATORY for EACH skill.**
+**The deployment checklist below should be completed for each skill.**
 
-Deploying untested skills = deploying untested code. It's a violation of quality standards.
+Deploying untested skills carries the same risks as deploying untested code.
 
 ## Skill Creation Checklist (TDD Adapted)
 
@@ -648,7 +652,7 @@ How future Claude finds your skill:
 
 **Creating skills IS TDD for process documentation.**
 
-Same Iron Law: No skill without failing test first.
+Same core principle: skills benefit from failing tests first.
 Same cycle: RED (baseline) → GREEN (write skill) → REFACTOR (close loopholes).
 Same benefits: Better quality, fewer surprises, bulletproof results.
 

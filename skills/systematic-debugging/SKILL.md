@@ -9,17 +9,17 @@ description: Use when encountering any bug, test failure, or unexpected behavior
 
 Random fixes waste time and create new bugs. Quick patches mask underlying issues.
 
-**Core principle:** ALWAYS find root cause before attempting fixes. Symptom fixes are failure.
+**Core principle:** Find root cause before attempting fixes. Symptom fixes waste time and create new problems.
 
-**Violating the letter of this process is violating the spirit of debugging.**
+**Shortcutting this process usually costs more time than it saves.**
 
-## The Iron Law
+## The Guiding Principle
 
 ```
-NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
+ROOT CAUSE INVESTIGATION BEFORE FIXES
 ```
 
-If you haven't completed Phase 1, you cannot propose fixes.
+If you haven't completed Phase 1, proposing fixes is premature — you risk fixing symptoms while the real cause persists.
 
 ## When to Use
 
@@ -45,7 +45,7 @@ Use for ANY technical issue:
 
 ## The Four Phases
 
-You MUST complete each phase before proceeding to the next.
+Complete each phase before proceeding to the next, unless you have a clear reason to skip ahead.
 
 ### Phase 1: Root Cause Investigation
 
@@ -175,8 +175,8 @@ You MUST complete each phase before proceeding to the next.
    - Simplest possible reproduction
    - Automated test if possible
    - One-off test script if no framework
-   - MUST have before fixing
-   - Use the `superpowers:test-driven-development` skill for writing proper failing tests
+   - Strongly recommended before fixing
+   - Use the `kinderpowers:test-driven-development` skill for writing proper failing tests
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -227,7 +227,7 @@ If you catch yourself thinking:
 - **"One more fix attempt" (when already tried 2+)**
 - **Each fix reveals new problem in different place**
 
-**ALL of these mean: STOP. Return to Phase 1.**
+**All of these are signals to pause and return to Phase 1.**
 
 **If 3+ fixes failed:** Question the architecture (see Phase 4.5)
 
@@ -240,7 +240,7 @@ If you catch yourself thinking:
 - "Ultrathink this" - Question fundamentals, not just symptoms
 - "We're stuck?" (frustrated) - Your approach isn't working
 
-**When you see these:** STOP. Return to Phase 1.
+**When you see these:** Pause and return to Phase 1.
 
 ## Common Rationalizations
 
@@ -284,8 +284,8 @@ These techniques are part of systematic debugging and available in this director
 - **`condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
 
 **Related skills:**
-- **superpowers:test-driven-development** - For creating failing test case (Phase 4, Step 1)
-- **superpowers:verification-before-completion** - Verify fix worked before claiming success
+- **kinderpowers:test-driven-development** - For creating failing test case (Phase 4, Step 1)
+- **kinderpowers:verification-before-completion** - Verify fix worked before claiming success
 
 ## Real-World Impact
 

@@ -43,7 +43,7 @@ If no directory exists and no CLAUDE.md preference:
 No worktree directory found. Where should I create worktrees?
 
 1. .worktrees/ (project-local, hidden)
-2. ~/.config/superpowers/worktrees/<project-name>/ (global location)
+2. ~/.config/kinderpowers/worktrees/<project-name>/ (global location)
 
 Which would you prefer?
 ```
@@ -52,7 +52,7 @@ Which would you prefer?
 
 ### For Project-Local Directories (.worktrees or worktrees)
 
-**MUST verify directory is ignored before creating worktree:**
+**Verify directory is ignored before creating worktree:**
 
 ```bash
 # Check if directory is ignored (respects local, global, and system gitignore)
@@ -68,7 +68,7 @@ Per Jesse's rule "Fix broken things immediately":
 
 **Why critical:** Prevents accidentally committing worktree contents to repository.
 
-### For Global Directory (~/.config/superpowers/worktrees)
+### For Global Directory (~/.config/kinderpowers/worktrees)
 
 No .gitignore verification needed - outside project entirely.
 
@@ -88,8 +88,8 @@ case $LOCATION in
   .worktrees|worktrees)
     path="$LOCATION/$BRANCH_NAME"
     ;;
-  ~/.config/superpowers/worktrees/*)
-    path="~/.config/superpowers/worktrees/$project/$BRANCH_NAME"
+  ~/.config/kinderpowers/worktrees/*)
+    path="~/.config/kinderpowers/worktrees/$project/$BRANCH_NAME"
     ;;
 esac
 
@@ -191,16 +191,16 @@ Tests passing (47 tests, 0 failures)
 Ready to implement auth feature
 ```
 
-## Red Flags
+## Watch For These Patterns
 
-**Never:**
-- Create worktree without verifying it's ignored (project-local)
-- Skip baseline test verification
-- Proceed with failing tests without asking
-- Assume directory location when ambiguous
-- Skip CLAUDE.md check
+**Avoid these — consequences noted:**
+- Creating worktree without verifying it's ignored (project-local) — worktree contents pollute git status
+- Skipping baseline test verification — can't distinguish new bugs from pre-existing issues
+- Proceeding with failing tests without asking — baseline confusion compounds downstream
+- Assuming directory location when ambiguous — violates project conventions
+- Skipping CLAUDE.md check — may miss project-specific preferences
 
-**Always:**
+**Strong defaults:**
 - Follow directory priority: existing > CLAUDE.md > ask
 - Verify directory is ignored for project-local
 - Auto-detect and run project setup

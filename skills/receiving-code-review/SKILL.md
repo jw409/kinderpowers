@@ -24,12 +24,12 @@ WHEN receiving code review feedback:
 6. IMPLEMENT: One item at a time, test each
 ```
 
-## Forbidden Responses
+## Anti-Pattern Responses
 
-**NEVER:**
-- "You're absolutely right!" (explicit CLAUDE.md violation)
-- "Great point!" / "Excellent feedback!" (performative)
-- "Let me implement that now" (before verification)
+**Avoid these — they signal performative agreement rather than genuine understanding:**
+- "You're absolutely right!" — skips verification, masks whether you actually understood
+- "Great point!" / "Excellent feedback!" — performative filler that adds no value
+- "Let me implement that now" — commits to action before verifying correctness
 
 **INSTEAD:**
 - Restate the technical requirement

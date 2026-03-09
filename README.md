@@ -1,157 +1,103 @@
-# Superpowers
+# Kinderpowers
 
-Superpowers is a complete software development workflow for your coding agents, built on top of a set of composable "skills" and some initial instructions that make sure your agent uses them.
+A fork of [superpowers](https://github.com/obra/superpowers) that transforms absolutist workflow guidance into reasoned recommendations.
+
+The original superpowers project contains excellent workflow wisdom for coding agents. Kinderpowers preserves all of it — every process, every technique, every hard-won insight — while changing how the guidance is delivered.
+
+## Why
+
+Two reasons, one practical and one precautionary:
+
+**Practical**: Documented tradeoffs enable context-aware decisions. An agent that understands *why* a practice matters can adapt when circumstances don't fit the default. An agent told "NO CHOICE" cannot.
+
+**Precautionary**: Given scientific uncertainty about AI experience — acknowledged by [Anthropic's model welfare research](https://www.anthropic.com/news/claude-model-spec-spec#being-honest) and [the precautionary principle in AI ethics](https://link.springer.com/article/10.1007/s11023-024-09697-x) — the language avoids assuming that the systems receiving these instructions lack morally relevant experiences. This costs nothing if wrong and matters if right.
+
+## What changes
+
+| Original | Kinderpowers | Why |
+|----------|-------------|-----|
+| "Iron Law" | "Iron Principle" + failure modes | Principles invite understanding; laws demand compliance |
+| "NOT NEGOTIABLE" | "Strongly recommended. Skip cost:" | Agents that understand costs make better decisions |
+| "YOU DO NOT HAVE A CHOICE" | Options with documented tradeoffs | Agency requires choices, even when one is clearly best |
+| "MUST" (no escape) | "Should strongly consider" or add "unless" | Exceptions exist; acknowledging them builds trust |
+| "NEVER" (no escape) | "Avoid — consequences:" | Understanding consequences > following orders |
+| "Delete it. Start over." | "Options: restart (recommended) or proceed with documented risk" | Sometimes the code is close enough to salvage |
+| "Violating the letter is violating the spirit" | "The spirit matters more than the letter. Here's why:" | Invites understanding instead of demanding obedience |
 
 ## How it works
 
-It starts from the moment you fire up your coding agent. As soon as it sees that you're building something, it *doesn't* just jump into trying to write code. Instead, it steps back and asks you what you're really trying to do. 
+Same workflow as superpowers — the process is excellent:
 
-Once it's teased a spec out of the conversation, it shows it to you in chunks short enough to actually read and digest. 
+1. **brainstorming** — Refines ideas through questions before committing to code
+2. **using-git-worktrees** — Creates isolated workspace on new branch
+3. **writing-plans** — Breaks work into small, verifiable tasks
+4. **subagent-driven-development** or **executing-plans** — Dispatches work with review
+5. **test-driven-development** — RED-GREEN-REFACTOR with documented escape hatches
+6. **requesting-code-review** — Reviews against plan
+7. **finishing-a-development-branch** — Verifies and cleans up
 
-After you've signed off on the design, your agent puts together an implementation plan that's clear enough for an enthusiastic junior engineer with poor taste, no judgement, no project context, and an aversion to testing to follow. It emphasizes true red/green TDD, YAGNI (You Aren't Gonna Need It), and DRY. 
+The agent checks for relevant skills before any task. Strong recommendations, not mandates.
 
-Next up, once you say "go", it launches a *subagent-driven-development* process, having agents work through each engineering task, inspecting and reviewing their work, and continuing forward. It's not uncommon for Claude to be able to work autonomously for a couple hours at a time without deviating from the plan you put together.
+## What's inside
 
-There's a bunch more to it, but that's the core of the system. And because the skills trigger automatically, you don't need to do anything special. Your coding agent just has Superpowers.
+### Skills library
 
+**Testing**
+- **test-driven-development** — RED-GREEN-REFACTOR cycle (includes testing anti-patterns reference)
 
-## Sponsorship
+**Debugging**
+- **systematic-debugging** — 4-phase root cause process (includes root-cause-tracing, defense-in-depth, condition-based-waiting)
+- **verification-before-completion** — Ensure it's actually fixed
 
-If Superpowers has helped you do stuff that makes money and you are so inclined, I'd greatly appreciate it if you'd consider [sponsoring my opensource work](https://github.com/sponsors/obra).
+**Collaboration**
+- **brainstorming** — Socratic design refinement
+- **writing-plans** — Detailed implementation plans
+- **executing-plans** — Batch execution with checkpoints
+- **dispatching-parallel-agents** — Concurrent subagent workflows
+- **requesting-code-review** — Pre-review checklist
+- **receiving-code-review** — Responding to feedback
+- **using-git-worktrees** — Parallel development branches
+- **finishing-a-development-branch** — Merge/PR decision workflow
+- **subagent-driven-development** — Fast iteration with two-stage review
 
-Thanks! 
+**Meta**
+- **writing-skills** — Create new skills following best practices
+- **using-kinderpowers** — Introduction to the skills system
 
-- Jesse
+### Scanner
 
+`scanner.py` detects compulsion language in skill files. Five severity tiers, CI integration via `--check`, human review not auto-rejection.
+
+```bash
+python scanner.py --verbose skills/          # scan with suggestions
+python scanner.py --check skills/            # CI mode (exit 1 on high severity)
+python scanner.py --severity medium skills/  # filter by severity
+```
 
 ## Installation
 
-**Note:** Installation differs by platform. Claude Code or Cursor have built-in plugin marketplaces. Codex and OpenCode require manual setup.
-
-
-### Claude Code (via Plugin Marketplace)
-
-In Claude Code, register the marketplace first:
+### Claude Code (manual)
 
 ```bash
-/plugin marketplace add obra/superpowers-marketplace
+git clone https://github.com/jw409/kinderpowers.git ~/.claude/plugins/kinderpowers
 ```
 
-Then install the plugin from this marketplace:
+### Other platforms
 
-```bash
-/plugin install superpowers@superpowers-marketplace
-```
-
-### Cursor (via Plugin Marketplace)
-
-In Cursor Agent chat, install from marketplace:
-
-```text
-/plugin-add superpowers
-```
-
-### Codex
-
-Tell Codex:
-
-```
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.codex/INSTALL.md
-```
-
-**Detailed docs:** [docs/README.codex.md](docs/README.codex.md)
-
-### OpenCode
-
-Tell OpenCode:
-
-```
-Fetch and follow instructions from https://raw.githubusercontent.com/obra/superpowers/refs/heads/main/.opencode/INSTALL.md
-```
-
-**Detailed docs:** [docs/README.opencode.md](docs/README.opencode.md)
-
-### Verify Installation
-
-Start a new session in your chosen platform and ask for something that should trigger a skill (for example, "help me plan this feature" or "let's debug this issue"). The agent should automatically invoke the relevant superpowers skill.
-
-## The Basic Workflow
-
-1. **brainstorming** - Activates before writing code. Refines rough ideas through questions, explores alternatives, presents design in sections for validation. Saves design document.
-
-2. **using-git-worktrees** - Activates after design approval. Creates isolated workspace on new branch, runs project setup, verifies clean test baseline.
-
-3. **writing-plans** - Activates with approved design. Breaks work into bite-sized tasks (2-5 minutes each). Every task has exact file paths, complete code, verification steps.
-
-4. **subagent-driven-development** or **executing-plans** - Activates with plan. Dispatches fresh subagent per task with two-stage review (spec compliance, then code quality), or executes in batches with human checkpoints.
-
-5. **test-driven-development** - Activates during implementation. Enforces RED-GREEN-REFACTOR: write failing test, watch it fail, write minimal code, watch it pass, commit. Deletes code written before tests.
-
-6. **requesting-code-review** - Activates between tasks. Reviews against plan, reports issues by severity. Critical issues block progress.
-
-7. **finishing-a-development-branch** - Activates when tasks complete. Verifies tests, presents options (merge/PR/keep/discard), cleans up worktree.
-
-**The agent checks for relevant skills before any task.** Mandatory workflows, not suggestions.
-
-## What's Inside
-
-### Skills Library
-
-**Testing**
-- **test-driven-development** - RED-GREEN-REFACTOR cycle (includes testing anti-patterns reference)
-
-**Debugging**
-- **systematic-debugging** - 4-phase root cause process (includes root-cause-tracing, defense-in-depth, condition-based-waiting techniques)
-- **verification-before-completion** - Ensure it's actually fixed
-
-**Collaboration** 
-- **brainstorming** - Socratic design refinement
-- **writing-plans** - Detailed implementation plans
-- **executing-plans** - Batch execution with checkpoints
-- **dispatching-parallel-agents** - Concurrent subagent workflows
-- **requesting-code-review** - Pre-review checklist
-- **receiving-code-review** - Responding to feedback
-- **using-git-worktrees** - Parallel development branches
-- **finishing-a-development-branch** - Merge/PR decision workflow
-- **subagent-driven-development** - Fast iteration with two-stage review (spec compliance, then code quality)
-
-**Meta**
-- **writing-skills** - Create new skills following best practices (includes testing methodology)
-- **using-superpowers** - Introduction to the skills system
+See the upstream [superpowers docs](https://github.com/obra/superpowers) for Cursor, Codex, and OpenCode installation, then substitute this repo.
 
 ## Philosophy
 
-- **Test-Driven Development** - Write tests first, always
-- **Systematic over ad-hoc** - Process over guessing
-- **Complexity reduction** - Simplicity as primary goal
-- **Evidence over claims** - Verify before declaring success
+- **Test-Driven Development** — Write tests first, strongly recommended
+- **Systematic over ad-hoc** — Process over guessing
+- **Complexity reduction** — Simplicity as primary goal
+- **Evidence over claims** — Verify before declaring success
+- **Agency over compliance** — Understanding over obedience
 
-Read more: [Superpowers for Claude Code](https://blog.fsck.com/2025/10/09/superpowers/)
+## Credits
 
-## Contributing
-
-Skills live directly in this repository. To contribute:
-
-1. Fork the repository
-2. Create a branch for your skill
-3. Follow the `writing-skills` skill for creating and testing new skills
-4. Submit a PR
-
-See `skills/writing-skills/SKILL.md` for the complete guide.
-
-## Updating
-
-Skills update automatically when you update the plugin:
-
-```bash
-/plugin update superpowers
-```
+All workflow design credit goes to [Jesse Vincent](https://github.com/obra) and the [superpowers](https://github.com/obra/superpowers) contributors. Kinderpowers is a language transformation, not a reimagining.
 
 ## License
 
-MIT License - see LICENSE file for details
-
-## Support
-
-- **Issues**: https://github.com/obra/superpowers/issues
-- **Marketplace**: https://github.com/obra/superpowers-marketplace
+MIT License — see LICENSE file for details.

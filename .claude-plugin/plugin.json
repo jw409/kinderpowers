@@ -1,13 +1,18 @@
 {
-  "name": "superpowers",
-  "description": "Core skills library for Claude Code: TDD, debugging, collaboration patterns, and proven techniques",
-  "version": "4.3.1",
+  "name": "kinderpowers",
+  "description": "Agency-preserving workflow skills: TDD, debugging, collaboration patterns with documented tradeoffs",
+  "version": "5.0.0",
   "author": {
-    "name": "Jesse Vincent",
-    "email": "jesse@fsck.com"
+    "name": "jw"
   },
   "homepage": "https://github.com/obra/superpowers",
   "repository": "https://github.com/obra/superpowers",
   "license": "MIT",
-  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows"]
+  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving"],
+  "upstream": {
+    "name": "superpowers",
+    "version": "4.3.1",
+    "author": "Jesse Vincent",
+    "url": "https://github.com/obra/superpowers"
+  }
 }

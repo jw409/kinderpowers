@@ -11,11 +11,11 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 **Core principle:** If you didn't watch the test fail, you don't know if it tests the right thing.
 
-**Violating the letter of the rules is violating the spirit of the rules.**
+**The spirit matters more than the letter. Here's why:** TDD's value comes from the feedback loop — seeing a test fail proves it tests something real. Any shortcut that bypasses this loop (writing code first, keeping "reference" implementations, adapting existing code) breaks the proof chain. The letter exists to protect the spirit.
 
 ## When to Use
 
-**Always:**
+**Always strongly recommended for:**
 - New features
 - Bug fixes
 - Refactoring
@@ -26,23 +26,23 @@ Write the test first. Watch it fail. Write minimal code to pass.
 - Generated code
 - Configuration files
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+Thinking "skip TDD just this once"? That's a common rationalization — it feels pragmatic but typically costs more time in debugging later.
 
-## The Iron Law
+## The Iron Principle
 
 ```
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
-Write code before the test? Delete it. Start over.
+**What happens when this is violated:** Code written before tests can't be verified — you never saw the test catch the bug, so you don't know if it actually tests the right thing. Tests written after tend to test the implementation (what you built) rather than the requirement (what should exist).
 
-**No exceptions:**
-- Don't keep it as "reference"
-- Don't "adapt" it while writing tests
-- Don't look at it
-- Delete means delete
+Write code before the test? Options: delete and restart with TDD (recommended — high confidence result), or proceed with documented risk that your tests may be testing implementation rather than behavior.
 
-Implement fresh from tests. Period.
+**Why restarting is recommended:**
+- Keeping code as "reference" leads to adapting tests to match code, not requirements
+- "Adapting" existing code while writing tests bypasses the fail-first proof
+- Looking at existing code biases your test design toward what exists, not what's needed
+- Starting fresh from tests takes less time than you expect
 
 ## Red-Green-Refactor
 
@@ -112,7 +112,7 @@ Vague name, tests mock not code
 
 ### Verify RED - Watch It Fail
 
-**MANDATORY. Never skip.**
+**Critical step — skipping this removes the proof that your test works.** Without seeing the failure, a passing test could be testing nothing.
 
 ```bash
 npm test path/to/test.test.ts
@@ -167,7 +167,7 @@ Don't add features, refactor other code, or "improve" beyond the test.
 
 ### Verify GREEN - Watch It Pass
 
-**MANDATORY.**
+**Critical step.**
 
 ```bash
 npm test path/to/test.test.ts
@@ -221,7 +221,7 @@ Manual testing is ad-hoc. You think you tested everything but:
 - No record of what you tested
 - Can't re-run when code changes
 - Easy to forget cases under pressure
-- "It worked when I tried it" ≠ comprehensive
+- "It worked when I tried it" does not equal comprehensive
 
 Automated tests are systematic. They run the same way every time.
 
@@ -251,31 +251,35 @@ Tests-after are biased by your implementation. You test what you built, not what
 
 Tests-first force edge case discovery before implementing. Tests-after verify you remembered everything (you didn't).
 
-30 minutes of tests after ≠ TDD. You get coverage, lose proof tests work.
+30 minutes of tests after does not equal TDD. You get coverage, lose proof tests work.
 
-## Common Rationalizations
+## Common Rationalization Patterns
 
-| Excuse | Reality |
-|--------|---------|
-| "Too simple to test" | Simple code breaks. Test takes 30 seconds. |
-| "I'll test after" | Tests passing immediately prove nothing. |
-| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" |
-| "Already manually tested" | Ad-hoc ≠ systematic. No record, can't re-run. |
-| "Deleting X hours is wasteful" | Sunk cost fallacy. Keeping unverified code is technical debt. |
-| "Keep as reference, write tests first" | You'll adapt it. That's testing after. Delete means delete. |
-| "Need to explore first" | Fine. Throw away exploration, start with TDD. |
-| "Test hard = design unclear" | Listen to test. Hard to test = hard to use. |
-| "TDD will slow me down" | TDD faster than debugging. Pragmatic = test-first. |
-| "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change. |
-| "Existing code has no tests" | You're improving it. Add tests for existing code. |
+These are tempting shortcuts that feel reasonable but undermine TDD's value. Here's why each one fails:
 
-## Red Flags - STOP and Start Over
+| Shortcut | Why it fails |
+|----------|-------------|
+| "Too simple to test" | Simple code breaks. Test takes 30 seconds. The cost of not testing is debugging later. |
+| "I'll test after" | Tests passing immediately prove nothing — you never saw the failure. |
+| "Tests after achieve same goals" | Tests-after = "what does this do?" Tests-first = "what should this do?" Different questions. |
+| "Already manually tested" | Ad-hoc testing leaves no record, can't re-run, misses edge cases under pressure. |
+| "Deleting X hours is wasteful" | Sunk cost fallacy. Keeping unverified code is technical debt that compounds. |
+| "Keep as reference, write tests first" | You'll adapt tests to match the code. That's testing-after with extra steps. |
+| "Need to explore first" | Fine. Throw away exploration, then start with TDD. Exploration is learning, not implementation. |
+| "Test hard = design unclear" | Listen to what the test is telling you. Hard to test = hard to use. Simplify the interface. |
+| "TDD will slow me down" | TDD is faster than debugging. The slowdown is an illusion from front-loading work. |
+| "Manual test faster" | Manual doesn't prove edge cases. You'll re-test every change manually too. |
+| "Existing code has no tests" | You're improving it. Add tests for the code you're changing. |
 
-- Code before test
-- Test after implementation
-- Test passes immediately
+## Red Flags — Pause and Reconsider
+
+If you notice these patterns, it's worth stopping to check whether TDD is being followed:
+
+- Code written before test
+- Test written after implementation
+- Test passes immediately without failing first
 - Can't explain why test failed
-- Tests added "later"
+- Tests deferred to "later"
 - Rationalizing "just this once"
 - "I already manually tested it"
 - "Tests after achieve the same purpose"
@@ -285,7 +289,7 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 - "TDD is dogmatic, I'm being pragmatic"
 - "This is different because..."
 
-**All of these mean: Delete code. Start over with TDD.**
+**These typically indicate the TDD cycle has been broken.** The recommended path: set aside the existing code and restart with test-first. The cost of restarting is almost always less than the cost of debugging untested code.
 
 ## Example: Bug Fix
 
@@ -337,7 +341,7 @@ Before marking work complete:
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
 
-Can't check all boxes? You skipped TDD. Start over.
+Can't check all boxes? The TDD cycle was likely incomplete. Consider going back to fill the gaps.
 
 ## When Stuck
 
@@ -352,7 +356,7 @@ Can't check all boxes? You skipped TDD. Start over.
 
 Bug found? Write failing test reproducing it. Follow TDD cycle. Test proves fix and prevents regression.
 
-Never fix bugs without a test.
+Avoid fixing bugs without a test — the consequence is that you can't prove the fix works or prevent regression.
 
 ## Testing Anti-Patterns
 
@@ -361,11 +365,11 @@ When adding mocks or test utilities, read @testing-anti-patterns.md to avoid com
 - Adding test-only methods to production classes
 - Mocking without understanding dependencies
 
-## Final Rule
+## Final Principle
 
 ```
 Production code → test exists and failed first
 Otherwise → not TDD
 ```
 
-No exceptions without your human partner's permission.
+Exceptions should involve your human partner's input — they have context you may not.

@@ -46,12 +46,12 @@ Based on feedback:
 
 After all tasks complete and verified:
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use superpowers:finishing-a-development-branch
+- **REQUIRED SUB-SKILL:** Use kinderpowers:finishing-a-development-branch
 - Follow that skill to verify tests, present options, execute choice
 
 ## When to Stop and Ask for Help
 
-**STOP executing immediately when:**
+**Pause execution when:**
 - Hit a blocker mid-batch (missing dependency, test fails, instruction unclear)
 - Plan has critical gaps preventing starting
 - You don't understand an instruction
@@ -74,11 +74,11 @@ After all tasks complete and verified:
 - Reference skills when plan says to
 - Between batches: just report and wait
 - Stop when blocked, don't guess
-- Never start implementation on main/master branch without explicit user consent
+- Avoid starting implementation on main/master branch without explicit user consent — accidental commits to main can be difficult to untangle
 
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
-- **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:finishing-a-development-branch** - Complete development after all tasks
+- **kinderpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **kinderpowers:writing-plans** - Creates the plan this skill executes
+- **kinderpowers:finishing-a-development-branch** - Complete development after all tasks

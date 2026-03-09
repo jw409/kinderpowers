@@ -59,7 +59,7 @@ digraph process {
     "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
     "More tasks remain?" [shape=diamond];
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
-    "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
+    "Use kinderpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
@@ -78,7 +78,7 @@ digraph process {
     "Mark task complete in TodoWrite" -> "More tasks remain?";
     "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use superpowers:finishing-a-development-branch";
+    "Dispatch final code reviewer subagent for entire implementation" -> "Use kinderpowers:finishing-a-development-branch";
 }
 ```
 
@@ -104,7 +104,7 @@ Task 1: Hook installation script
 
 Implementer: "Before I begin - should the hook be installed at user or system level?"
 
-You: "User level (~/.config/superpowers/hooks/)"
+You: "User level (~/.config/kinderpowers/hooks/)"
 
 Implementer: "Got it. Implementing now..."
 [Later] Implementer:
@@ -196,21 +196,21 @@ Done!
 - Review loops add iterations
 - But catches issues early (cheaper than debugging later)
 
-## Red Flags
+## Watch For These Patterns
 
-**Never:**
-- Start implementation on main/master branch without explicit user consent
-- Skip reviews (spec compliance OR code quality)
-- Proceed with unfixed issues
-- Dispatch multiple implementation subagents in parallel (conflicts)
-- Make subagent read plan file (provide full text instead)
-- Skip scene-setting context (subagent needs to understand where task fits)
-- Ignore subagent questions (answer before letting them proceed)
-- Accept "close enough" on spec compliance (spec reviewer found issues = not done)
-- Skip review loops (reviewer found issues = implementer fixes = review again)
-- Let implementer self-review replace actual review (both are needed)
-- **Start code quality review before spec compliance is ✅** (wrong order)
-- Move to next task while either review has open issues
+**Avoid these — consequences noted:**
+- Starting implementation on main/master without explicit user consent — accidental commits to main are hard to untangle
+- Skipping reviews (spec compliance OR code quality) — unreviewed code compounds errors across tasks
+- Proceeding with unfixed issues — issues cascade and become harder to fix later
+- Dispatching multiple implementation subagents in parallel — file conflicts and merge headaches
+- Making subagent read plan file (provide full text instead) — wastes tokens on irrelevant context
+- Skipping scene-setting context — subagent needs to understand where task fits
+- Ignoring subagent questions — unanswered questions lead to wrong implementations
+- Accepting "close enough" on spec compliance — spec reviewer found issues = not done
+- Skipping review loops — reviewer found issues = implementer fixes = review again
+- Letting implementer self-review replace actual review — both serve different purposes
+- Starting code quality review before spec compliance passes — wrong order, wastes reviewer effort
+- Moving to next task while either review has open issues — unresolved issues compound
 
 **If subagent asks questions:**
 - Answer clearly and completely
@@ -230,13 +230,13 @@ Done!
 ## Integration
 
 **Required workflow skills:**
-- **superpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
-- **superpowers:writing-plans** - Creates the plan this skill executes
-- **superpowers:requesting-code-review** - Code review template for reviewer subagents
-- **superpowers:finishing-a-development-branch** - Complete development after all tasks
+- **kinderpowers:using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **kinderpowers:writing-plans** - Creates the plan this skill executes
+- **kinderpowers:requesting-code-review** - Code review template for reviewer subagents
+- **kinderpowers:finishing-a-development-branch** - Complete development after all tasks
 
 **Subagents should use:**
-- **superpowers:test-driven-development** - Subagents follow TDD for each task
+- **kinderpowers:test-driven-development** - Subagents follow TDD for each task
 
 **Alternative workflow:**
-- **superpowers:executing-plans** - Use for parallel session instead of same-session execution
+- **kinderpowers:executing-plans** - Use for parallel session instead of same-session execution

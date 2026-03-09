@@ -4,25 +4,27 @@
 
 ## Overview
 
-Tests must verify real behavior, not mock behavior. Mocks are a means to isolate, not the thing being tested.
+Tests should verify real behavior, not mock behavior. Mocks are a means to isolate, not the thing being tested.
 
 **Core principle:** Test what the code does, not what the mocks do.
 
 **Following strict TDD prevents these anti-patterns.**
 
-## The Iron Laws
+## The Iron Principles
 
 ```
-1. NEVER test mock behavior
-2. NEVER add test-only methods to production classes
-3. NEVER mock without understanding dependencies
+1. Avoid testing mock behavior — it proves nothing about your code
+2. Avoid adding test-only methods to production classes — they pollute the API and risk accidental use
+3. Avoid mocking without understanding dependencies — over-mocking breaks the behaviors tests depend on
 ```
+
+**Why these matter:** Each of these patterns creates tests that pass for wrong reasons, giving false confidence while real bugs slip through.
 
 ## Anti-Pattern 1: Testing Mock Behavior
 
-**The violation:**
+**The problem:**
 ```typescript
-// ❌ BAD: Testing that the mock exists
+// BAD: Testing that the mock exists
 test('renders sidebar', () => {
   render(<Page />);
   expect(screen.getByTestId('sidebar-mock')).toBeInTheDocument();
@@ -38,7 +40,7 @@ test('renders sidebar', () => {
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Test real component or don't mock it
+// GOOD: Test real component or don't mock it
 test('renders sidebar', () => {
   render(<Page />);  // Don't mock sidebar
   expect(screen.getByRole('navigation')).toBeInTheDocument();
@@ -62,9 +64,9 @@ BEFORE asserting on any mock element:
 
 ## Anti-Pattern 2: Test-Only Methods in Production
 
-**The violation:**
+**The problem:**
 ```typescript
-// ❌ BAD: destroy() only used in tests
+// BAD: destroy() only used in tests
 class Session {
   async destroy() {  // Looks like production API!
     await this._workspaceManager?.destroyWorkspace(this.id);
@@ -84,7 +86,7 @@ afterEach(() => session.destroy());
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Test utilities handle test cleanup
+// GOOD: Test utilities handle test cleanup
 // Session has no destroy() - it's stateless in production
 
 // In test-utils/
@@ -117,9 +119,9 @@ BEFORE adding any method to production class:
 
 ## Anti-Pattern 3: Mocking Without Understanding
 
-**The violation:**
+**The problem:**
 ```typescript
-// ❌ BAD: Mock breaks test logic
+// BAD: Mock breaks test logic
 test('detects duplicate server', () => {
   // Mock prevents config write that test depends on!
   vi.mock('ToolCatalog', () => ({
@@ -138,13 +140,13 @@ test('detects duplicate server', () => {
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Mock at correct level
+// GOOD: Mock at correct level
 test('detects duplicate server', () => {
   // Mock the slow part, preserve behavior test needs
   vi.mock('MCPServerManager'); // Just mock slow server startup
 
   await addServer(config);  // Config written
-  await addServer(config);  // Duplicate detected ✓
+  await addServer(config);  // Duplicate detected
 });
 ```
 
@@ -168,17 +170,17 @@ BEFORE mocking any method:
     Observe what actually needs to happen
     THEN add minimal mocking at the right level
 
-  Red flags:
-    - "I'll mock this to be safe"
-    - "This might be slow, better mock it"
-    - Mocking without understanding the dependency chain
+  Watch for these rationalization patterns:
+    - "I'll mock this to be safe" — over-mocking breaks behavior tests depend on
+    - "This might be slow, better mock it" — mock the slow part specifically, not the whole dependency
+    - Mocking without understanding the dependency chain — leads to tests that pass for wrong reasons
 ```
 
 ## Anti-Pattern 4: Incomplete Mocks
 
-**The violation:**
+**The problem:**
 ```typescript
-// ❌ BAD: Partial mock - only fields you think you need
+// BAD: Partial mock - only fields you think you need
 const mockResponse = {
   status: 'success',
   data: { userId: '123', name: 'Alice' }
@@ -194,11 +196,11 @@ const mockResponse = {
 - **Tests pass but integration fails** - Mock incomplete, real API complete
 - **False confidence** - Test proves nothing about real behavior
 
-**The Iron Rule:** Mock the COMPLETE data structure as it exists in reality, not just fields your immediate test uses.
+**The principle:** Mock the COMPLETE data structure as it exists in reality, not just fields your immediate test uses. Incomplete mocks create silent failures when downstream code accesses omitted fields.
 
 **The fix:**
 ```typescript
-// ✅ GOOD: Mirror real API completeness
+// GOOD: Mirror real API completeness
 const mockResponse = {
   status: 'success',
   data: { userId: '123', name: 'Alice' },
@@ -219,7 +221,7 @@ BEFORE creating mock responses:
     3. Verify mock matches real response schema completely
 
   Critical:
-    If you're creating a mock, you must understand the ENTIRE structure
+    If you're creating a mock, you should understand the ENTIRE structure
     Partial mocks fail silently when code depends on omitted fields
 
   If uncertain: Include all documented fields
@@ -227,15 +229,15 @@ BEFORE creating mock responses:
 
 ## Anti-Pattern 5: Integration Tests as Afterthought
 
-**The violation:**
+**The problem:**
 ```
-✅ Implementation complete
-❌ No tests written
+Implementation complete
+No tests written
 "Ready for testing"
 ```
 
 **Why this is wrong:**
-- Testing is part of implementation, not optional follow-up
+- Testing is part of implementation, not a separate phase — skipping it means shipping unverified code
 - TDD would have caught this
 - Can't claim complete without tests
 
@@ -263,12 +265,12 @@ TDD cycle:
 ## TDD Prevents These Anti-Patterns
 
 **Why TDD helps:**
-1. **Write test first** → Forces you to think about what you're actually testing
-2. **Watch it fail** → Confirms test tests real behavior, not mocks
-3. **Minimal implementation** → No test-only methods creep in
-4. **Real dependencies** → You see what the test actually needs before mocking
+1. **Write test first** - Forces you to think about what you're actually testing
+2. **Watch it fail** - Confirms test tests real behavior, not mocks
+3. **Minimal implementation** - No test-only methods creep in
+4. **Real dependencies** - You see what the test actually needs before mocking
 
-**If you're testing mock behavior, you violated TDD** - you added mocks without watching test fail against real code first.
+**If you're testing mock behavior, the TDD cycle was likely broken** - mocks were added without watching the test fail against real code first.
 
 ## Quick Reference
 

@@ -1,0 +1,29 @@
+name: Lint skills
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check for compulsion language
+        run: python scanner.py --check skills/
+
+      - name: Check for legacy superpowers references
+        run: |
+          # Allow references in RELEASE-NOTES.md, LICENSE, and upstream docs
+          if grep -r 'superpowers' skills/ agents/ commands/ hooks/ --include="*.md" --include="*.json" -l | grep -v RELEASE-NOTES; then
+            echo "WARNING: Found 'superpowers' references in skills/agents/commands/hooks"
+            grep -rn 'superpowers' skills/ agents/ commands/ hooks/ --include="*.md" --include="*.json" | grep -v RELEASE-NOTES || true
+            exit 1
+          fi
