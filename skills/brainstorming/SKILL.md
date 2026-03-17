@@ -15,9 +15,9 @@ Start by understanding the current project context, then ask questions one at a 
 Avoid invoking implementation skills, writing code, or scaffolding before presenting a design and getting user approval. Skipping this step risks wasted work from unexamined assumptions, even on projects that seem simple. If time pressure or context makes skipping appropriate, note the trade-off explicitly.
 </DESIGN-FIRST>
 
-## Anti-Pattern: "This Is Too Simple To Need A Design"
+## Even Simple Projects
 
-Every project benefits from this process. A todo list, a single-function utility, a config change — all of them. "Simple" projects are where unexamined assumptions cause the most wasted work. The design can be short (a few sentences for truly simple projects), but you should strongly consider presenting it and getting approval before proceeding.
+Simple projects often get skipped because they seem straightforward. A quick design pass (even a few sentences) catches assumptions before they become rework. Scale the design to the complexity — a config change needs a paragraph, not a document.
 
 ## Checklist
 

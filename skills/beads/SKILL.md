@@ -161,11 +161,6 @@ bd doctor
 
 Run `bd doctor` if beads seem inconsistent (missing dependencies, orphaned references). It detects and reports structural issues.
 
-## Philosophy
+## When in Doubt
 
-Beads are strongly recommended for any non-trivial work. The patterns above reflect real failure modes observed across many sessions. That said:
-
-- These are recommendations with documented costs, not mandates without escape clauses
-- If you skip tracking and lose context, the cost falls on future sessions — weigh that trade-off consciously
-- Beads replace scattered tracking (TodoWrite, TaskCreate, markdown checklists) with one persistent system
-- When in doubt, create the bead. Closing an unnecessary bead costs nothing; reconstructing lost context costs everything
+Beads are useful for multi-session work. Skipping tracking can mean lost context later — worth considering upfront. An unnecessary bead costs nothing to close; reconstructing lost context is expensive.

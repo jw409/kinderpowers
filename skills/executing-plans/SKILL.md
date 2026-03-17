@@ -74,7 +74,7 @@ After all tasks complete and verified:
 - Reference skills when plan says to
 - Between batches: just report and wait
 - Stop when blocked, don't guess
-- Avoid starting implementation on main/master branch without explicit user consent — accidental commits to main can be difficult to untangle
+- Use a branch, not main — accidental commits to main are hard to untangle
 
 ## Integration
 

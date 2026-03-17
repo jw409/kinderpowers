@@ -1,14 +1,14 @@
 {
   "name": "kinderpowers",
-  "description": "Agency-preserving workflow skills: TDD, debugging, collaboration patterns with documented tradeoffs",
-  "version": "5.0.0",
+  "description": "Hub-and-spoke agent skill system: workflow skills, skill discovery, and agent definitions with documented tradeoffs",
+  "version": "5.1.0",
   "author": {
     "name": "jw"
   },
-  "homepage": "https://github.com/obra/superpowers",
-  "repository": "https://github.com/obra/superpowers",
+  "homepage": "https://github.com/jw409/kinderpowers",
+  "repository": "https://github.com/jw409/kinderpowers",
   "license": "MIT",
-  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving"],
+  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving", "skill-discovery", "hub"],
   "upstream": {
     "name": "superpowers",
     "version": "4.3.1",

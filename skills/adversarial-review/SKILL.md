@@ -7,7 +7,7 @@ description: Use when reviewing significant changes, completed features, or arch
 
 ## Overview
 
-Adversarial review is a disciplined approach to finding problems in work product. The reviewer's job is to discover issues, not to validate quality. "Looks good" without substantive analysis is a failure mode — it means the reviewer didn't look hard enough or didn't know what to look for.
+Adversarial review is a disciplined approach to finding problems in work product. The reviewer's job is to discover issues, not to validate quality. "Looks good" without substantive analysis suggests the review needs more time or context.
 
 **Core principle:** Assume issues exist. Your job is to find them.
 
@@ -29,7 +29,7 @@ Adversarial review is a disciplined approach to finding problems in work product
 - **Standard review:** Routine changes, internal refactors, test additions
 - **Light review:** Typo fixes, config changes, documentation updates, dependency bumps
 
-**Cost of skipping:** Issues caught in review cost minutes to fix. Issues caught in production cost hours to debug, plus trust damage. The math strongly favors reviewing.
+**Cost of skipping:** Issues caught in review cost minutes to fix. Issues caught in production cost hours to debug. Earlier is cheaper.
 
 ## Review Protocol
 
@@ -128,7 +128,7 @@ This methodology applies beyond code:
 
 | Pattern | Problem | Better Approach |
 |---------|---------|-----------------|
-| Rubber-stamping | "LGTM" without reading — provides false confidence | Spend real time. If you can't review properly, say so |
+| Rubber-stamping | "LGTM" without reading — misses real issues | Spend real time. If you can't review properly, say so |
 | Nitpick avalanche | 30 style comments, zero substantive findings — misses the forest for the trees | Lead with important findings. Nits are optional |
 | Adversarial without constructive | "This is wrong" with no path forward — demoralizes without helping | Every criticism should include a suggestion or clear explanation |
 | Review scope creep | Reviewing adjacent code that wasn't changed — diffuses focus | Review what changed. File issues for pre-existing problems |
@@ -141,9 +141,7 @@ This methodology applies beyond code:
 THE REVIEWER'S JOB IS TO FIND PROBLEMS, NOT CONFIRM QUALITY
 ```
 
-**Why:** Confirmation bias is real. If you approach a review expecting it to be fine, you'll find it fine. If you approach expecting issues, you'll find the issues that were always there. The mindset shift from "verify it works" to "find what's broken" is the difference between catching bugs in review and catching them in production.
-
-**Cost of ignoring:** Every "LGTM" on a change with hidden issues is a deferred cost. The issue will surface later — in production, in a dependent feature, in a frustrated user report — when it's far more expensive to fix.
+**Why:** If you approach a review expecting it to be fine, you'll find it fine. Looking for problems surfaces them while they're cheap to fix.
 
 ## Output Format
 

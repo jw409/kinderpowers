@@ -61,12 +61,12 @@ git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/d
 
 **If NOT ignored:**
 
-Per Jesse's rule "Fix broken things immediately":
+Fix it before proceeding:
 1. Add appropriate line to .gitignore
 2. Commit the change
 3. Proceed with worktree creation
 
-**Why critical:** Prevents accidentally committing worktree contents to repository.
+This prevents worktree contents from being tracked in git.
 
 ### For Global Directory (~/.config/kinderpowers/worktrees)
 
@@ -191,20 +191,12 @@ Tests passing (47 tests, 0 failures)
 Ready to implement auth feature
 ```
 
-## Watch For These Patterns
+## Watch For
 
-**Avoid these — consequences noted:**
-- Creating worktree without verifying it's ignored (project-local) — worktree contents pollute git status
-- Skipping baseline test verification — can't distinguish new bugs from pre-existing issues
-- Proceeding with failing tests without asking — baseline confusion compounds downstream
-- Assuming directory location when ambiguous — violates project conventions
-- Skipping CLAUDE.md check — may miss project-specific preferences
-
-**Strong defaults:**
+- Verify directory is ignored before creating project-local worktrees — otherwise contents show in git status
+- Run baseline tests — can't distinguish new bugs from pre-existing ones without this
 - Follow directory priority: existing > CLAUDE.md > ask
-- Verify directory is ignored for project-local
-- Auto-detect and run project setup
-- Verify clean test baseline
+- Check CLAUDE.md for project-specific worktree preferences
 
 ## Integration
 

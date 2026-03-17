@@ -27,7 +27,7 @@ Architecture work captures the *why* behind technical choices before implementat
 - The decision is trivially reversible (internal function signature, local refactor)
 - You're following an established pattern already documented elsewhere
 
-**Cost of skipping:** Undocumented decisions get relitigated. New contributors (or future sessions) re-explore the same options, sometimes choosing differently, creating inconsistency. A 10-minute ADR prevents hours of archaeology.
+**Cost of skipping:** Undocumented decisions get relitigated. New contributors (or future sessions) re-explore the same options, sometimes choosing differently. A 10-minute ADR saves time when context is lost.
 
 ## ADR Format
 
@@ -126,9 +126,7 @@ Plans created with the writing-plans skill should reference ADRs: "Per ADR-0003,
 DOCUMENT THE DECISION, NOT JUST THE OUTCOME
 ```
 
-**Why:** Code shows *what* was chosen. Only documentation shows *why* it was chosen, *what else* was considered, and *what tradeoffs* were accepted. Without the why, future contributors can't evaluate whether the decision still holds.
-
-**Cost of ignoring:** Every undocumented architectural decision becomes a mystery for the next person. They either waste time investigating, or worse, make an incompatible choice without realizing it.
+**Why:** Code shows *what* was chosen. Documentation shows *why* it was chosen, *what else* was considered, and *what tradeoffs* were accepted. Without the why, future contributors can't evaluate whether the decision still holds.
 
 ## Proportional Depth
 

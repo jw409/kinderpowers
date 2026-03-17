@@ -196,36 +196,15 @@ Done!
 - Review loops add iterations
 - But catches issues early (cheaper than debugging later)
 
-## Watch For These Patterns
+## Watch For
 
-**Avoid these — consequences noted:**
-- Starting implementation on main/master without explicit user consent — accidental commits to main are hard to untangle
-- Skipping reviews (spec compliance OR code quality) — unreviewed code compounds errors across tasks
-- Proceeding with unfixed issues — issues cascade and become harder to fix later
-- Dispatching multiple implementation subagents in parallel — file conflicts and merge headaches
-- Making subagent read plan file (provide full text instead) — wastes tokens on irrelevant context
-- Skipping scene-setting context — subagent needs to understand where task fits
-- Ignoring subagent questions — unanswered questions lead to wrong implementations
-- Accepting "close enough" on spec compliance — spec reviewer found issues = not done
-- Skipping review loops — reviewer found issues = implementer fixes = review again
-- Letting implementer self-review replace actual review — both serve different purposes
-- Starting code quality review before spec compliance passes — wrong order, wastes reviewer effort
-- Moving to next task while either review has open issues — unresolved issues compound
-
-**If subagent asks questions:**
-- Answer clearly and completely
-- Provide additional context if needed
-- Don't rush them into implementation
-
-**If reviewer finds issues:**
-- Implementer (same subagent) fixes them
-- Reviewer reviews again
-- Repeat until approved
-- Don't skip the re-review
-
-**If subagent fails task:**
-- Dispatch fix subagent with specific instructions
-- Don't try to fix manually (context pollution)
+- Use a branch, not main — accidental commits to main are hard to untangle
+- Don't skip reviews — spec compliance first, then code quality
+- One implementation subagent at a time — parallel dispatch causes file conflicts
+- Provide full task text, don't make subagent read the plan file
+- Answer subagent questions fully before they start implementation
+- If reviewer finds issues → implementer fixes → reviewer reviews again → repeat until approved
+- If subagent fails → dispatch fix subagent with specific instructions (don't fix manually, avoids context pollution)
 
 ## Integration
 

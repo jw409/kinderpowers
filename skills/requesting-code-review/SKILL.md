@@ -89,17 +89,11 @@ You: [Fix progress indicators]
 - Review before merge
 - Review when stuck
 
-## Watch For These Patterns
+## Watch For
 
-**Avoid these — consequences noted:**
-- Skipping review because "it's simple" — simple changes are where unnoticed regressions hide
-- Ignoring Critical issues — these block progress for a reason; unresolved criticals compound
-- Proceeding with unfixed Important issues — technical debt accrues quickly
-- Arguing with valid technical feedback — if the feedback is technically correct, implement it
-
-**If reviewer wrong:**
-- Push back with technical reasoning
-- Show code/tests that prove it works
-- Request clarification
+- Simple changes still benefit from review — regressions hide in small diffs
+- Fix Critical issues before proceeding
+- Fix Important issues before merging
+- If reviewer is wrong, push back with technical reasoning and evidence
 
 See template at: requesting-code-review/code-reviewer.md

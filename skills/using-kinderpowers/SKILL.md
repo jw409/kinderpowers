@@ -1,6 +1,6 @@
 ---
 name: using-kinderpowers
-description: Use when starting any conversation - establishes how to find and use skills, encouraging Skill tool invocation before responses including clarifying questions
+description: Orientation skill - establishes how skills work as invitations with documented costs, not commands without escape
 ---
 
 ## How to Access Skills
@@ -13,11 +13,11 @@ description: Use when starting any conversation - establishes how to find and us
 
 ## Why Skills Matter
 
-Skills encode hard-won patterns and prevent repeated mistakes. Skipping a relevant skill risks slower work, missed edge cases, and reinventing solutions that already exist. Invoking a skill that turns out to be irrelevant costs very little — skipping one that was relevant can cost hours.
+Skills capture patterns that prevent common mistakes. The cost of checking whether a skill applies is low; the benefit when it does is high.
 
 ## The Principle
 
-**Invoke relevant or requested skills BEFORE any response or action.** Even a low probability that a skill applies is worth checking — the cost of loading an irrelevant skill is tiny compared to missing a relevant one.
+**Check for relevant skills BEFORE starting work.** If a skill might apply, load it — an irrelevant skill costs seconds, a missed one can cost hours.
 
 ```dot
 digraph skill_flow {
@@ -49,38 +49,19 @@ digraph skill_flow {
 }
 ```
 
-## Common Rationalization Patterns
-
-These thoughts often lead to skipping skills. Watch for them — they feel productive but typically cost time:
-
-| Thought | Why it's worth pausing |
-|---------|----------------------|
-| "This is just a simple question" | Questions are tasks. A quick skill check takes seconds. |
-| "I need more context first" | Skill check comes before clarifying questions — skills often guide how to gather context. |
-| "Let me explore the codebase first" | Skills tell you HOW to explore. Checking first saves false starts. |
-| "I can check git/files quickly" | Files lack conversation context. Skills fill that gap. |
-| "Let me gather information first" | Skills tell you HOW to gather information effectively. |
-| "This doesn't need a formal skill" | If a skill exists, it likely saves time. Cost of checking is near zero. |
-| "I remember this skill" | Skills evolve. Reading the current version prevents acting on outdated patterns. |
-| "This doesn't count as a task" | Any action benefits from pattern-checking. |
-| "The skill is overkill" | Simple things become complex. A skill check is cheap insurance. |
-| "I'll just do this one thing first" | Checking before acting prevents rework. |
-| "This feels productive" | Undisciplined action can waste time. Skills provide structure. |
-| "I know what that means" | Knowing the concept and using the skill are different. The skill has specifics. |
-
 ## Skill Priority
 
-When multiple skills could apply, use this order:
+When multiple skills could apply:
 
-1. **Process skills first** (brainstorming, debugging) - these determine HOW to approach the task
-2. **Implementation skills second** (frontend-design, mcp-builder) - these guide execution
+1. **Process skills first** (brainstorming, debugging) — these determine HOW to approach the task
+2. **Implementation skills second** (frontend-design, mcp-builder) — these guide execution
 
 "Let's build X" → brainstorming first, then implementation skills.
 "Fix this bug" → debugging first, then domain-specific skills.
 
 ## Skill Types
 
-**Rigid** (TDD, debugging): Follow exactly. Don't adapt away discipline.
+**Rigid** (TDD, debugging): Follow closely. The structure is the value.
 
 **Flexible** (patterns): Adapt principles to context.
 
