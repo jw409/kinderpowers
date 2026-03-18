@@ -55,26 +55,19 @@ link_file() {
 }
 
 # --- 1. GSD runtime ---
-echo "[1/4] GSD runtime"
+# GSD workflows reference ~/.claude/get-shit-done at runtime
+echo "[1/2] GSD runtime"
 mkdir -p "${CLAUDE_DIR}"
 link_dir "${PLUGIN_ROOT}/gsd" "${CLAUDE_DIR}/get-shit-done"
 
-# --- 2. GSD commands ---
-echo "[2/4] GSD commands"
-mkdir -p "${CLAUDE_DIR}/commands"
-link_dir "${PLUGIN_ROOT}/commands/gsd" "${CLAUDE_DIR}/commands/gsd"
+# NOTE: GSD commands and agents are NOT symlinked here.
+# The plugin system registers them under the kinderpowers: namespace
+# automatically (kinderpowers:gsd:* skills, kinderpowers:gsd-* agents).
+# Symlinking into ~/.claude/commands/ and ~/.claude/agents/ would create
+# duplicates (gsd:* AND kinderpowers:gsd:*) that confuse users and models.
 
-# --- 3. GSD agents ---
-echo "[3/4] GSD agents"
-mkdir -p "${CLAUDE_DIR}/agents"
-for agent in "${PLUGIN_ROOT}"/agents/gsd-*.md; do
-  [ -f "$agent" ] || continue
-  name="$(basename "$agent")"
-  link_file "$agent" "${CLAUDE_DIR}/agents/${name}"
-done
-
-# --- 4. Hookify rules (optional) ---
-echo "[4/4] Hookify rules"
+# --- 2. Hookify rules (optional) ---
+echo "[2/2] Hookify rules"
 HOOKIFY_RULES_DIR=""
 
 # Search for hookify rules directory
