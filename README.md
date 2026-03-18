@@ -279,6 +279,138 @@ Agent:  "/gsd:new-project → context gathered, PROJECT.md created
 
 ---
 
+## What's Inside
+
+<details>
+<summary><b>26 Skills</b> — how agents think</summary>
+
+| Skill | Level | When It Activates |
+|-------|-------|-------------------|
+| brainstorming | L1 | Before any creative work — features, components, behavior changes |
+| test-driven-development | L1 | Implementing any feature or bugfix |
+| systematic-debugging | L1 | Any bug, test failure, or unexpected behavior |
+| verification-before-completion | L1 | About to claim work is complete |
+| requesting-code-review | L1 | Completing tasks, before merging |
+| receiving-code-review | L1 | Receiving review feedback |
+| writing-plans | L2 | Spec or requirements for a multi-step task |
+| executing-plans | L2 | Written plan ready to execute |
+| strategic-planning | L2 | Work needs design or discovery before execution |
+| metathinking | L2 | Complex decisions, debugging mysteries, architectural choices |
+| research-extraction | L2 | Analyzing external codebases, libraries, or papers |
+| subagent-driven-development | L2 | Executing plans with independent tasks in current session |
+| using-git-worktrees | L2 | Starting feature work that needs isolation |
+| finishing-a-development-branch | L2 | Implementation complete, tests pass, ready to integrate |
+| remembering-conversations | L2 | Unfamiliar workflows, past work references, "how should I..." |
+| find-skills | L2 | Looking for functionality that might exist as a skill |
+| writing-skills | L2 | Creating or editing skills |
+| beads | L2 | Multi-session work, tracking dependencies, context recovery |
+| requirements | L2 | Gathering requirements for a feature |
+| retrospective | L2 | After completing a project or phase |
+| architecture | L2 | System design decisions, ADRs |
+| adversarial-review | L2 | Reviewing significant changes — assumes issues exist |
+| team-orchestration | L3 | Coordinating multiple Claude Code agents in parallel |
+| dispatching-parallel-agents | L3 | 2+ independent tasks with no shared state |
+| dispatching-to-runtimes | L3 | Writing prompts for Gemini, GPT, or local models |
+
+Skills are invitations, not commands. Every recommendation documents the cost of skipping it.
+
+</details>
+
+<details>
+<summary><b>22 Agents</b> — autonomous workers with tool restrictions</summary>
+
+**Kinderpowers Agents (6)**
+
+| Agent | Model | Tools | Purpose |
+|-------|-------|-------|---------|
+| code-reviewer | inherit | Read, Grep, Glob, Bash | Reviews work against plan and standards (read-only) |
+| strategic-planner | opus | Read, Grep, Glob, Bash, Write | Goal → discovery → phased plan |
+| quality-gate | opus | Read, Grep, Glob, Bash | Adversarial verification — refuses without evidence (read-only) |
+| team-coordinator | opus | Read, Grep, Glob, Bash, Agent, Write, Edit | Orchestrates parallel Claude Code teams |
+| research-extractor | opus | Read, Grep, Glob, Bash, WebSearch, WebFetch | Idea extraction / usage evaluation / deep integration |
+| multi-perspective-review | opus | Read, Grep, Glob, Bash, Agent | Council mode — spawns disposable review lenses |
+
+**GSD Agents (16)** — lifecycle automation
+
+| Agent | Purpose |
+|-------|---------|
+| gsd-planner | Detailed phase plans with task breakdown |
+| gsd-executor | Plan execution with atomic commits |
+| gsd-verifier | Phase goal verification |
+| gsd-debugger | Scientific method debugging with persistent state |
+| gsd-phase-researcher | Phase implementation research |
+| gsd-project-researcher | Domain ecosystem research |
+| gsd-research-synthesizer | Research output synthesis |
+| gsd-roadmapper | Project roadmap creation |
+| gsd-codebase-mapper | Parallel codebase analysis |
+| gsd-plan-checker | Plan quality validation before execution |
+| gsd-integration-checker | Cross-phase E2E verification |
+| gsd-nyquist-auditor | Test coverage gap filling |
+| gsd-ui-researcher | UI design contract generation |
+| gsd-ui-auditor | 6-pillar frontend audit |
+| gsd-ui-checker | UI-SPEC validation |
+| gsd-user-profiler | Developer behavioral profiling |
+
+Tool restrictions are intentional: reviewers can't write code, planners can't spawn agents, extractors get web access. The `tools` frontmatter field controls what each agent can do.
+
+</details>
+
+<details>
+<summary><b>42 GSD Commands</b> — the lifecycle engine</summary>
+
+**Project Setup**
+- `/gsd:new-project` — initialize with deep context gathering
+- `/gsd:new-milestone` — start a new milestone cycle
+- `/gsd:map-codebase` — parallel codebase analysis
+
+**Planning**
+- `/gsd:discuss-phase` — gather context through adaptive questioning
+- `/gsd:research-phase` — research before planning
+- `/gsd:plan-phase` — create PLAN.md with verification loop
+- `/gsd:list-phase-assumptions` — surface Claude's assumptions before planning
+
+**Execution**
+- `/gsd:execute-phase` — wave-based parallel execution
+- `/gsd:quick` — small task with GSD guarantees, skip optional agents
+- `/gsd:autonomous` — run remaining phases without human in the loop
+- `/gsd:debug` — systematic debugging with persistent state
+
+**Verification & Shipping**
+- `/gsd:verify-work` — conversational UAT
+- `/gsd:validate-phase` — retroactive Nyquist validation
+- `/gsd:audit-milestone` — audit completion against original intent
+- `/gsd:ship` — create PR, run review, prepare for merge
+
+**Navigation**
+- `/gsd:progress` — check status, route to next action
+- `/gsd:next` — auto-advance to next logical step
+- `/gsd:stats` — project metrics and timeline
+- `/gsd:help` — full command reference
+
+**Utilities**: `/gsd:add-phase`, `/gsd:remove-phase`, `/gsd:insert-phase`, `/gsd:add-todo`, `/gsd:check-todos`, `/gsd:note`, `/gsd:pause-work`, `/gsd:resume-work`, `/gsd:cleanup`, `/gsd:complete-milestone`, `/gsd:session-report`, `/gsd:settings`, `/gsd:set-profile`, `/gsd:update`, `/gsd:do`, `/gsd:plan-milestone-gaps`, `/gsd:add-tests`, `/gsd:ui-phase`, `/gsd:ui-review`, `/gsd:reapply-patches`, `/gsd:profile-user`, `/gsd:join-discord`
+
+</details>
+
+<details>
+<summary><b>3 Hookify Rules</b> — enforcement that explains why</summary>
+
+All rules **ship disabled**. You opt in. That's the kinderpowers way.
+
+**verification-required** (event: stop, action: block)
+> Blocks the agent from claiming "done" unless the transcript contains evidence of verification — test output, curl responses, screenshots. The agent can't just say "looks correct." It has to prove it.
+
+**discovery-before-creation** (event: write, action: warn)
+> Warns before creating new files if there's no evidence of searching for existing solutions first. Because the #1 agent anti-pattern is building something that already exists.
+
+**brainstorm-before-build** (event: write, action: warn)
+> Warns before writing 100+ lines if there's no evidence of design discussion. Not every file needs a brainstorm — but a 200-line component without any discussion of approach is a red flag.
+
+Enable with `hookify:configure` or copy from `hookify-rules/` to your hookify installation.
+
+</details>
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -341,7 +473,7 @@ uv run python scanner.py --check skills/        # CI mode (exit 1 on high severi
 
 | Severity | Example | Why It's Flagged |
 |----------|---------|-----------------|
-| HIGH | "NOT NEGOTIABLE" | Removes all agent judgment |
+| HIGH | Absolute directives with no escape | Removes all agent judgment |
 | MEDIUM | "you MUST always" | Commands without escape hatch |
 | LOW | "REQUIRED SUB-SKILL" | Directive but with implicit opt-out |
 
