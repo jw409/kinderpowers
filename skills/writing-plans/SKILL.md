@@ -87,12 +87,42 @@ git commit -m "feat: add specific feature"
 ```
 ````
 
+## Discovery Before Creation
+
+**Before writing any plan, search for what already exists.** This prevents the most common planning failure: proposing new solutions when existing ones can be extended.
+
+**Planning-phase checkpoints**:
+1. Before proposing ANY new file/tool/script, run discovery:
+   - Search for similar function names or patterns
+   - Search for similar file names
+   - Check project documentation for existing solutions
+2. Include discovery results in each task: "Found existing X, will extend" or "No existing solution found"
+3. If existing solution found, pivot task to extension approach
+
+**Anti-patterns**:
+- Creating `new-feature-v2.py` without checking if `feature.py` exists
+- Proposing new documentation when similar docs already exist
+- Building parallel systems that duplicate existing capabilities
+- Skipping search because "I'm pretty sure there's nothing"
+
+## Extend Over Duplicate
+
+When discovery reveals similar existing work:
+1. Document what the existing system does
+2. Identify the gap between current and needed capability
+3. Write the task as "Extend X to support Y" not "Create new Z"
+4. Reference the existing file paths in the task's Files section
+
+**The WHY**: Duplication creates maintenance burden. Every parallel system is technical debt. Extension tasks are also faster to execute because the foundation exists.
+
 ## Remember
 - Exact file paths always
 - Complete code in plan (not "add validation")
 - Exact commands with expected output
 - Reference relevant skills with @ syntax
 - DRY, YAGNI, TDD, frequent commits
+- Discovery before creation (search before proposing new)
+- Extend over duplicate (modify existing before building new)
 
 ## Execution Handoff
 

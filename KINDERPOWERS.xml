@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kinderpowers-manifest version="6.0.0" architecture="plugin-first">
+
+<!--
+  kinderpowers: AN OPERATING SYSTEM FOR AI AGENTS
+  Philosophy + Lifecycle Engine + Workers + Enforcement
+
+  Built on superpowers (Jesse Vincent) and get-shit-done (Davíd Braun)
+
+  Progression: L1 Coding Assistant → L2 Agentic Worker → L3 Team Orchestrator → L4 Dark Factory
+-->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     INDEX: Jump to what you need
+     ═══════════════════════════════════════════════════════════════ -->
+<index>
+  <section name="emergency-start" what="Install and use in 60 seconds"/>
+  <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
+  <section name="skill-catalog" what="All 27 skills with levels, triggers, and costs"/>
+  <section name="agent-catalog" what="All 21 agents with capabilities and model requirements"/>
+  <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
+  <section name="hookify-rules" what="3 default enforcement rules (ship disabled)"/>
+  <section name="progression" what="L1 → L2 → L3 → L4 capability model"/>
+  <section name="attestation" what="What has been verified"/>
+</index>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     EMERGENCY START: Install and go
+     ═══════════════════════════════════════════════════════════════ -->
+<emergency-start>
+  <step n="1">git clone https://github.com/jw409/kinderpowers.git ~/.claude/plugins/kinderpowers</step>
+  <step n="2">cd ~/.claude/plugins/kinderpowers &amp;&amp; ./setup.sh</step>
+  <step n="3">Start a Claude Code session — skills auto-inject via hooks</step>
+  <step n="4">Try: "Use the brainstorming skill to design a feature"</step>
+</emergency-start>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     INVARIANTS: The philosophy as machine-readable rules
+     ═══════════════════════════════════════════════════════════════ -->
+<invariants type="PHILOSOPHY">
+  <invariant id="agency-preserving">
+    Skills recommend, they don't command. Every strong recommendation has a documented
+    skip cost. Every prohibition has a documented exception. The agent retains judgment.
+  </invariant>
+  <invariant id="evidence-before-claims">
+    Run the verification command. Read the output. Then make the claim.
+    Never say "should work" or "looks correct" without evidence.
+  </invariant>
+  <invariant id="discovery-before-creation">
+    Search for existing solutions before proposing new ones.
+    Extension is cheaper than duplication. Every parallel system is debt.
+  </invariant>
+  <invariant id="one-task-per-worker">
+    Workers with multiple tasks produce partial completions.
+    Split into focused units. Each worker finishes within the tool-count budget.
+  </invariant>
+  <invariant id="inject-upfront">
+    Workers don't coordinate mid-task. Everything they need goes into the initial prompt.
+    If a worker needs to ask a question, you failed at decomposition.
+  </invariant>
+  <invariant id="scanner-compliance">
+    Compulsion language (MUST without escape, NEVER without exception, NOT NEGOTIABLE)
+    is detected by scanner.py and flagged. Skills use "strongly recommended" with skip costs.
+  </invariant>
+</invariants>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SKILL CATALOG: 27 skills across 4 levels
+     ═══════════════════════════════════════════════════════════════ -->
+<skill-catalog count="27">
+  <!-- Level 1: Coding Assistant -->
+  <skill name="brainstorming" level="1" trigger="before creative work, features, components, behavior changes"
+    description="Explores user intent, requirements and design before implementation"/>
+  <skill name="test-driven-development" level="1" trigger="implementing any feature or bugfix"
+    description="Write failing test → implement → verify green → commit"/>
+  <skill name="systematic-debugging" level="1" trigger="any bug, test failure, or unexpected behavior"
+    description="Structured hypothesis tracking and elimination"/>
+  <skill name="verification-before-completion" level="1" trigger="about to claim work is complete"
+    description="Evidence before assertions — run the command, read the output, then claim"/>
+  <skill name="requesting-code-review" level="1" trigger="completing tasks, before merging"
+    description="Structured review request with context for reviewer"/>
+  <skill name="receiving-code-review" level="1" trigger="receiving review feedback"
+    description="Technical rigor in response — verify suggestions before implementing"/>
+
+  <!-- Level 2: Agentic Worker -->
+  <skill name="writing-plans" level="2" trigger="spec or requirements for multi-step task"
+    description="Comprehensive implementation plans with bite-sized tasks, discovery-before-creation"/>
+  <skill name="executing-plans" level="2" trigger="written plan to execute"
+    description="Batch execution with checkpoints, claim protocol, verify-before-assuming"/>
+  <skill name="strategic-planning" level="2" trigger="work needs design or discovery before execution"
+    description="Strategic briefs with investigative and implementation modes"/>
+  <skill name="metathinking" level="2" trigger="complex decisions, debugging mysteries, architectural choices"
+    description="Sequential thinking with mandatory branching and confidence tracking"/>
+  <skill name="research-extraction" level="2" trigger="analyzing external codebases, libraries, or papers"
+    description="Harvest → extract → analyze → rank → verify pipeline"/>
+  <skill name="subagent-driven-development" level="2" trigger="executing plans with independent tasks"
+    description="Fresh subagent per task with review between tasks"/>
+  <skill name="using-git-worktrees" level="2" trigger="starting feature work needing isolation"
+    description="Isolated git worktrees with smart directory selection"/>
+  <skill name="finishing-a-development-branch" level="2" trigger="implementation complete, tests pass"
+    description="Guides merge, PR, or cleanup decisions"/>
+  <skill name="remembering-conversations" level="2" trigger="unfamiliar workflows, past work references"
+    description="Searches conversation history for relevant context"/>
+  <skill name="find-skills" level="2" trigger="looking for functionality"
+    description="Discovers and installs agent skills"/>
+  <skill name="writing-skills" level="2" trigger="creating or editing skills"
+    description="Skill authoring with scanner compliance"/>
+  <skill name="beads" level="2" trigger="multi-session work, tracking dependencies"
+    description="Issue tracking with persistent memory across sessions"/>
+  <skill name="requirements" level="2" trigger="gathering requirements for a feature"
+    description="Structured requirements elicitation"/>
+  <skill name="retrospective" level="2" trigger="after completing a project or phase"
+    description="Structured reflection on what worked and what didn't"/>
+  <skill name="architecture" level="2" trigger="system design decisions"
+    description="Architecture decision records and trade-off analysis"/>
+  <skill name="adversarial-review" level="2" trigger="reviewing work for completeness"
+    description="Adversarial quality review looking for what's missing"/>
+
+  <!-- Level 3: Team Orchestrator -->
+  <skill name="team-orchestration" level="3" trigger="coordinating multiple agents"
+    description="Team creation, task assignment, worker sizing, INJECT patterns"/>
+  <skill name="dispatching-parallel-agents" level="3" trigger="2+ independent tasks"
+    description="Parallel dispatch without shared state"/>
+  <skill name="dispatching-to-runtimes" level="3" trigger="writing prompts for non-Claude runtimes"
+    description="Prompt structuring for Gemini, GPT, and local models"/>
+</skill-catalog>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     AGENT CATALOG: 21 agents (5 kinderpowers + 16 GSD)
+     ═══════════════════════════════════════════════════════════════ -->
+<agent-catalog count="21">
+  <!-- Kinderpowers agents -->
+  <agent name="code-reviewer" level="1" model="inherit"
+    description="Reviews completed work against plan and coding standards"/>
+  <agent name="strategic-planner" level="3" model="opus"
+    description="Takes a goal → discovery → phased plan with dependencies"/>
+  <agent name="quality-gate" level="3" model="opus"
+    description="Adversarial verification — refuses to pass without evidence"/>
+  <agent name="team-coordinator" level="3" model="opus"
+    description="Orchestrates parallel Claude Code agent teams"/>
+  <agent name="research-extractor" level="2" model="opus"
+    description="Routes: idea extraction, usage evaluation, or deep integration"/>
+
+  <!-- GSD agents -->
+  <agent name="gsd-codebase-mapper" level="4" model="sonnet" description="Parallel codebase analysis"/>
+  <agent name="gsd-debugger" level="4" model="opus" description="Scientific method debugging"/>
+  <agent name="gsd-executor" level="4" model="opus" description="Plan execution with atomic commits"/>
+  <agent name="gsd-integration-checker" level="4" model="opus" description="Cross-phase E2E verification"/>
+  <agent name="gsd-nyquist-auditor" level="4" model="opus" description="Test coverage gap filling"/>
+  <agent name="gsd-phase-researcher" level="4" model="opus" description="Phase implementation research"/>
+  <agent name="gsd-plan-checker" level="4" model="opus" description="Plan quality validation"/>
+  <agent name="gsd-planner" level="4" model="opus" description="Detailed phase planning"/>
+  <agent name="gsd-project-researcher" level="4" model="opus" description="Domain ecosystem research"/>
+  <agent name="gsd-research-synthesizer" level="4" model="sonnet" description="Research output synthesis"/>
+  <agent name="gsd-roadmapper" level="4" model="opus" description="Project roadmap creation"/>
+  <agent name="gsd-ui-auditor" level="4" model="opus" description="6-pillar frontend audit"/>
+  <agent name="gsd-ui-checker" level="4" model="opus" description="UI-SPEC validation"/>
+  <agent name="gsd-ui-researcher" level="4" model="opus" description="UI design contract generation"/>
+  <agent name="gsd-user-profiler" level="4" model="sonnet" description="Developer behavioral profiling"/>
+  <agent name="gsd-verifier" level="4" model="opus" description="Phase goal verification"/>
+</agent-catalog>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     COMMAND CATALOG: 42 GSD slash commands
+     ═══════════════════════════════════════════════════════════════ -->
+<command-catalog count="42">
+  <command name="/gsd:new-project" when="Starting a brand new project" description="Initialize with deep context gathering"/>
+  <command name="/gsd:plan-phase" when="Ready to plan a specific phase" description="Create PLAN.md with verification loop"/>
+  <command name="/gsd:execute-phase" when="Plan approved, ready to build" description="Wave-based parallel execution"/>
+  <command name="/gsd:verify-work" when="Phase complete, need validation" description="Conversational UAT"/>
+  <command name="/gsd:debug" when="Bug found during development" description="Scientific debugging with persistent state"/>
+  <command name="/gsd:quick" when="Small task with GSD guarantees" description="Atomic commits, skip optional agents"/>
+  <command name="/gsd:autonomous" when="Run remaining phases without human" description="Full autonomous lifecycle"/>
+  <command name="/gsd:progress" when="Check project status" description="Show context and route to next action"/>
+  <command name="/gsd:ship" when="Ready to create PR" description="PR creation with review and merge prep"/>
+  <command name="/gsd:discuss-phase" when="Gather context before planning" description="Adaptive questioning"/>
+  <command name="/gsd:research-phase" when="Need research before planning" description="Standalone research"/>
+  <command name="/gsd:map-codebase" when="Analyze existing codebase" description="Parallel mapper agents"/>
+  <command name="/gsd:help" when="Need guidance" description="Available commands and usage"/>
+  <command name="/gsd:stats" when="Project metrics" description="Phases, plans, requirements, timeline"/>
+  <command name="/gsd:next" when="What should I do next?" description="Auto-advance to next logical step"/>
+  <!-- 27 more GSD commands available — run /gsd:help for full list -->
+</command-catalog>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HOOKIFY RULES: Default enforcement (ship disabled)
+     ═══════════════════════════════════════════════════════════════ -->
+<hookify-rules count="3">
+  <rule name="verification-required" event="stop" action="block" enabled="false"
+    description="Blocks completion without verification evidence in transcript"/>
+  <rule name="discovery-before-creation" event="write" action="warn" enabled="false"
+    description="Warns before creating files without evidence of search"/>
+  <rule name="brainstorm-before-build" event="write" action="warn" enabled="false"
+    description="Warns before writing 100+ lines without design discussion"/>
+</hookify-rules>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PROGRESSION MODEL
+     ═══════════════════════════════════════════════════════════════ -->
+<progression>
+  <level n="1" name="Coding Assistant" description="Agent writes code, tests it, asks for review">
+    <capability>brainstorming, TDD, systematic-debugging, verification, code-review</capability>
+  </level>
+  <level n="2" name="Agentic Worker" description="Agent plans work, tracks progress, works in isolation">
+    <capability>Plans, memory, worktrees, strategic-planning, metathinking, research-extraction</capability>
+    <requires>Level 1 skills</requires>
+  </level>
+  <level n="3" name="Team Orchestrator" description="Agent coordinates parallel workers">
+    <capability>Team orchestration, parallel dispatch, runtime dispatch, quality gates</capability>
+    <requires>Level 1-2 skills</requires>
+  </level>
+  <level n="4" name="Dark Factory" description="Fully autonomous project delivery">
+    <capability>GSD lifecycle engine, hookify enforcement, autonomous execution</capability>
+    <requires>Level 1-3 skills</requires>
+  </level>
+</progression>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ATTESTATION: What has been verified
+     ═══════════════════════════════════════════════════════════════ -->
+<attestation>
+  <claim what="Scanner passes on all skills" verified="pending" method="uv run python scanner.py --check skills/"/>
+  <claim what="setup.sh creates correct symlinks" verified="pending" method="Manual test on clean machine"/>
+  <claim what="GSD paths use CLAUDE_PLUGIN_ROOT" verified="true" method="grep -rl hardcoded paths = 0"/>
+  <claim what="All skills have valid frontmatter" verified="pending" method="Check name + description in each SKILL.md"/>
+  <claim what="XML is well-formed" verified="pending" method="python -c 'import xml.etree.ElementTree as ET; ET.parse(...)'"/>
+</attestation>
+
+</kinderpowers-manifest>

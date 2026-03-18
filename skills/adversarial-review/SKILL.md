@@ -124,6 +124,67 @@ This methodology applies beyond code:
 | **Test suites** | Missing scenarios, weak assertions, tests that can't fail, flaky patterns |
 | **Documentation** | Inaccuracies, missing context, outdated information, misleading examples |
 
+## Multi-Perspective Review (Council Mode)
+
+For significant decisions, a single-perspective review misses things. Council mode spawns disposable lenses — not permanent personas, but task-scoped perspectives selected based on **what could break**.
+
+### Smart Persona Selection
+
+Don't pick personas from a fixed roster. Pick based on the artifact and its risk profile:
+
+| What You're Reviewing | Lenses to Spawn | Why These |
+|-----------------------|-----------------|-----------|
+| API design | Edge Case + Contract + Empathy | Margins, promises, newcomer confusion |
+| Security change | Edge Case + Resilience + Contract | Injection, failure modes, guarantees |
+| Architecture decision | Workflow + Empathy + Contract | User journey, team impact, promises |
+| Documentation | Workflow + Empathy + Documentation | Can I follow it? Do I understand it? Is it true? |
+| Performance claim | Contract + Edge Case + Resilience | Is it real? What breaks it? What about load? |
+
+### The Six Lenses (from Reformed Troll Testing)
+
+Each lens asks a different question:
+
+| Lens | Core Question | Spawns When |
+|------|---------------|-------------|
+| **WORKFLOW** | "Can a real user actually do this?" | User-facing features, docs, onboarding |
+| **EDGE CASE** | "What happens with unusual inputs?" | Parsers, APIs, data handling |
+| **RESILIENCE** | "What happens when things go sideways?" | Infrastructure, distributed systems, error handling |
+| **CONTRACT** | "Does it actually do what it says?" | APIs, guarantees, performance claims |
+| **DOCUMENTATION** | "Can I believe the docs?" | Any documented behavior or example |
+| **EMPATHY** | "What would confuse a newcomer?" | Onboarding, naming, error messages |
+
+### How to Run
+
+1. **Select 2-3 lenses** based on the table above (not all 6 — that's expensive and most won't apply)
+2. **Spawn one agent per lens** — each with a role-scoped prompt (see the multi-perspective-review agent)
+3. **Each agent reviews independently** — no coordination, no groupthink
+4. **Synthesize**: One pass to identify consensus (multiple lenses flagged same issue) and divergence (one lens found something others missed)
+
+### Emotional Indirection (Reformed Troll Pattern)
+
+Findings land better when attributed to a role, not stated as direct criticism:
+
+- **Instead of**: "Your error handling is broken"
+- **Say**: "The RESILIENCE lens found that this error message doesn't tell the user how to fix the problem"
+
+This creates psychological distance from criticism and lets the author "agree with the lens" without defensiveness.
+
+### Pedanticness Slider
+
+Not every finding is worth raising. Match depth to context:
+
+| Level | What Gets Raised |
+|-------|------------------|
+| **Low** | Bugs that affect users, security issues, broken promises |
+| **Medium** (default) | Above + misleading docs, confusing APIs, performance gaps |
+| **High** | Above + style issues, nitpicks, technically-true-but-pedantic |
+
+Default to medium. Raise material issues. Skip the nitpicks unless asked.
+
+### Skip Cost
+
+Single-perspective review catches obvious bugs but misses cross-cutting concerns. The security reviewer doesn't think about onboarding confusion. The UX reviewer doesn't think about injection attacks. Council mode costs 2-3x a single review but catches 3-5x more issues.
+
 ## Anti-Patterns
 
 | Pattern | Problem | Better Approach |

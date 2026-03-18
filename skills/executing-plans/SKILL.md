@@ -67,6 +67,58 @@ After all tasks complete and verified:
 
 **Don't force through blockers** - stop and ask.
 
+## Just Do It When Clear
+
+Not every task needs ceremony. If the plan step is explicit and unambiguous:
+- Don't re-plan what's already planned
+- Don't ask "should I brainstorm approaches?" when the approach is specified
+- Don't create sub-plans for individual steps
+
+**Execute when**: Plan provides file paths + exact changes, or describes a precise command sequence.
+**Pause when**: Plan step is vague, open-ended, or you genuinely don't understand it.
+
+**Default bias**: If the plan step is clear, just do it.
+
+## Work Item Claim Protocol
+
+Before executing, check if a tracking system is in use:
+
+### Before Execution
+1. Check for relevant work items (issues, beads, tickets)
+2. If one exists: verify status, claim it (set in-progress + assignee)
+3. If someone else claimed it: ask before proceeding (soft enforcement)
+4. If no relevant work item exists: ask whether to create one or treat as ad-hoc
+
+### During Execution
+- If scope grows beyond the plan step: note the expansion
+- If blocked: record the blocker, don't silently skip
+
+### After Execution
+- Close the work item with a summary
+- If partial: note what's done and what remains
+
+## Verify Before Assuming
+
+Never assume services, ports, or capabilities work without explicit verification.
+
+**Apply when**:
+- Referencing any port/service (APIs, databases, LLM endpoints)
+- Claiming infrastructure capability
+- Describing what a subprocess or worker does
+
+**Protocol**: Check that it's actually running/working before building on the assumption. A 5-second health check prevents 30 minutes of debugging phantom failures.
+
+## Parallel Execution Patterns
+
+| Pattern | Flow |
+|---------|------|
+| Multi-file edit | Read all files (parallel) -> Edit -> Test -> Verify |
+| Fix failures | Run tests -> Fix each -> Re-test -> Repeat until green |
+| Execute plan | Read plan -> Load context (parallel) -> Execute phases -> Verify |
+| Independent tasks | Dispatch to separate agents -> Collect results -> Integrate |
+
+When tasks within a batch are independent, run them in parallel. Sequential execution of independent tasks wastes time.
+
 ## Remember
 - Review plan critically first
 - Follow plan steps exactly
@@ -74,7 +126,11 @@ After all tasks complete and verified:
 - Reference skills when plan says to
 - Between batches: just report and wait
 - Stop when blocked, don't guess
-- Use a branch, not main — accidental commits to main are hard to untangle
+- Use a branch, not main -- accidental commits to main are hard to untangle
+- Just do it when the step is clear (no re-planning)
+- Claim work items before starting
+- Verify assumptions before building on them
+- Parallelize independent operations
 
 ## Integration
 

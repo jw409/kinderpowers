@@ -1,14 +1,14 @@
 {
   "name": "kinderpowers",
-  "description": "Hub-and-spoke agent skill system: workflow skills, skill discovery, and agent definitions with documented tradeoffs",
-  "version": "5.1.0",
+  "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
+  "version": "6.0.0",
   "author": {
     "name": "jw"
   },
   "homepage": "https://github.com/jw409/kinderpowers",
   "repository": "https://github.com/jw409/kinderpowers",
   "license": "MIT",
-  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving", "skill-discovery", "hub"],
+  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving", "skill-discovery", "hub", "lifecycle-engine", "gsd", "hookify", "agents", "team-orchestration"],
   "upstream": {
     "name": "superpowers",
     "version": "4.3.1",
