@@ -32,6 +32,36 @@ graph LR
 
 ---
 
+## Quick Start (Easy Mode)
+
+```bash
+# Install (once)
+git clone https://github.com/jw409/kinderpowers.git ~/.claude/plugins/kinderpowers
+cd ~/.claude/plugins/kinderpowers && ./setup.sh
+```
+
+**That's it.** Skills auto-inject via hooks — you don't invoke them. Write a test → TDD skill activates. Claim "done" → verification skill asks for evidence. Touch a plan file → executing-plans skill loads. You just work normally and the skills show up when relevant.
+
+When you want the lifecycle engine:
+
+```
+/gsd:quick "add input validation to the signup form"
+```
+
+One command. GSD handles research, planning, execution, and verification. Atomic commits. Tests included. No ceremony.
+
+When you want full autonomy:
+
+```
+/gsd:autonomous
+```
+
+Roadmap → plan → execute → verify → ship. For each phase. You review at phase boundaries. The agent manages everything else.
+
+**You don't need to know 26 skills, 22 agents, or 42 commands.** They're auto-routed. The sections below are for power users who want to understand the machinery — or pick specific skills for specific situations.
+
+---
+
 ## Who Is This For?
 
 <details>
@@ -279,10 +309,12 @@ Agent:  "/gsd:new-project → context gathered, PROJECT.md created
 
 ---
 
-## What's Inside
+## What's Inside (You Don't Need to Read This)
+
+Everything below is auto-routed. Skills inject when relevant files are touched. GSD commands pick the right agents. You're reading the engine manual, not the driving instructions.
 
 <details>
-<summary><b>26 Skills</b> — how agents think</summary>
+<summary><b>26 Skills</b> — auto-injected, you never invoke these manually</summary>
 
 | Skill | Level | When It Activates |
 |-------|-------|-------------------|
@@ -317,7 +349,7 @@ Skills are invitations, not commands. Every recommendation documents the cost of
 </details>
 
 <details>
-<summary><b>22 Agents</b> — autonomous workers with tool restrictions</summary>
+<summary><b>22 Agents</b> — spawned automatically by skills and GSD commands</summary>
 
 **Kinderpowers Agents (6)**
 
@@ -356,7 +388,7 @@ Tool restrictions are intentional: reviewers can't write code, planners can't sp
 </details>
 
 <details>
-<summary><b>42 GSD Commands</b> — the lifecycle engine</summary>
+<summary><b>42 GSD Commands</b> — or just use <code>/gsd:quick</code> and <code>/gsd:do</code></summary>
 
 **Project Setup**
 - `/gsd:new-project` — initialize with deep context gathering
