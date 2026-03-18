@@ -50,6 +50,7 @@ Kinderpowers v6.0: An operating system for AI agents.
 - [superpowers](https://github.com/obra/superpowers) by Jesse Vincent — craft philosophy, skill format, scanner, hook system
 - [get-shit-done](https://github.com/davidjbauer/get-shit-done) by Davíd Braun — lifecycle engine, commands, agents, workflows
 - [hookify](https://github.com/QuantGeekDev/hookify) by Diego Perez — enforcement rule format
+- [jw409](https://github.com/jw409) — progression model, agency-preserving philosophy, council mode, new skills and agents
 
 ## [5.1.0] — 2025-03-17
 

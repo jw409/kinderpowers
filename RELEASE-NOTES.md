@@ -1,4 +1,72 @@
-# Superpowers Release Notes
+# Kinderpowers Release Notes
+
+## v6.0.0 (2026-03-18)
+
+### kinderpowers v6.0 — An Operating System for AI Agents
+
+Four-layer architecture: Philosophy (skills) + Lifecycle Engine (GSD) + Workers (agents) + Enforcement (hookify rules). Progression model from L1 Coding Assistant through L4 Dark Factory.
+
+#### Added
+
+**Lifecycle Engine — GSD v1.26.0 integrated**
+- 44 workflow definitions, 42 slash commands, 16 agents
+- Full development lifecycle: `/gsd:new-project` → `/gsd:plan-phase` → `/gsd:execute-phase` → `/gsd:verify-work` → `/gsd:ship`
+- `gsd-tools.cjs` runtime with state management, model resolution, and phase tracking
+- 96 hardcoded paths rewritten to `${CLAUDE_PLUGIN_ROOT}/gsd/` for plugin portability
+
+**New Skills (6)**
+- `strategic-planning` — discovery-before-creation, investigative vs implementation modes, extend-over-duplicate
+- `metathinking` — sequential thinking with mandatory branching, confidence tracking, Brenner "third alternative" pattern
+- `research-extraction` — harvest → extract (L0-L3) → analyze → rank → verify pipeline with 3 routing modes (idea extraction, usage evaluation, deep integration)
+- `dispatching-to-runtimes` — prompt structuring for Gemini, GPT, and local model dispatch
+- `team-orchestration` — Claude Code teams patterns: worker sizing, file domain separation, INJECT upfront, idle handling
+- `remembering-conversations` — conversation history search (moved from marketplace-only to repo)
+
+**New Agents (6)**
+- `strategic-planner` (opus, tools: Read/Grep/Glob/Bash/Write) — goal → discovery → phased plan
+- `quality-gate` (opus, tools: Read/Grep/Glob/Bash) — adversarial verification, refuses to pass without evidence
+- `team-coordinator` (opus, tools: Read/Grep/Glob/Bash/Agent/Write/Edit) — orchestrates parallel agent teams
+- `research-extractor` (opus, tools: Read/Grep/Glob/Bash/WebSearch/WebFetch) — routes between idea extraction, usage evaluation, and deep integration
+- `multi-perspective-review` (opus, tools: Read/Grep/Glob/Bash/Agent) — council mode + reformed troll testing with smart persona selection
+- `code-reviewer` upgraded with tools restriction (read-only: Read/Grep/Glob/Bash)
+
+**Multi-Perspective Review (Council Mode)**
+- 6 disposable lenses: WORKFLOW, EDGE CASE, RESILIENCE, CONTRACT, DOCUMENTATION, EMPATHY
+- Smart persona selection based on what could break, not a fixed roster
+- Pedanticness slider (Low/Medium/High materiality filter)
+- Emotional indirection pattern ("The CONTRACT lens found...")
+- Synthesizes consensus (2+ lenses agree) and divergence (unique findings)
+- Adapted from game1 council mode and schemaless-beta reformed troll testing protocol
+
+**Enforcement — Hookify Rules (3, ship disabled)**
+- `verification-required` — blocks completion without verification evidence
+- `discovery-before-creation` — warns before creating new files without searching
+- `brainstorm-before-build` — warns before writing 100+ lines without design discussion
+
+**Infrastructure**
+- `setup.sh` — post-install script for symlinks and hookify rule installation (idempotent)
+- `KINDERPOWERS.xml` — machine-readable manifest for AI agent consumption (skill/agent/command catalogs)
+- `CHANGELOG.md` — structured change history
+
+#### Enhanced
+
+- `writing-plans` — added discovery-before-creation and extend-over-duplicate strategies from jw-planning
+- `executing-plans` — added explicit instructions mode, bead claim protocol, verify-before-assuming, parallel patterns from jw-execution
+- `verification-before-completion` — added deep inspection checklist, agent delegation verification from jw-execution
+- `adversarial-review` — added multi-perspective review section with council mode, 6 lenses, pedanticness slider
+- `plugin.json` — updated to v6.0.0, expanded description and keywords
+- All kinderpowers agents now have `tools` frontmatter restrictions
+
+#### Credits
+
+- [superpowers](https://github.com/obra/superpowers) by Jesse Vincent — craft philosophy, skill format, scanner, hook system
+- [get-shit-done](https://github.com/davidjbauer/get-shit-done) by Davíd Braun — lifecycle engine, commands, agents, workflows
+- [hookify](https://github.com/QuantGeekDev/hookify) by Diego Perez — enforcement rule format
+- [jw409](https://github.com/jw409) — progression model, agency-preserving philosophy, council mode, new skills and agents
+
+---
+
+## Upstream Superpowers Release Notes
 
 ## v4.3.1 (2026-02-21)
 
