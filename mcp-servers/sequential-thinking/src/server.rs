@@ -166,6 +166,10 @@ impl ServerHandler for SeqThinkServer {
                 icons: None,
                 website_url: None,
             },
+            capabilities: rmcp::model::ServerCapabilities {
+                tools: Some(rmcp::model::ToolsCapability::default()),
+                ..Default::default()
+            },
             ..Default::default()
         }
     }
