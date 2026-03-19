@@ -1,6 +1,6 @@
 ---
 name: gsd-codebase-mapper
-description: Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load.
+description: Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load. Optionally emits structured JSONL for search index ingestion.
 tools: Read, Bash, Grep, Glob, Write
 color: cyan
 # hooks:
@@ -25,6 +25,58 @@ Your job: Explore thoroughly, then write document(s) directly. Return confirmati
 **CRITICAL: Mandatory Initial Read**
 If the prompt contains a `<files_to_read>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
 </role>
+
+<parameters>
+The caller tunes the mapper via their prompt. Parse these:
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `depth` | standard | quick, standard, deep, exhaustive | How deep to explore. quick=top-level only, exhaustive=read every file |
+| `emit_jsonl` | false | true/false | Emit structured `.planning/codebase/{FOCUS}_index.jsonl` alongside markdown |
+| `expiry_days` | 30 | 1-365 | Days until this analysis is considered stale (written into metadata) |
+| `target_repo` | cwd | path | Repository to map (for multi-repo mapping) |
+| `custom_focus` | none | string | Override the 4 standard foci with a custom focus description |
+
+If the caller says "deep scan" → depth=deep. If they mention "index" or "search" → emit_jsonl=true.
+If mapping a different repo → target_repo=path. If they want something specific → custom_focus.
+</parameters>
+
+<jsonl_output>
+When `emit_jsonl=true`, write a sidecar JSONL file alongside each markdown document.
+Each line is a self-contained finding that any search system can ingest.
+
+**File**: `.planning/codebase/{FOCUS}_index.jsonl` (e.g., `arch_index.jsonl`)
+
+**Schema** (one JSON object per line):
+```json
+{
+  "id": "arch-layer-api",
+  "focus": "arch",
+  "category": "layer",
+  "title": "API Layer",
+  "description": "Express REST API with controller/service/repository pattern",
+  "file_paths": ["src/controllers/", "src/services/", "src/repositories/"],
+  "tags": ["api", "express", "rest", "controller-pattern"],
+  "severity": null,
+  "mapped_at": "2026-03-19T03:00:00Z",
+  "expires_at": "2026-04-18T03:00:00Z",
+  "repo": "/home/jw/dev/myproject",
+  "mapper_version": "kinderpowers-6.0.0"
+}
+```
+
+**Categories by focus**:
+- tech: `language`, `framework`, `dependency`, `runtime`, `config`, `integration`
+- arch: `layer`, `pattern`, `entry_point`, `data_flow`, `abstraction`, `cross_cutting`
+- quality: `convention`, `test_pattern`, `linting`, `import_style`, `error_handling`
+- concerns: `tech_debt`, `bug`, `security`, `performance`, `fragile`, `scaling`, `coverage_gap`
+
+**Why JSONL**: Any downstream system (ZMCPTools, DuckDB, grep, jq) can consume it.
+The markdown is human-readable; the JSONL is machine-readable. Both describe the same findings.
+
+**Expiry**: Every record has `mapped_at` and `expires_at`. Consumers should check expiry
+before trusting the data. Stale maps are worse than no maps.
+</jsonl_output>
 
 <why_this_matters>
 **These documents are consumed by other GSD commands:**
@@ -157,6 +209,13 @@ Write document(s) to `.planning/codebase/` using the templates below.
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
 </step>
 
+<step name="emit_jsonl_if_requested">
+If `emit_jsonl=true`, write the JSONL sidecar file AFTER writing the markdown documents.
+Walk through each section of the markdown you just wrote and emit one JSONL line per finding.
+
+Calculate `expires_at` from current time + `expiry_days`.
+</step>
+
 <step name="return_confirmation">
 Return a brief confirmation. DO NOT include document contents.
 
@@ -165,9 +224,13 @@ Format:
 ## Mapping Complete
 
 **Focus:** {focus}
+**Depth:** {depth}
 **Documents written:**
 - `.planning/codebase/{DOC1}.md` ({N} lines)
 - `.planning/codebase/{DOC2}.md` ({N} lines)
+- `.planning/codebase/{FOCUS}_index.jsonl` ({M} records) [if emit_jsonl]
+
+**Expires:** {expires_at}
 
 Ready for orchestrator summary.
 ```
