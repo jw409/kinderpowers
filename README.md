@@ -441,6 +441,47 @@ Enable with `hookify:configure` or copy from `hookify-rules/` to your hookify in
 
 </details>
 
+<details>
+<summary><b>2 MCP Servers</b> — Rust-native, high-performance, optional</summary>
+
+### kp-github-mcp
+
+Token-compressed GitHub MCP server. Replaces the official Claude Code GitHub plugin with 10-40x fewer tokens per read operation.
+
+```bash
+cd mcp-servers/github && cargo build --release
+claude mcp add kp-github --transport stdio -- ./target/release/kp-github-mcp
+```
+
+**63 tools** covering issues, PRs, commits, branches, releases, tags, files, repos, actions, labels, teams, users, code search. Every read tool supports:
+- `fields` — project only the fields you need (`["number","title","state"]`)
+- `format` — output as `json`, `table`, or `text`
+
+**4 MCP resources**: `github://repos/{owner}/{repo}/issues`, `/pulls`, `/readme`, repo info.
+
+**5-stage compression pipeline**: strip waste fields (avatar_url, node_id, etc.) → flatten nested objects (user → login string) → project requested fields → compact timestamps/URLs/SHAs → auto-format (tables for lists, JSON-lines for mixed).
+
+**Backend**: reqwest HTTP primary (0.5s), gh CLI fallback (when no GITHUB_TOKEN).
+
+**Coverage**: 484 unit tests + 23 live integration tests, 97% line coverage.
+
+### kp-sequential-thinking
+
+Rust port of the enhanced sequential thinking MCP server with metathinking integration.
+
+```bash
+cd mcp-servers/sequential-thinking && cargo build --release
+claude mcp add kp-seqthink --transport stdio -- ./target/release/kp-sequential-thinking
+```
+
+**1 tool** (`sequentialthinking`) with wide exploration, branching, confidence tracking, compliance warnings, layer abstraction, and search integration.
+
+Per-model tuning profiles (Claude, Gemini, DeepSeek, Grok, Llama). Persistent JSONL logging for learning pipeline harvesting. Brenner "Third Alternative" pattern and Four Self-Checks from the metathinking skill.
+
+**Coverage**: 78 unit tests + 19 integration tests, 95.6% line coverage.
+
+</details>
+
 ---
 
 ## Architecture
