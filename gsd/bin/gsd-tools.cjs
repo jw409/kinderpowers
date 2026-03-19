@@ -131,19 +131,23 @@
 
 const fs = require('fs');
 const path = require('path');
-const { error } = require('./lib/core.cjs');
-const state = require('./lib/state.cjs');
-const phase = require('./lib/phase.cjs');
-const roadmap = require('./lib/roadmap.cjs');
-const verify = require('./lib/verify.cjs');
-const config = require('./lib/config.cjs');
-const template = require('./lib/template.cjs');
-const milestone = require('./lib/milestone.cjs');
-const commands = require('./lib/commands.cjs');
-const init = require('./lib/init.cjs');
-const frontmatter = require('./lib/frontmatter.cjs');
-const profilePipeline = require('./lib/profile-pipeline.cjs');
-const profileOutput = require('./lib/profile-output.cjs');
+
+// Resolve lib relative to this script, not cwd — fixes MODULE_NOT_FOUND
+// when invoked from a working directory that isn't gsd/bin/
+const _lib = (name) => path.join(__dirname, 'lib', name);
+const { error } = require(_lib('core.cjs'));
+const state = require(_lib('state.cjs'));
+const phase = require(_lib('phase.cjs'));
+const roadmap = require(_lib('roadmap.cjs'));
+const verify = require(_lib('verify.cjs'));
+const config = require(_lib('config.cjs'));
+const template = require(_lib('template.cjs'));
+const milestone = require(_lib('milestone.cjs'));
+const commands = require(_lib('commands.cjs'));
+const init = require(_lib('init.cjs'));
+const frontmatter = require(_lib('frontmatter.cjs'));
+const profilePipeline = require(_lib('profile-pipeline.cjs'));
+const profileOutput = require(_lib('profile-output.cjs'));
 
 // ─── CLI Router ───────────────────────────────────────────────────────────────
 
