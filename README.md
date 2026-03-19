@@ -442,43 +442,63 @@ Enable with `hookify:configure` or copy from `hookify-rules/` to your hookify in
 </details>
 
 <details>
-<summary><b>2 MCP Servers</b> — Rust-native, high-performance, optional</summary>
+<summary><b>2 MCP Servers</b> — Rust-native, install independently, 7x-27x token savings</summary>
 
-### kp-github-mcp
+### kp-github-mcp — drop-in GitHub plugin replacement
 
-Token-compressed GitHub MCP server. Replaces the official Claude Code GitHub plugin with 10-40x fewer tokens per read operation.
+The official Claude Code GitHub plugin returns raw API responses. Listing 5 issues burns ~7,700 tokens on avatar URLs, node IDs, empty arrays, and nested user objects nobody asked for. kp-github-mcp runs the same queries through a 5-stage compression pipeline and returns only what matters.
+
+| Query | Official Plugin | kp-github (default) | kp-github (projected) |
+|-------|----------------|--------------------|-----------------------|
+| 5 open issues | ~7,700 tokens | ~1,100 tokens | ~280 tokens |
+| **Reduction** | 1x | **7x** | **27x** |
 
 ```bash
+# Install (requires Rust toolchain)
 cd mcp-servers/github && cargo build --release
 claude mcp add kp-github --transport stdio -- ./target/release/kp-github-mcp
+
+# Then disable the official plugin in ~/.claude/settings.json:
+# "github@claude-plugins-official": false
 ```
 
-**63 tools** covering issues, PRs, commits, branches, releases, tags, files, repos, actions, labels, teams, users, code search. Every read tool supports:
-- `fields` — project only the fields you need (`["number","title","state"]`)
-- `format` — output as `json`, `table`, or `text`
+**63 tools** — full superset of the official plugin plus Actions, Labels, Compare, Release Create. Every read tool accepts `fields` (project columns) and `format` (json/table/text).
 
-**4 MCP resources**: `github://repos/{owner}/{repo}/issues`, `/pulls`, `/readme`, repo info.
+**How it works:**
+1. **Strip** — remove avatar_url, node_id, reactions, 20+ waste fields
+2. **Flatten** — `user: {login: "alice", id: 123, ...}` → `user: "alice"`
+3. **Project** — keep only the fields you asked for
+4. **Compact** — timestamps to "2h ago", URLs to "owner/repo#42", SHAs to 7 chars, base64 content decoded to plaintext
+5. **Format** — auto-detect: tables for uniform lists, JSON-lines for mixed, pretty JSON for single objects
 
-**5-stage compression pipeline**: strip waste fields (avatar_url, node_id, etc.) → flatten nested objects (user → login string) → project requested fields → compact timestamps/URLs/SHAs → auto-format (tables for lists, JSON-lines for mixed).
+**Backend**: reqwest HTTP (0.5s) with gh CLI fallback. Rate limit warnings when < 100 requests remaining.
 
-**Backend**: reqwest HTTP primary (0.5s), gh CLI fallback (when no GITHUB_TOKEN).
+**Quality**: 484 unit tests, 23 live integration tests, 97% line coverage. 7.3MB binary.
 
-**Coverage**: 484 unit tests + 23 live integration tests, 97% line coverage.
+### kp-sequential-thinking — structured reasoning with model-aware tuning
 
-### kp-sequential-thinking
-
-Rust port of the enhanced sequential thinking MCP server with metathinking integration.
+Rust port of the Anthropic sequential thinking server, enhanced with wide exploration, branching-as-primary, and per-model tuning profiles.
 
 ```bash
 cd mcp-servers/sequential-thinking && cargo build --release
 claude mcp add kp-seqthink --transport stdio -- ./target/release/kp-sequential-thinking
 ```
 
-**1 tool** (`sequentialthinking`) with wide exploration, branching, confidence tracking, compliance warnings, layer abstraction, and search integration.
+**What it adds over the official server:**
+- **Per-model profiles** — Claude gets 4-5 alternatives, Gemini Flash gets 5-7, DeepSeek goes 3 layers deep
+- **Compliance enforcement** — warns after 4+ linear thoughts without branching (empirical: 69% of sessions fail to branch when they should)
+- **Confidence-driven guidance** — low confidence triggers "consider branching", high confidence suggests early exit
+- **Brenner pattern** — every A-vs-B choice must include "both could be wrong"
+- **Four self-checks** — verify before assuming, discover before creating, inspect deeply, extend before duplicating
+- **Persistent logging** — JSONL output for learning pipeline harvesting and CMA-ES profile optimization
 
-Per-model tuning profiles (Claude, Gemini, DeepSeek, Grok, Llama). Persistent JSONL logging for learning pipeline harvesting. Brenner "Third Alternative" pattern and Four Self-Checks from the metathinking skill.
+**Quality**: 78 unit tests, 19 integration tests, 95.6% line coverage. 4.6MB binary.
 
-**Coverage**: 78 unit tests + 19 integration tests, 95.6% line coverage.
+### Install both at once
+
+```bash
+cd mcp-servers && ./install.sh
+```
 
 </details>
 
