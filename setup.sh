@@ -56,7 +56,7 @@ link_file() {
 
 # --- 1. GSD runtime ---
 # GSD workflows reference ~/.claude/get-shit-done at runtime
-echo "[1/2] GSD runtime"
+echo "[1/3] GSD runtime"
 mkdir -p "${CLAUDE_DIR}"
 link_dir "${PLUGIN_ROOT}/gsd" "${CLAUDE_DIR}/get-shit-done"
 
@@ -67,7 +67,7 @@ link_dir "${PLUGIN_ROOT}/gsd" "${CLAUDE_DIR}/get-shit-done"
 # duplicates (gsd:* AND kinderpowers:gsd:*) that confuse users and models.
 
 # --- 2. Hookify rules (optional) ---
-echo "[2/2] Hookify rules"
+echo "[2/3] Hookify rules"
 HOOKIFY_RULES_DIR=""
 
 # Search for hookify rules directory
@@ -93,6 +93,41 @@ if [ -n "$HOOKIFY_RULES_DIR" ]; then
 else
   echo "  Hookify not detected — skipping rule installation"
   echo "  (Install hookify, then re-run this script)"
+fi
+
+# --- 3. Agent outcome logger hook ---
+echo "[3/3] Agent outcome logger"
+KP_DIR="${HOME}/.kinderpowers"
+KP_HOOKS="${KP_DIR}/hooks"
+mkdir -p "$KP_HOOKS"
+
+# Copy hook script
+HOOK_SRC="${PLUGIN_ROOT}/hooks/agent-outcome-logger.py"
+HOOK_DST="${KP_HOOKS}/agent-outcome-logger.py"
+if [ -f "$HOOK_SRC" ]; then
+  cp "$HOOK_SRC" "$HOOK_DST"
+  chmod +x "$HOOK_DST"
+  echo "  OK: agent-outcome-logger.py -> ${HOOK_DST}"
+else
+  echo "  SKIP: hook source not found at ${HOOK_SRC}"
+fi
+
+# Register in settings.json (idempotent)
+SETTINGS_FILE="${CLAUDE_DIR}/settings.json"
+if [ -f "$SETTINGS_FILE" ]; then
+  # Check if hook is already registered
+  if grep -q "agent-outcome-logger" "$SETTINGS_FILE" 2>/dev/null; then
+    echo "  OK: hook already registered in settings.json"
+  else
+    echo "  NOTE: Add this to your settings.json hooks.PostToolUse array:"
+    echo '    {'
+    echo '      "matcher": "Agent",'
+    echo "      \"command\": \"python3 ${HOOK_DST}\""
+    echo '    }'
+    echo "  (Manual step — setup.sh does not modify settings.json directly)"
+  fi
+else
+  echo "  NOTE: ${SETTINGS_FILE} not found — create it and add the PostToolUse hook"
 fi
 
 echo ""
