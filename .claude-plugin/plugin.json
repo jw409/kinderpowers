@@ -38,12 +38,12 @@
   ],
   "mcpServers": {
     "kp-github": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/linux-x86_64/kp-github-mcp",
+      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-github-mcp",
       "args": [],
       "env": {}
     },
     "kp-sequential-thinking": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/linux-x86_64/kp-sequential-thinking",
+      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-sequential-thinking",
       "args": [],
       "env": {}
     }

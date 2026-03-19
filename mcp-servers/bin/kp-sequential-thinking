@@ -1,0 +1,9 @@
+#!/bin/sh
+# Platform-detecting wrapper for kp-sequential-thinking
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+case "$(uname -s)-$(uname -m)" in
+    Linux-x86_64)   exec "$SCRIPT_DIR/linux-x86_64/kp-sequential-thinking" "$@" ;;
+    Darwin-arm64)   exec "$SCRIPT_DIR/macos-arm64/kp-sequential-thinking" "$@" ;;
+    Darwin-x86_64)  echo "macOS Intel not supported. Build from source or use Rosetta." >&2; exit 1 ;;
+    *) echo "Unsupported platform: $(uname -s)-$(uname -m). Build from source: cd mcp-servers/sequential-thinking && cargo build --release" >&2; exit 1 ;;
+esac

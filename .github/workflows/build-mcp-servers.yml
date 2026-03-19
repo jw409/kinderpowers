@@ -1,0 +1,108 @@
+name: Build MCP Server Binaries
+
+on:
+  push:
+    paths:
+      - 'mcp-servers/github/src/**'
+      - 'mcp-servers/github/Cargo.toml'
+      - 'mcp-servers/sequential-thinking/src/**'
+      - 'mcp-servers/sequential-thinking/Cargo.toml'
+      - '.github/workflows/build-mcp-servers.yml'
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  RUST_MIN_STACK: 16777216
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            dir: linux-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            dir: macos-arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            mcp-servers/github/target
+            mcp-servers/sequential-thinking/target
+          key: ${{ matrix.target }}-cargo-${{ hashFiles('mcp-servers/*/Cargo.lock') }}
+          restore-keys: ${{ matrix.target }}-cargo-
+
+      - name: Build kp-github-mcp
+        working-directory: mcp-servers/github
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build kp-sequential-thinking
+        working-directory: mcp-servers/sequential-thinking
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Collect binaries
+        run: |
+          mkdir -p mcp-servers/bin/${{ matrix.dir }}
+          cp mcp-servers/github/target/${{ matrix.target }}/release/kp-github-mcp mcp-servers/bin/${{ matrix.dir }}/
+          cp mcp-servers/sequential-thinking/target/${{ matrix.target }}/release/kp-sequential-thinking mcp-servers/bin/${{ matrix.dir }}/
+          ls -lh mcp-servers/bin/${{ matrix.dir }}/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-servers-${{ matrix.dir }}
+          path: mcp-servers/bin/${{ matrix.dir }}/
+
+  commit-binaries:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: mcp-servers/bin/
+          pattern: mcp-servers-*
+          merge-multiple: false
+
+      - name: Flatten artifact directories
+        run: |
+          # download-artifact creates mcp-servers-linux-x86_64/ etc, rename to linux-x86_64/
+          cd mcp-servers/bin
+          for dir in mcp-servers-*; do
+            target="${dir#mcp-servers-}"
+            mv "$dir" "$target"
+            chmod +x "$target"/*
+          done
+          ls -lhR .
+
+      - name: Commit binaries
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add mcp-servers/bin/
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "build: update pre-built MCP server binaries [skip ci]"
+            git push
+          fi
