@@ -122,6 +122,7 @@ impl PersistentLogger {
         }
     }
 
+    #[allow(dead_code)] // Available for diagnostics
     pub(crate) fn log_file_path(&self) -> Option<&Path> {
         self.log_file.as_deref()
     }

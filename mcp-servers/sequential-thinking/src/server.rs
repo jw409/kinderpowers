@@ -1,7 +1,10 @@
 use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
-use rmcp::model::{CallToolResult, Content, ServerInfo};
-use rmcp::{Error as McpError, ServerHandler, ServiceExt};
+use rmcp::model::{
+    CallToolResult, Content, ListResourceTemplatesResult, ReadResourceRequestParams,
+    ReadResourceResult, ResourceContents, ServerInfo,
+};
+use rmcp::{ErrorData as McpError, ServerHandler, ServiceExt};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::sync::Mutex;
@@ -172,9 +175,130 @@ impl ServerHandler for SeqThinkServer {
             },
             capabilities: rmcp::model::ServerCapabilities {
                 tools: Some(rmcp::model::ToolsCapability::default()),
+                resources: Some(rmcp::model::ResourcesCapability::default()),
                 ..Default::default()
             },
             ..Default::default()
+        }
+    }
+
+    fn list_resource_templates(
+        &self,
+        _request: Option<rmcp::model::PaginatedRequestParams>,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> impl std::future::Future<Output = Result<ListResourceTemplatesResult, McpError>> + Send + '_
+    {
+        use rmcp::model::{Annotated, RawResourceTemplate};
+
+        let templates = vec![
+            Annotated::new(
+                RawResourceTemplate {
+                    uri_template: "seqthink://sessions/current/thoughts".into(),
+                    name: "current_thoughts".into(),
+                    title: Some("Current Session Thoughts".into()),
+                    description: Some(
+                        "Returns the current session's thought history as compressed JSON"
+                            .into(),
+                    ),
+                    mime_type: Some("application/json".into()),
+                    icons: None,
+                },
+                None,
+            ),
+            Annotated::new(
+                RawResourceTemplate {
+                    uri_template: "seqthink://sessions/current/branches".into(),
+                    name: "current_branches".into(),
+                    title: Some("Current Session Branches".into()),
+                    description: Some(
+                        "Returns branch names and thought counts for the current session".into(),
+                    ),
+                    mime_type: Some("application/json".into()),
+                    icons: None,
+                },
+                None,
+            ),
+            Annotated::new(
+                RawResourceTemplate {
+                    uri_template: "seqthink://sessions/current/compliance".into(),
+                    name: "current_compliance".into(),
+                    title: Some("Current Session Compliance".into()),
+                    description: Some(
+                        "Returns compliance stats for the current session".into(),
+                    ),
+                    mime_type: Some("application/json".into()),
+                    icons: None,
+                },
+                None,
+            ),
+        ];
+
+        std::future::ready(Ok(ListResourceTemplatesResult::with_all_items(templates)))
+    }
+
+    fn read_resource(
+        &self,
+        request: ReadResourceRequestParams,
+        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+    ) -> impl std::future::Future<Output = Result<ReadResourceResult, McpError>> + Send + '_ {
+        async move {
+            let uri = &request.uri;
+
+            let path = uri
+                .strip_prefix("seqthink://sessions/current/")
+                .ok_or_else(|| {
+                    McpError::invalid_params(format!("Unknown resource URI: {uri}"), None)
+                })?;
+
+            let engine = self.engine.lock().map_err(|e| {
+                McpError::internal_error(format!("engine lock poisoned: {e}"), None)
+            })?;
+
+            let json_text = match path {
+                "thoughts" => {
+                    let history = engine.thought_history();
+                    let compact: Vec<serde_json::Value> = history
+                        .iter()
+                        .map(|t| {
+                            serde_json::json!({
+                                "n": t.thought_number,
+                                "total": t.total_thoughts,
+                                "thought": t.thought,
+                                "confidence": t.confidence,
+                                "branch": t.branch_id,
+                                "layer": t.layer,
+                                "mode": t.continuation_mode,
+                            })
+                        })
+                        .collect();
+                    serde_json::to_string(&compact).unwrap_or_default()
+                }
+                "branches" => {
+                    let branches = engine.branches();
+                    let summary: serde_json::Value = branches
+                        .iter()
+                        .map(|(name, thoughts)| {
+                            (name.clone(), serde_json::json!(thoughts.len()))
+                        })
+                        .collect::<serde_json::Map<String, serde_json::Value>>()
+                        .into();
+                    serde_json::to_string(&summary).unwrap_or_default()
+                }
+                "compliance" => {
+                    let stats = engine.compliance_stats();
+                    serde_json::to_string(&stats).unwrap_or_default()
+                }
+                other => {
+                    return Err(McpError::invalid_params(
+                        format!("Unknown resource path: {other}"),
+                        None,
+                    ));
+                }
+            };
+
+            Ok(ReadResourceResult {
+                contents: vec![ResourceContents::text(json_text, &request.uri)],
+            })
         }
     }
 }
@@ -415,6 +539,82 @@ mod tests {
         let params = make_params("This should fail", 1, 5);
         let result = server.sequentialthinking(Parameters(params));
         assert!(result.is_err()); // McpError from poisoned lock
+    }
+
+    // ---- resource tests ----
+
+    #[test]
+    fn server_info_has_resources_capability() {
+        let server = make_server();
+        let info = server.get_info();
+        assert!(info.capabilities.resources.is_some());
+    }
+
+    // ---- engine getter tests (used by resource handlers) ----
+
+    #[test]
+    fn engine_thought_history_empty() {
+        let engine = crate::thinking::ThinkingEngine::new(
+            crate::profiles::fallback_profile(),
+            "test".into(),
+            "test".into(),
+        );
+        assert!(engine.thought_history().is_empty());
+    }
+
+    #[test]
+    fn engine_thought_history_after_processing() {
+        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
+        let mut engine = crate::thinking::ThinkingEngine::new(
+            crate::profiles::fallback_profile(),
+            "test".into(),
+            "test".into(),
+        );
+        let data: ThoughtData = make_params("First thought", 1, 3).into();
+        engine.process(data).unwrap();
+        let data2: ThoughtData = make_params("Second thought", 2, 3).into();
+        engine.process(data2).unwrap();
+        assert_eq!(engine.thought_history().len(), 2);
+        assert_eq!(engine.thought_history()[0].thought_number, 1);
+        assert_eq!(engine.thought_history()[1].thought_number, 2);
+    }
+
+    #[test]
+    fn engine_branches_after_branching() {
+        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
+        let mut engine = crate::thinking::ThinkingEngine::new(
+            crate::profiles::fallback_profile(),
+            "test".into(),
+            "test".into(),
+        );
+        let data: ThoughtData = make_params("Start", 1, 5).into();
+        engine.process(data).unwrap();
+
+        let mut p2 = make_params("Branch A", 2, 5);
+        p2.branch_from_thought = Some(1);
+        p2.branch_id = Some("branch-a".into());
+        let data2: ThoughtData = p2.into();
+        engine.process(data2).unwrap();
+
+        let branches = engine.branches();
+        assert_eq!(branches.len(), 1);
+        assert_eq!(branches["branch-a"].len(), 1);
+    }
+
+    #[test]
+    fn engine_compliance_stats() {
+        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
+        let mut engine = crate::thinking::ThinkingEngine::new(
+            crate::profiles::fallback_profile(),
+            "test".into(),
+            "test".into(),
+        );
+        let data: ThoughtData = make_params("Think", 1, 5).into();
+        engine.process(data).unwrap();
+        let stats = engine.compliance_stats();
+        assert_eq!(stats.consecutive_linear_thoughts, 1);
+        assert!(!stats.needs_branching);
+        assert!(!stats.explore_count_used);
     }
 
     #[test]

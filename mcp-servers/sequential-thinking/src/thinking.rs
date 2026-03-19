@@ -103,7 +103,9 @@ pub struct ThinkingEngine {
     thought_history: Vec<ThoughtData>,
     branches: HashMap<String, Vec<ThoughtData>>,
     profile: TuningProfile,
+    #[allow(dead_code)] // Stored for future per-model analytics
     model_id: String,
+    #[allow(dead_code)] // Stored for future per-client analytics
     client_type: String,
     disable_logging: bool,
     logger: PersistentLogger,
@@ -136,8 +138,29 @@ impl ThinkingEngine {
         }
     }
 
+    #[allow(dead_code)] // Public API for future use
     pub fn profile(&self) -> &TuningProfile {
         &self.profile
+    }
+
+    #[allow(dead_code)] // Accessor for future diagnostics/tests
+    pub(crate) fn thought_history(&self) -> &[ThoughtData] {
+        &self.thought_history
+    }
+
+    #[allow(dead_code)] // Accessor for future diagnostics/tests
+    pub(crate) fn branches(&self) -> &HashMap<String, Vec<ThoughtData>> {
+        &self.branches
+    }
+
+    #[allow(dead_code)] // Accessor for future diagnostics/tests
+    pub(crate) fn compliance_stats(&self) -> ComplianceStats {
+        ComplianceStats {
+            consecutive_linear_thoughts: self.consecutive_linear_thoughts,
+            low_conf_without_branch_count: self.low_conf_without_branch_count,
+            explore_count_used: self.explore_count_usage_count > 0,
+            needs_branching: self.consecutive_linear_thoughts >= 4,
+        }
     }
 
     /// Validate and clamp input fields, returning a clean ThoughtData.
@@ -581,6 +604,7 @@ EXAMPLE - Wide Exploration:
 }
 
 /// Generate tool description text (embedded in tool schema).
+#[allow(dead_code)] // Available for dynamic tool description generation
 pub fn tool_description(profile: &TuningProfile) -> String {
     let bt = (profile.branching_threshold * 100.0).round() as u32;
     let ct = (profile.confidence_threshold * 100.0).round() as u32;
