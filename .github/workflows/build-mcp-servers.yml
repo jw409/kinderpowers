@@ -76,26 +76,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Clean old binaries
+        run: rm -rf mcp-servers/bin/linux-x86_64 mcp-servers/bin/macos-arm64
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: mcp-servers/bin/
-          pattern: mcp-servers-*
-          merge-multiple: false
+          path: artifacts/
 
-      - name: Flatten artifact directories
+      - name: Place binaries
         run: |
-          # download-artifact creates mcp-servers-linux-x86_64/ etc, rename to linux-x86_64/
-          cd mcp-servers/bin
-          for dir in mcp-servers-*; do
-            target="${dir#mcp-servers-}"
-            mv "$dir" "$target"
-            chmod +x "$target"/*
+          for artifact_dir in artifacts/mcp-servers-*; do
+            platform="${artifact_dir#artifacts/mcp-servers-}"
+            mkdir -p "mcp-servers/bin/$platform"
+            cp "$artifact_dir"/* "mcp-servers/bin/$platform/"
+            chmod +x "mcp-servers/bin/$platform"/*
           done
-          ls -lhR .
+          ls -lhR mcp-servers/bin/
 
-      - name: Commit binaries
+      - name: Commit and push binaries
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -103,6 +105,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
+            git pull --rebase origin main
             git commit -m "build: update pre-built MCP server binaries [skip ci]"
             git push
           fi
