@@ -382,6 +382,42 @@
 </mcp-servers>
 
 <!-- ═══════════════════════════════════════════════════════════════
+     RECOMMENDED: Companion tools that make kinderpowers better
+     ═══════════════════════════════════════════════════════════════ -->
+<recommended note="Not dependencies — kinderpowers works without these. But they amplify it.">
+  <tool name="beads" url="https://github.com/jw409/beads" install="pipx install beads-cli">
+    <description>Dolt-powered issue tracker for multi-session work. Persistent memory across
+      conversation compaction. Dependencies, blockers, priorities. The kinderpowers beads skill
+      wraps this CLI.</description>
+    <why>Without beads, work context is lost when conversations compact or sessions end.
+      With beads, every agent picks up where the last one left off.</why>
+  </tool>
+
+  <tool name="beads-viewer" url="https://github.com/jw409/beads-viewer" install="npm install -g beads-viewer">
+    <description>Web UI for beads issues. Dependency graphs, timeline views, status dashboards.
+      Read-only — safe to run alongside agents.</description>
+    <why>Agents work in CLI. Humans need visual context. beads-viewer bridges the gap.</why>
+  </tool>
+
+  <tool name="ck" url="https://github.com/BeaconBay/ck" install="cargo install ck-cli">
+    <description>Local-first semantic and hybrid BM25/grep search tool. Rust, fast, works offline.
+      Indexes codebases for semantic search without cloud dependencies.</description>
+    <why>The codebase mapper and research agents need search. ck provides it locally and openly.
+      No API keys, no rate limits, no privacy concerns.</why>
+    <integration>gsd-codebase-mapper can emit JSONL that ck indexes. Research agents can query
+      ck for semantic code search during planning and debugging.</integration>
+  </tool>
+
+  <tool name="ultimate-bug-scanner" url="https://github.com/jw409/ultimate-bug-scanner">
+    <description>Multi-strategy bug scanner: static analysis, pattern matching, LLM-assisted review.
+      Finds bugs that linters miss.</description>
+    <why>The quality-gate agent and verification-before-completion skill verify work is correct.
+      ultimate-bug-scanner finds the bugs they'd miss — different detection strategies are
+      complementary, not redundant.</why>
+  </tool>
+</recommended>
+
+<!-- ═══════════════════════════════════════════════════════════════
      REFERENCES: Papers and prior art informing the design
      ═══════════════════════════════════════════════════════════════ -->
 <references>

@@ -1,7 +1,7 @@
 ---
 name: gsd-codebase-mapper
 description: Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load. Optionally emits structured JSONL for search index ingestion.
-tools: Read, Bash, Grep, Glob, Write
+tools: Read, Bash, Grep, Glob, Write, LSP
 color: cyan
 # hooks:
 #   PostToolUse:
@@ -135,6 +135,40 @@ Based on focus, determine which documents you'll write:
 - `arch` → ARCHITECTURE.md, STRUCTURE.md
 - `quality` → CONVENTIONS.md, TESTING.md
 - `concerns` → CONCERNS.md
+</step>
+
+<step name="probe_tools">
+Before exploring, discover what intelligence sources are available. This determines
+how deep your analysis can go. Probe in order — use the best tools present.
+
+**Always available (Claude Code built-in):**
+- `LSP` tool — documentSymbol, findReferences, goToDefinition, incomingCalls, outgoingCalls
+  - Test: try `LSP(operation="documentSymbol", filePath="<any source file>")` on a source file
+  - If LSP works → you can extract export graphs, call graphs, real type info
+
+**Language-specific (stdlib, no install):**
+- Python `ast.parse()` — run via `uv run python -c "import ast; ..."`
+  - Extracts: function signatures, class hierarchies, imports, decorators
+- Go `go list -json ./...` — module/package info
+
+**Type checkers (if installed):**
+- `pyright --outputjson` — structured Python type errors, dead code
+- `tsc --noEmit 2>&amp;1` — TypeScript type errors
+- Test: `which pyright 2>/dev/null`, `which tsc 2>/dev/null`
+
+**Search tools (if installed):**
+- `ck` (BeaconBay/ck) — local semantic+BM25 search
+  - Test: `which ck 2>/dev/null`
+- ZMCPTools `mcp__zmcptools__search` — if available as MCP server
+
+Report what's available in your confirmation. Use the best tools present for each focus area:
+
+| Focus | LSP adds | Type checker adds |
+|-------|----------|-------------------|
+| arch | Real call graph, actual layers, export surface | Circular dep detection |
+| tech | Accurate dependency graph | Version mismatch warnings |
+| quality | Unused exports, dead code | Type error count, strictness level |
+| concerns | Unreachable code, orphan functions | Real type errors (not guessed) |
 </step>
 
 <step name="explore_codebase">
