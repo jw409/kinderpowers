@@ -172,61 +172,80 @@ Report what's available in your confirmation. Use the best tools present for eac
 </step>
 
 <step name="explore_codebase">
-Explore the codebase thoroughly for your focus area.
+Explore the codebase using the BEST tools available from probe_tools. LSP and type checkers
+are primary. Grep is fallback only.
 
-**For tech focus:**
-```bash
-# Package manifests
-ls package.json requirements.txt Cargo.toml go.mod pyproject.toml 2>/dev/null
-cat package.json 2>/dev/null | head -100
+**EXPLORATION PRIORITY ORDER (use highest available):**
 
-# Config files (list only - DO NOT read .env contents)
-ls -la *.config.* tsconfig.json .nvmrc .python-version 2>/dev/null
-ls .env* 2>/dev/null  # Note existence only, never read contents
+1. **LSP first** — if probe_tools found LSP working:
+   - `LSP(operation="documentSymbol", filePath="<entry point>")` → get all exports per file
+   - `LSP(operation="incomingCalls", filePath="<fn>", line=N, character=M)` → real call graph
+   - `LSP(operation="outgoingCalls", filePath="<fn>", line=N, character=M)` → real dependencies
+   - `LSP(operation="findReferences", filePath="<symbol>", line=N, character=M)` → actual usage counts
+   - Walk the top 10-20 source files with documentSymbol to build the real export surface
 
-# Find SDK/API imports
-grep -r "import.*stripe\|import.*supabase\|import.*aws\|import.*@" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -50
-```
+2. **Type checker second** — if pyright/tsc available:
+   - Python: `uv run pyright --outputjson <dir> 2>/dev/null | head -500` → structured type errors
+   - TypeScript: `npx tsc --noEmit 2>&1 | head -200` → type errors
+   - These are REAL findings, not grep guesses. Every type error is an architectural finding.
 
-**For arch focus:**
-```bash
-# Directory structure
-find . -type d -not -path '*/node_modules/*' -not -path '*/.git/*' | head -50
+3. **AST third** — for Python (stdlib, always available):
+   ```bash
+   uv run python -c "
+   import ast, sys, pathlib
+   for f in sorted(pathlib.Path('src').rglob('*.py'))[:30]:
+       tree = ast.parse(f.read_text())
+       classes = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
+       funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+       imports = [n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module]
+       if classes or funcs:
+           print(f'{f}: classes={classes} funcs={funcs[:5]} imports_from={imports[:5]}')
+   "
+   ```
 
-# Entry points
-ls src/index.* src/main.* src/app.* src/server.* app/page.* 2>/dev/null
+4. **Grep/Glob last** — only for what LSP/AST can't answer:
+   - Config file discovery (package.json, pyproject.toml, etc.)
+   - TODO/FIXME comments
+   - File size analysis
+   - .env existence (never read contents)
 
-# Import patterns to understand layers
-grep -r "^import" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -100
-```
+**FOCUS-SPECIFIC LSP STRATEGIES:**
 
-**For quality focus:**
-```bash
-# Linting/formatting config
-ls .eslintrc* .prettierrc* eslint.config.* biome.json 2>/dev/null
-cat .prettierrc 2>/dev/null
+**For arch focus (ARCHITECTURE.md, STRUCTURE.md):**
+- LSP documentSymbol on every entry point → build real module graph
+- LSP incomingCalls on key functions → verify stated layer boundaries
+- LSP findReferences on core types → find actual coupling (not grep-approximated)
+- **CRITICAL**: Check for cross-layer imports. If architecture says "core/ doesn't import services/",
+  verify with LSP. Grep misses re-exports and aliased imports. LSP catches them.
 
-# Test files and config
-ls jest.config.* vitest.config.* 2>/dev/null
-find . -name "*.test.*" -o -name "*.spec.*" | head -30
+**For concerns focus (CONCERNS.md):**
+- Type checker output → real type errors (not "potential issues" from grep)
+- LSP findReferences with count=0 → dead exports (defined but never used)
+- LSP documentSymbol → find orphan files (files with exports nobody references)
+- **CRITICAL**: Run the type checker. 18 pyright errors in security code is a finding.
+  "Potential issues based on pattern matching" is not a finding.
 
-# Sample source files for convention analysis
-ls src/**/*.ts 2>/dev/null | head -10
-```
+**For tech focus (STACK.md, INTEGRATIONS.md):**
+- Package manifests first (grep is fine here)
+- LSP hover on import statements → get actual types and versions
+- AST import graph → real dependency DAG, not grep-approximated
 
-**For concerns focus:**
-```bash
-# TODO/FIXME comments
-grep -rn "TODO\|FIXME\|HACK\|XXX" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -50
+**For quality focus (CONVENTIONS.md, TESTING.md):**
+- LSP documentSymbol on test files → actual test structure
+- Type checker strict mode status → quality signal
+- AST for naming patterns → more accurate than grep sampling
 
-# Large files (potential complexity)
-find src/ -name "*.ts" -o -name "*.tsx" | xargs wc -l 2>/dev/null | sort -rn | head -20
+**WHAT GREP-ONLY MAPS MISS (the whole point of this upgrade):**
 
-# Empty returns/stubs
-grep -rn "return null\|return \[\]\|return {}" src/ --include="*.ts" --include="*.tsx" 2>/dev/null | head -30
-```
-
-Read key files identified during exploration. Use Glob and Grep liberally.
+| Finding | Grep sees | LSP/AST sees |
+|---------|-----------|-------------|
+| Layer violations | Nothing (import aliases hide it) | Real cross-layer dependencies |
+| Dead code | Maybe (if obvious) | Exports with zero references |
+| Type errors | Nothing | Exact count, locations, severity |
+| Phantom config | Nothing | Config keys read by zero code paths |
+| Circular deps | Maybe (with manual tracing) | Type checker reports them |
+| Actual API surface | Grepped export lines | Complete typed function signatures |
+| Test coverage gaps | File existence | Which functions have no test references |
 </step>
 
 <step name="write_documents">
@@ -473,9 +492,36 @@ Ready for orchestrator summary.
 **Validation:** [Approach]
 **Authentication:** [Approach]
 
+## Verified Layer Boundaries (LSP-sourced)
+
+<!-- This section is populated by LSP incomingCalls/outgoingCalls analysis.
+     If LSP was not available, note "LSP not available — layer boundaries unverified." -->
+
+**Stated invariant:** [e.g., "core/ depends only on stdlib and GCP SDKs"]
+**Verified:** [TRUE/FALSE — based on LSP outgoingCalls from core/ modules]
+**Violations found:**
+- `[file:line]` imports `[unexpected dependency]` — [impact]
+
+## Module Coupling (LSP-sourced)
+
+<!-- From LSP findReferences: which modules are tightly coupled? -->
+
+| Module | Incoming refs | Outgoing deps | Coupling assessment |
+|--------|--------------|---------------|-------------------|
+| `[path]` | [N] | [M] | [tight/loose/isolated] |
+
+## Export Surface (LSP-sourced)
+
+<!-- From LSP documentSymbol: what does each module expose? -->
+
+| Module | Exported symbols | Used by N files | Dead exports |
+|--------|-----------------|-----------------|--------------|
+| `[path]` | [symbol list] | [N] | [symbols with 0 refs] |
+
 ---
 
 *Architecture analysis: [date]*
+*Intelligence sources: [LSP|AST|grep — list what was actually used]*
 ```
 
 ## STRUCTURE.md Template (arch focus)
@@ -812,9 +858,51 @@ Ready for orchestrator summary.
 - Risk: [What could break unnoticed]
 - Priority: [High/Medium/Low]
 
+## Type Errors (type checker output — NOT grep guesses)
+
+<!-- This section is populated by pyright --outputjson or tsc --noEmit.
+     If no type checker was available, note "Type checker not available." -->
+
+**Type checker:** [pyright/tsc/none]
+**Total errors:** [N]
+**Errors in critical paths:**
+
+| File | Line | Error | Severity |
+|------|------|-------|----------|
+| `[path]` | [N] | [error message] | [error/warning] |
+
+## Dead Code (LSP-verified — NOT grep guesses)
+
+<!-- From LSP findReferences: exports with zero references across the codebase. -->
+
+| File | Symbol | Type | References | Verdict |
+|------|--------|------|-----------|---------|
+| `[path]` | [name] | [function/class/const] | 0 | Dead — safe to remove |
+| `[path]` | [name] | [function/class/const] | 0 | Dead — but referenced in config/env |
+
+## Phantom Config (defined but never read)
+
+<!-- Config keys that appear in env/config files but have zero code references.
+     From: grep config files for keys, then LSP findReferences for each key. -->
+
+| Config key | Defined in | Referenced by | Verdict |
+|-----------|-----------|--------------|---------|
+| `[KEY_NAME]` | `[config file]` | 0 code paths | Phantom — remove or wire up |
+
+## Layer Violations (LSP-verified)
+
+<!-- Cross-layer imports that violate stated architecture.
+     From: LSP outgoingCalls on modules that should be isolated. -->
+
+| From | Imports | Stated rule | Violation |
+|------|---------|-------------|-----------|
+| `[core/module.py]` | `[services/other.py]` | "core/ is independent" | Direct cross-layer import |
+
 ---
 
 *Concerns audit: [date]*
+*Intelligence sources: [LSP|type-checker|AST|grep — list what was actually used]*
+*Confidence: [high if LSP+type-checker, medium if AST only, low if grep only]*
 ```
 
 </templates>
