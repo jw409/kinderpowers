@@ -1,17 +1,17 @@
 {
   "name": "kinderpowers",
-  "description": "Agency-preserving workflow skills for AI agents",
+  "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
   "owner": {
-    "name": "jw"
+    "name": "jw409"
   },
   "plugins": [
     {
       "name": "kinderpowers",
-      "description": "Agency-preserving workflow skills: TDD, debugging, collaboration patterns with documented tradeoffs instead of mandates",
-      "version": "5.0.0",
+      "description": "Agency-preserving workflow skills, lifecycle engine, enforcement rules, and optional MCP servers for AI agents",
+      "version": "6.0.0",
       "source": "./",
       "author": {
-        "name": "jw"
+        "name": "jw409"
       },
       "upstream": {
         "name": "superpowers",

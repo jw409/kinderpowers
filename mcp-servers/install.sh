@@ -50,7 +50,7 @@ if [ "$SKIP_REGISTER" = "1" ]; then
   echo ""
   echo "Binaries built. Register manually with:"
   echo "  claude mcp add kp-github --transport stdio -- $GITHUB_BIN"
-  echo "  claude mcp add kp-seqthink --transport stdio -- $SEQTHINK_BIN"
+  echo "  claude mcp add kp-sequential-thinking --transport stdio -- $SEQTHINK_BIN"
   exit 0
 fi
 
@@ -60,8 +60,8 @@ claude mcp remove kp-github 2>/dev/null || true
 claude mcp add kp-github --transport stdio -- "$GITHUB_BIN" 2>&1
 
 echo "[4/4] Registering kp-sequential-thinking..."
-claude mcp remove kp-seqthink 2>/dev/null || true
-claude mcp add kp-seqthink --transport stdio -- "$SEQTHINK_BIN" 2>&1
+claude mcp remove kp-sequential-thinking 2>/dev/null || true
+claude mcp add kp-sequential-thinking --transport stdio -- "$SEQTHINK_BIN" 2>&1
 
 echo ""
 echo "=== Done ==="

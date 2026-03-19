@@ -481,7 +481,7 @@ Rust port of the Anthropic sequential thinking server, enhanced with wide explor
 
 ```bash
 cd mcp-servers/sequential-thinking && cargo build --release
-claude mcp add kp-seqthink --transport stdio -- ./target/release/kp-sequential-thinking
+claude mcp add kp-sequential-thinking --transport stdio -- ./target/release/kp-sequential-thinking
 ```
 
 **What it adds over the official server:**

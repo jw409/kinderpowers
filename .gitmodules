@@ -1,0 +1,3 @@
+[submodule "specs/toon-format"]
+	path = specs/toon-format
+	url = https://github.com/toon-format/spec.git

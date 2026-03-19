@@ -47,7 +47,7 @@ echo "  kp-sequential-thinking: $(du -h target/release/kp-sequential-thinking | 
 echo ""
 echo "[3/3] Verifying registration..."
 if command -v claude &>/dev/null; then
-  claude mcp list 2>/dev/null | grep -E "kp-github|kp-seqthink" || echo "  WARNING: servers not registered. Run install.sh first."
+  claude mcp list 2>/dev/null | grep -E "kp-github|kp-sequential-thinking" || echo "  WARNING: servers not registered. Run install.sh first."
 fi
 
 echo ""
