@@ -475,24 +475,44 @@ claude mcp add kp-github --transport stdio -- ./target/release/kp-github-mcp
 
 **Quality**: 484 unit tests, 23 live integration tests, 97% line coverage. 7.3MB binary.
 
-### kp-sequential-thinking — structured reasoning with model-aware tuning
+### kp-sequential-thinking — structured reasoning with hints, not mandates
 
-Rust port of the Anthropic sequential thinking server, enhanced with wide exploration, branching-as-primary, and per-model tuning profiles.
+Rust MCP server for structured thinking. The server surfaces observations about your reasoning pattern. You decide what to act on. Notably better than Anthropic's default, but honest about when it helps and when it's overhead.
 
 ```bash
 cd mcp-servers/sequential-thinking && cargo build --release
 claude mcp add kp-sequential-thinking --transport stdio -- ./target/release/kp-sequential-thinking
 ```
 
-**What it adds over the official server:**
-- **Per-model profiles** — Claude gets 4-5 alternatives, Gemini Flash gets 5-7, DeepSeek goes 3 layers deep
-- **Compliance enforcement** — warns after 4+ linear thoughts without branching (empirical: 69% of sessions fail to branch when they should)
-- **Confidence-driven guidance** — low confidence triggers "consider branching", high confidence suggests early exit
-- **Brenner pattern** — every A-vs-B choice must include "both could be wrong"
-- **Four self-checks** — verify before assuming, discover before creating, inspect deeply, extend before duplicating
-- **Persistent logging** — JSONL output for learning pipeline harvesting and CMA-ES profile optimization
+**When sequential thinking actually helps:**
+- **Multi-agent coordination** — externalized reasoning that other agents can review, merge, or continue. If a subagent explores a branch, the orchestrator can read what it concluded.
+- **Debugging mysteries** — structured hypothesis tracking. When you're 8 thoughts deep and need to backtrack, the branch history tells you what was tried and why it was rejected.
+- **Architectural decisions with real trade-offs** — branching explores alternatives in parallel. Merge synthesizes. The audit trail shows what was considered, not just what was chosen.
+- **Learning pipeline input** — JSONL logs feed into scavenger/teacher pipelines. Over time, the system learns which reasoning patterns precede user acceptance vs correction.
 
-**Quality**: 78 unit tests, 19 integration tests, 95.6% line coverage. 4.6MB binary.
+**When it's just overhead:**
+- Simple tasks. If you know the answer, just do it. Don't create a 6-thought chain to justify adding a dependency.
+- Single-agent work with no coordination needs. Native extended thinking (ultrathink) gives raw reasoning depth without the structured output overhead.
+- When the model is already confident and correct. Branching a 0.9-confidence answer to "explore alternatives" wastes tokens.
+
+**What it adds over Anthropic's official server:**
+
+| Feature | Anthropic default | kp-sequential-thinking |
+|---------|-------------------|----------------------|
+| Branching | No | Yes — branch_from, branch_id, branch merge |
+| Confidence tracking | No | Yes — 0.0-1.0 per thought, Dunning-Kruger detection |
+| Layers | No | Yes — 1=problem, 2=approach, 3=details |
+| Exploration | No | Yes — explore_count, proposals |
+| Branch merge | No | Yes — continuation_mode=merge, mergeSummary |
+| Hints system | No | Yes — 6 non-prescriptive observation types |
+| Per-model profiles | No | Yes — Claude, Gemini, DeepSeek, Grok, Llama/Nemotron |
+| JSONL logging | No | Yes — for learning pipeline harvesting |
+
+**Hints (observations, not mandates):** The server surfaces signals — `linear_chain`, `premature_confidence`, `low_confidence_pattern`, `merge_available`, `explore_available`, `layer_available`. These are info/suggestions/observations. A capable caller acts on them. A simple caller ignores them and still gets a better-than-default experience.
+
+**Per-model profiles:** Different models think differently. Claude gets balanced exploration (4-5 alternatives). Gemini Flash gets wide exploration (5-7). DeepSeek goes deep (3 layers). Custom profiles via JSON file.
+
+**Quality**: 106 tests (87 unit + 19 integration), 95.6% line coverage. 4.6MB binary.
 
 ### Install both at once
 
