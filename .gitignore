@@ -3,3 +3,5 @@
 .claude/
 .DS_Store
 __pycache__/
+target/
+node_modules/
