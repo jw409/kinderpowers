@@ -18,6 +18,7 @@ use crate::thinking::{ThinkingEngine, ThoughtData};
 
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
 pub struct SequentialThinkingParams {
     /// Your current thinking step
     pub thought: String,
@@ -31,65 +32,84 @@ pub struct SequentialThinkingParams {
     pub total_thoughts: u32,
 
     /// Whether another thought step is needed (backwards compat, prefer continuation_mode)
+    #[serde(default)]
     pub next_thought_needed: Option<bool>,
 
     /// Whether this revises previous thinking
+    #[serde(default)]
     pub is_revision: Option<bool>,
 
     /// Which thought is being reconsidered
+    #[serde(default)]
     #[schemars(range(min = 1))]
     pub revises_thought: Option<u32>,
 
     /// PRIMARY: Branching point thought number - USE LIBERALLY
+    #[serde(default)]
     #[schemars(range(min = 1))]
     pub branch_from_thought: Option<u32>,
 
     /// PRIMARY: Branch identifier - descriptive name for this exploration path
+    #[serde(default)]
     pub branch_id: Option<String>,
 
     /// If more thoughts are needed
+    #[serde(default)]
     pub needs_more_thoughts: Option<bool>,
 
     /// How to continue: explore (generate alternatives), done (early exit), delegate (pass to next layer), branch (alternative path), merge (combine branches), continue (default linear)
+    #[serde(default)]
     pub continuation_mode: Option<String>,
 
     /// Number of parallel alternatives to generate (default: 4, max: 5)
+    #[serde(default)]
     #[schemars(range(min = 1, max = 5))]
     pub explore_count: Option<u32>,
 
     /// Lightweight descriptions of alternatives being considered
+    #[serde(default)]
     pub proposals: Option<Vec<String>>,
 
     /// Abstraction layer: 1=problem, 2=approach, 3=details
+    #[serde(default)]
     #[schemars(range(min = 1, max = 5))]
     pub layer: Option<u32>,
 
     /// Pass proposals to smarter agent/layer for selection
+    #[serde(default)]
     pub delegate_to_next_layer: Option<bool>,
 
     /// How to handle branches: parallel (explore all), sequential (one at a time), converge (merge results)
+    #[serde(default)]
     pub branch_strategy: Option<String>,
 
     /// Merge insights from these branch IDs into this thought (continuation_mode should be "merge")
+    #[serde(default)]
     pub merge_branches: Option<Vec<String>>,
 
     /// Confidence in current answer (0.0-1.0). Below 0.6: consider branching. Above 0.75: consider early exit.
+    #[serde(default)]
     #[schemars(range(min = 0.0, max = 1.0))]
     pub confidence: Option<f64>,
 
     /// Why stopping: complete (fully solved), sufficient (good enough), blocked (can't proceed), delegate (passing up)
+    #[serde(default)]
     pub done_reason: Option<String>,
 
     /// Token efficiency: compact (last 2 thoughts), normal (last 5), expanded (all)
+    #[serde(default)]
     pub context_window: Option<String>,
 
     /// What to search for before next thought (orchestrator will execute)
+    #[serde(default)]
     pub search_query: Option<String>,
 
     /// Previous search results (provided by orchestrator)
+    #[serde(default)]
     pub search_context: Option<String>,
 
     /// Should orchestrator search before next thought?
+    #[serde(default)]
     pub incorporate_search: Option<bool>,
 }
 
