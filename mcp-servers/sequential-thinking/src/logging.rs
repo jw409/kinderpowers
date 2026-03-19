@@ -168,6 +168,7 @@ mod tests {
             layer: None,
             delegate_to_next_layer: None,
             branch_strategy: None,
+            merge_branches: None,
             confidence: Some(0.7),
             done_reason: None,
             context_window: None,

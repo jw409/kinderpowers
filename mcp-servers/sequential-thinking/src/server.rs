@@ -67,6 +67,9 @@ pub struct SequentialThinkingParams {
     /// How to handle branches: parallel (explore all), sequential (one at a time), converge (merge results)
     pub branch_strategy: Option<String>,
 
+    /// Merge insights from these branch IDs into this thought (continuation_mode should be "merge")
+    pub merge_branches: Option<Vec<String>>,
+
     /// Confidence in current answer (0.0-1.0). Below 0.6: consider branching. Above 0.75: consider early exit.
     #[schemars(range(min = 0.0, max = 1.0))]
     pub confidence: Option<f64>,
@@ -105,6 +108,7 @@ impl From<SequentialThinkingParams> for ThoughtData {
             layer: p.layer,
             delegate_to_next_layer: p.delegate_to_next_layer,
             branch_strategy: p.branch_strategy,
+            merge_branches: p.merge_branches,
             confidence: p.confidence,
             done_reason: p.done_reason,
             context_window: p.context_window,
@@ -237,6 +241,7 @@ mod tests {
             layer: None,
             delegate_to_next_layer: None,
             branch_strategy: None,
+            merge_branches: None,
             confidence: None,
             done_reason: None,
             context_window: None,
@@ -290,6 +295,7 @@ mod tests {
             layer: Some(2),
             delegate_to_next_layer: Some(true),
             branch_strategy: Some("parallel".into()),
+            merge_branches: Some(vec!["branch-a".into(), "branch-b".into()]),
             confidence: Some(0.8),
             done_reason: Some("complete".into()),
             context_window: Some("expanded".into()),
@@ -310,6 +316,7 @@ mod tests {
         assert_eq!(data.layer, Some(2));
         assert_eq!(data.delegate_to_next_layer, Some(true));
         assert_eq!(data.branch_strategy.as_deref(), Some("parallel"));
+        assert_eq!(data.merge_branches.as_ref().unwrap().len(), 2);
         assert_eq!(data.confidence, Some(0.8));
         assert_eq!(data.done_reason.as_deref(), Some("complete"));
         assert_eq!(data.context_window.as_deref(), Some("expanded"));

@@ -44,6 +44,8 @@ pub struct ThoughtData {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub branch_strategy: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub merge_branches: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub confidence: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub done_reason: Option<String>,
@@ -70,6 +72,27 @@ pub struct ComplianceStats {
     pub low_conf_without_branch_count: u32,
     pub explore_count_used: bool,
     pub needs_branching: bool,
+}
+
+/// A non-prescriptive hint the server surfaces. The caller decides what to do.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Hint {
+    /// Machine-readable hint kind for programmatic use
+    pub kind: String,
+    /// Human-readable suggestion
+    pub message: String,
+    /// How notable this observation is: "info", "suggestion", "observation"
+    pub severity: String,
+}
+
+/// Summary of a branch merge operation.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MergeSummary {
+    pub merged_branches: Vec<String>,
+    pub thought_counts: HashMap<String, usize>,
+    pub missing_branches: Vec<String>,
 }
 
 // ============================================================================
@@ -307,30 +330,119 @@ impl ThinkingEngine {
         if !self.disable_logging {
             let formatted = self.format_thought(&validated);
             eprintln!("{}", formatted);
+        }
 
-            // Compliance warnings
-            if self.consecutive_linear_thoughts >= 4 {
-                eprintln!(
-                    "\n  LINEAR CHAIN DETECTED: {} thoughts\n  \
-                     SKILL SAYS: \"1 branch per 4 linear thoughts\"\n  \
-                     USE: branchFromThought + branchId NOW\n",
+        // Build hints (non-prescriptive observations)
+        let mut hints: Vec<Hint> = Vec::new();
+
+        // --- Hint: linear chain getting long ---
+        if self.consecutive_linear_thoughts >= 4 {
+            hints.push(Hint {
+                kind: "linear_chain".into(),
+                message: format!(
+                    "{} consecutive linear thoughts. Branching (branchFromThought + branchId) is available if you want to explore alternatives.",
                     self.consecutive_linear_thoughts
-                );
-            }
+                ),
+                severity: "suggestion".into(),
+            });
+        }
 
-            if self.explore_count_usage_count == 0 && validated.thought_number >= 3 {
-                eprintln!(
-                    "  [HINT] exploreCount is available but unused. Try: exploreCount: 4, proposals: [...]"
-                );
-            }
+        // --- Hint: explore_count available ---
+        if self.explore_count_usage_count == 0 && validated.thought_number >= 3 {
+            hints.push(Hint {
+                kind: "explore_available".into(),
+                message: "exploreCount is available but unused. Try: exploreCount: 4, proposals: [...] to widen exploration.".into(),
+                severity: "info".into(),
+            });
+        }
 
-            if self.low_conf_without_branch_count >= 2 {
-                eprintln!(
-                    "  [COMPLIANCE] {} low-confidence thoughts without branching (target: <30%)",
+        // --- Hint: low confidence pattern ---
+        if self.low_conf_without_branch_count >= 2 {
+            hints.push(Hint {
+                kind: "low_confidence_pattern".into(),
+                message: format!(
+                    "{} low-confidence thoughts without branching. Branching can help validate uncertain reasoning.",
                     self.low_conf_without_branch_count
-                );
+                ),
+                severity: "suggestion".into(),
+            });
+        }
+
+        // --- Hint: Dunning-Kruger detection (high confidence at layer 1) ---
+        if let (Some(conf), Some(layer)) = (validated.confidence, validated.layer) {
+            if conf > 0.8 && layer <= 1 && validated.thought_number <= 2 {
+                hints.push(Hint {
+                    kind: "premature_confidence".into(),
+                    message: format!(
+                        "Confidence {:.0}% at layer {} on thought {}. High confidence before deep analysis can indicate premature closure. Layer 2+ exploration may reveal unknowns.",
+                        conf * 100.0, layer, validated.thought_number
+                    ),
+                    severity: "observation".into(),
+                });
             }
         }
+
+        // --- Hint: confidence without layer tracking ---
+        if validated.confidence.is_some() && validated.layer.is_none() && validated.thought_number >= 2 {
+            hints.push(Hint {
+                kind: "layer_available".into(),
+                message: "Confidence is tracked but layer is not set. Layers (1=problem, 2=approach, 3=details) help calibrate whether confidence is warranted at this stage.".into(),
+                severity: "info".into(),
+            });
+        }
+
+        // --- Hint: merge available when multiple branches exist ---
+        if self.branches.len() >= 2
+            && validated.continuation_mode.as_deref() != Some("merge")
+            && validated.merge_branches.is_none()
+        {
+            let branch_names: Vec<String> = self.branches.keys().cloned().collect();
+            hints.push(Hint {
+                kind: "merge_available".into(),
+                message: format!(
+                    "{} branches exist ({}). Use continuation_mode: \"merge\" with merge_branches: [...] to synthesize insights.",
+                    self.branches.len(),
+                    branch_names.join(", ")
+                ),
+                severity: "info".into(),
+            });
+        }
+
+        // Process merge if requested
+        let merge_summary = if validated.continuation_mode.as_deref() == Some("merge") {
+            if let Some(ref requested) = validated.merge_branches {
+                let mut merged = Vec::new();
+                let mut missing = Vec::new();
+                let mut counts = HashMap::new();
+                for branch_name in requested {
+                    if let Some(thoughts) = self.branches.get(branch_name) {
+                        counts.insert(branch_name.clone(), thoughts.len());
+                        merged.push(branch_name.clone());
+                    } else {
+                        missing.push(branch_name.clone());
+                    }
+                }
+                Some(MergeSummary {
+                    merged_branches: merged,
+                    thought_counts: counts,
+                    missing_branches: missing,
+                })
+            } else {
+                // Merge all branches by default
+                let mut counts = HashMap::new();
+                let merged: Vec<String> = self.branches.keys().cloned().collect();
+                for (name, thoughts) in &self.branches {
+                    counts.insert(name.clone(), thoughts.len());
+                }
+                Some(MergeSummary {
+                    merged_branches: merged,
+                    thought_counts: counts,
+                    missing_branches: Vec::new(),
+                })
+            }
+        } else {
+            None
+        };
 
         // Build response
         let branch_keys: Vec<String> = self.branches.keys().cloned().collect();
@@ -350,6 +462,11 @@ impl ThinkingEngine {
             "compliance": compliance,
         });
 
+        // Hints array — always present, may be empty
+        if !hints.is_empty() {
+            response["hints"] = serde_json::to_value(&hints).unwrap_or_default();
+        }
+
         // First-call guidance
         if validated.thought_number == 1 {
             response["firstCallGuidance"] = serde_json::Value::String(
@@ -364,7 +481,12 @@ impl ThinkingEngine {
                 serde_json::Value::String("Agent should execute search before next thought".into());
         }
 
-        // Confidence-based guidance
+        // Merge summary
+        if let Some(ref summary) = merge_summary {
+            response["mergeSummary"] = serde_json::to_value(summary).unwrap_or_default();
+        }
+
+        // Confidence-based guidance (kept for backwards compat, also in hints)
         if let Some(conf) = validated.confidence {
             if conf >= self.profile.confidence_threshold {
                 response["guidance"] = serde_json::Value::String(
@@ -597,6 +719,7 @@ mod tests {
             layer: None,
             delegate_to_next_layer: None,
             branch_strategy: None,
+            merge_branches: None,
             confidence: None,
             done_reason: None,
             context_window: None,
@@ -1126,5 +1249,166 @@ mod tests {
         assert!(engine.consecutive_linear_thoughts >= 4);       // linear chain
         assert_eq!(engine.explore_count_usage_count, 0);        // no explore_count used
         assert!(engine.low_conf_without_branch_count >= 2);     // low-conf without branch
+    }
+
+    // ---- hints system tests ----
+
+    #[test]
+    fn hints_empty_when_no_issues() {
+        let mut engine = make_engine();
+        let mut t = make_thought(1, 5);
+        t.confidence = Some(0.7);
+        t.layer = Some(2);
+        let result = engine.process(t).unwrap();
+        // First thought shouldn't have linear chain or low-conf hints
+        assert!(result.get("hints").is_none() || result["hints"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn hints_linear_chain_suggestion() {
+        let mut engine = make_engine();
+        for i in 1..=5 {
+            engine.process(make_thought(i, 10)).unwrap();
+        }
+        let result = engine.process(make_thought(6, 10)).unwrap();
+        let hints = result["hints"].as_array().unwrap();
+        assert!(hints.iter().any(|h| h["kind"] == "linear_chain"));
+        // It's a suggestion, not a mandate
+        assert!(hints.iter().all(|h| h["severity"] != "error"));
+    }
+
+    #[test]
+    fn hints_premature_confidence_dunning_kruger() {
+        let mut engine = make_engine();
+        let mut t = make_thought(1, 5);
+        t.confidence = Some(0.9);
+        t.layer = Some(1);
+        let result = engine.process(t).unwrap();
+        let hints = result["hints"].as_array().unwrap();
+        assert!(hints.iter().any(|h| h["kind"] == "premature_confidence"));
+        // Check it's an observation, not enforcement
+        let dk_hint = hints.iter().find(|h| h["kind"] == "premature_confidence").unwrap();
+        assert_eq!(dk_hint["severity"], "observation");
+    }
+
+    #[test]
+    fn no_premature_confidence_at_layer_2() {
+        let mut engine = make_engine();
+        let mut t = make_thought(1, 5);
+        t.confidence = Some(0.9);
+        t.layer = Some(2); // Layer 2 = approach selection, high confidence OK
+        let result = engine.process(t).unwrap();
+        // Should not have premature_confidence hint at layer 2
+        if let Some(hints) = result.get("hints") {
+            let hints = hints.as_array().unwrap();
+            assert!(!hints.iter().any(|h| h["kind"] == "premature_confidence"));
+        }
+    }
+
+    #[test]
+    fn hints_merge_available_with_multiple_branches() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("approach-a".into());
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("approach-b".into());
+        let result = engine.process(b2).unwrap();
+
+        let hints = result["hints"].as_array().unwrap();
+        assert!(hints.iter().any(|h| h["kind"] == "merge_available"));
+    }
+
+    // ---- merge tests ----
+
+    #[test]
+    fn merge_branches_returns_summary() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("branch-a".into());
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("branch-b".into());
+        engine.process(b2).unwrap();
+
+        // Now merge
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        merge.merge_branches = Some(vec!["branch-a".into(), "branch-b".into()]);
+        let result = engine.process(merge).unwrap();
+
+        let summary = &result["mergeSummary"];
+        assert!(summary.is_object());
+        let merged = summary["mergedBranches"].as_array().unwrap();
+        assert_eq!(merged.len(), 2);
+        assert!(summary["missingBranches"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn merge_with_missing_branch_reports_it() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("real-branch".into());
+        engine.process(b1).unwrap();
+
+        let mut merge = make_thought(3, 10);
+        merge.continuation_mode = Some("merge".into());
+        merge.merge_branches = Some(vec!["real-branch".into(), "ghost-branch".into()]);
+        let result = engine.process(merge).unwrap();
+
+        let summary = &result["mergeSummary"];
+        let missing = summary["missingBranches"].as_array().unwrap();
+        assert_eq!(missing.len(), 1);
+        assert_eq!(missing[0], "ghost-branch");
+    }
+
+    #[test]
+    fn merge_all_branches_when_none_specified() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("auto-a".into());
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("auto-b".into());
+        engine.process(b2).unwrap();
+
+        // Merge without specifying which branches — should merge all
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        let result = engine.process(merge).unwrap();
+
+        let summary = &result["mergeSummary"];
+        let merged = summary["mergedBranches"].as_array().unwrap();
+        assert_eq!(merged.len(), 2);
+    }
+
+    #[test]
+    fn hints_layer_available_when_confidence_set_without_layer() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 5)).unwrap();
+        let mut t = make_thought(2, 5);
+        t.confidence = Some(0.6);
+        // No layer set
+        let result = engine.process(t).unwrap();
+        let hints = result["hints"].as_array().unwrap();
+        assert!(hints.iter().any(|h| h["kind"] == "layer_available"));
     }
 }
