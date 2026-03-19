@@ -36,28 +36,16 @@
       "what": "TOON output format specification"
     }
   ],
-  "optionalComponents": {
-    "mcpServers": {
-      "kp-github": {
-        "description": "Token-compressed GitHub MCP server — 63 tools, 5-stage compression, 10-40x fewer tokens",
-        "path": "mcp-servers/github",
-        "binary": "target/release/kp-github-mcp",
-        "build": "cargo build --release",
-        "transport": "stdio",
-        "install": "claude mcp add kp-github --transport stdio -- ./mcp-servers/github/target/release/kp-github-mcp"
-      },
-      "kp-sequential-thinking": {
-        "description": "Enhanced sequential thinking with branching, confidence tracking, and metathinking integration",
-        "path": "mcp-servers/sequential-thinking",
-        "binary": "target/release/kp-sequential-thinking",
-        "build": "cargo build --release",
-        "transport": "stdio",
-        "env": {
-          "SEQUENTIAL_THINKING_MODEL": "auto-detected",
-          "KP_SEQTHINK_LOG_LEVEL": "warn"
-        },
-        "install": "claude mcp add kp-sequential-thinking --transport stdio -- ./mcp-servers/sequential-thinking/target/release/kp-sequential-thinking"
-      }
+  "mcpServers": {
+    "kp-github": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/linux-x86_64/kp-github-mcp",
+      "args": [],
+      "env": {}
+    },
+    "kp-sequential-thinking": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/linux-x86_64/kp-sequential-thinking",
+      "args": [],
+      "env": {}
     }
   }
 }
