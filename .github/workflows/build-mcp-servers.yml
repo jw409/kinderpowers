@@ -2,13 +2,8 @@ name: Build MCP Server Binaries
 
 on:
   push:
-    paths:
-      - 'mcp-servers/github/src/**'
-      - 'mcp-servers/github/Cargo.toml'
-      - 'mcp-servers/sequential-thinking/src/**'
-      - 'mcp-servers/sequential-thinking/Cargo.toml'
-      - '.github/workflows/build-mcp-servers.yml'
-    branches: [main]
+    tags:
+      - 'mcp-v*'
   workflow_dispatch:
 
 env:
