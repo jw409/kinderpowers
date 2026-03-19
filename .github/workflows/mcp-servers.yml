@@ -1,0 +1,77 @@
+name: MCP Servers
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mcp-servers/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mcp-servers/**'
+
+jobs:
+  test-sequential-thinking:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            mcp-servers/sequential-thinking/target
+          key: ${{ runner.os }}-cargo-seqthink-${{ hashFiles('mcp-servers/sequential-thinking/Cargo.lock') }}
+
+      - name: Test kp-sequential-thinking
+        working-directory: mcp-servers/sequential-thinking
+        run: cargo test
+
+      - name: Build release
+        working-directory: mcp-servers/sequential-thinking
+        run: cargo build --release
+
+  test-github:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            mcp-servers/github/target
+          key: ${{ runner.os }}-cargo-github-${{ hashFiles('mcp-servers/github/Cargo.lock') }}
+
+      - name: Test kp-github-mcp
+        working-directory: mcp-servers/github
+        run: cargo test
+
+      - name: Build release
+        working-directory: mcp-servers/github
+        run: cargo build --release
+
+  test-gsd-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify gsd-tools loads from any cwd
+        run: |
+          cd /tmp
+          node "$GITHUB_WORKSPACE/gsd/bin/gsd-tools.cjs" current-timestamp
+          echo "gsd-tools loads correctly from arbitrary cwd"

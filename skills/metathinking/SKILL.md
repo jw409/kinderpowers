@@ -1,6 +1,6 @@
 ---
 name: metathinking
-description: Use when facing complex decisions, debugging mysteries, or architectural choices - activates deep sequential thinking with mandatory branching, confidence tracking, and wide exploration patterns
+description: Use when facing complex decisions, debugging mysteries, or architectural choices - activates deep sequential thinking with branching, confidence tracking, and wide exploration patterns
 ---
 
 # Metathinking Protocol
@@ -22,21 +22,31 @@ description: Use when facing complex decisions, debugging mysteries, or architec
 
 **Key insight**: This provides EXTERNALIZED REASONING STRUCTURE (logging, branches, coordination), not reasoning itself. Native extended thinking provides raw power. Use together when you need both depth AND visible structure.
 
-## Hard Requirements
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `min_thoughts` | 6 | 3-20 | Minimum thought chain length for complex problems |
+| `branch_style` | liberal | conservative, liberal, exhaustive | How aggressively to branch |
+| `explore_width` | 4 | 2-7 | Default explore_count when widening |
+| `self_checks` | true | true/false | Run the four self-checks at layer 1 |
+| `search_wiring` | true | true/false | Auto-execute search when incorporate_search is set |
+
+The server surfaces **hints** — observations about your reasoning pattern. You decide what to act on. The server never blocks or enforces.
+
+## Recommendations (with skip costs)
 
 **Third Alternative**: When facing A vs B choices, include "both options could be wrong." False dichotomies are a major cognitive trap. The real answer often lies outside the options presented.
+*Skip cost: You accept the first framing presented. In ~30% of cases, the real answer is outside A vs B.*
 
-**Minimum Thought Chain**: 6 thoughts minimum for complex problems. Stopping at 3 means you haven't explored enough.
+**Branching on low confidence**: When confidence < 0.6, branching to explore alternatives catches errors that linear thinking misses.
+*Skip cost: Linear chains produce the first plausible answer, not the best one.*
 
-**Minimum Branches**: At least 1 branch per 4 linear thoughts. Fully-linear chains on complex problems indicate insufficient exploration.
+**Layer progression**: Start at layer 1 (problem), progress to layer 2 (approach), then layer 3 (details). The server will hint if confidence is high at layer 1 (premature_confidence observation).
+*Skip cost: Jumping to implementation without understanding the problem leads to rework.*
 
-**Minimum Explore Count**: Use `explore_count: 4` or higher when exploring alternatives.
-
-**Confidence Tracking**: Every thought should include a `confidence` parameter.
-
-**Layer Progression**: Start at layer 1, progress through layers. Skipping to layer 3 without understanding the problem (layer 1) leads to premature solutions.
-
-**Cost of skipping**: Linear thinking without branches produces the first plausible answer, not the best one. Branching catches the 30-40% of cases where the obvious answer is wrong.
+**Confidence tracking**: Setting confidence on each thought calibrates your certainty and lets the server surface useful hints.
+*Skip cost: No hints, no calibration signals. You're flying blind.*
 
 ## Core Patterns
 
@@ -50,16 +60,6 @@ The third alternative should ask:
 - What assumption makes A vs B the only choices?
 - What if that assumption is wrong?
 - What would a completely different framing look like?
-
-```
-Thought N:
-  "Evaluating options..."
-  proposals: [
-    "Option A: [description]",
-    "Option B: [description]",
-    "Third Alternative: Both A and B are wrong because [the framing assumes X, which may be false]"
-  ]
-```
 
 ### 1. Wide Exploration (Default Start)
 
@@ -82,7 +82,7 @@ Thought 1:
 
 ### 2. Branch on Uncertainty
 
-If confidence < 0.6, branch to explore alternatives:
+When confidence < 0.6, branching helps validate uncertain reasoning:
 
 ```
 Thought N:
@@ -93,22 +93,37 @@ Thought N:
   confidence: 0.5
 ```
 
-### 3. Layer Progression
+### 3. Branch Merge (converge insights)
+
+When multiple branches have been explored, merge them:
+
+```
+Thought N:
+  "Synthesizing insights from both exploration paths..."
+  continuation_mode: "merge"
+  merge_branches: ["approach-a", "approach-b"]
+  confidence: 0.75
+  layer: 2
+```
+
+The server returns a `mergeSummary` with thought counts per branch and any missing branches.
+
+### 4. Layer Progression
 
 - **Layer 1**: Problem understanding -- what are we actually solving?
 - **Layer 2**: Approach selection -- which path forward?
 - **Layer 3**: Implementation details -- how exactly?
 
-Set `layer` parameter on each thought. Don't jump to layer 3 without layers 1-2.
+Set `layer` parameter on each thought. The server hints if confidence > 0.8 at layer 1 (premature_confidence).
 
-### 4. Confidence Calibration
+### 5. Confidence Calibration
 
 - `0.0-0.3`: "I'm guessing" -- explore more before proceeding
-- `0.3-0.6`: "I have ideas but uncertainty" -- branch to validate
+- `0.3-0.6`: "I have ideas but uncertainty" -- consider branching
 - `0.6-0.8`: "Fairly confident" -- can proceed but verify
 - `0.8-1.0`: "High confidence" -- can conclude with `continuation_mode: "done"`
 
-### 5. Search Integration
+### 6. Search Integration
 
 When you need codebase context mid-thought:
 
@@ -123,31 +138,23 @@ Then execute the actual search, and pass results in `search_context` on the next
 
 ## The Four Self-Checks
 
-Before reaching confidence > 0.6 in any thought, run these checks:
+Before reaching confidence > 0.6 in any thought, consider these checks:
 
 ### 1. Verify Before Assuming
 
 > "Before concluding 'X works', have I actually tested it?"
 
-If your thought claims "this should work" and you haven't verified, confidence stays < 0.6 until verified.
-
 ### 2. Discovery Before Creation
 
 > "Before proposing a new solution, have I searched for existing ones?"
-
-If your thought proposes creating something new without searching the codebase first, confidence stays < 0.6 until searched.
 
 ### 3. Deep Inspection Required
 
 > "Before claiming understanding, did I see the full picture or just the first 20 lines?"
 
-If you only read partial content, confidence stays < 0.6 until fully inspected.
-
 ### 4. Extend Over Duplicate
 
 > "Before designing something new, have I considered extending what exists?"
-
-If you haven't explored extension options for existing code, confidence stays < 0.6 until evaluated.
 
 ### Integration Pattern
 
@@ -166,17 +173,28 @@ Thought 1 (Layer 1):
   [ ] extend-over-duplicate: Am I designing new without considering extensions?
 ```
 
-Only transition to Layer 2 when all four checks pass.
+Transition to Layer 2 when checks pass.
+
+## Server Hints
+
+The kp-sequential-thinking server surfaces non-prescriptive hints. You decide what to act on:
+
+| Hint Kind | Severity | What it means |
+|-----------|----------|---------------|
+| `linear_chain` | suggestion | N consecutive linear thoughts — branching is available |
+| `premature_confidence` | observation | High confidence at layer 1 — may indicate Dunning-Kruger |
+| `low_confidence_pattern` | suggestion | Multiple low-confidence thoughts without branching |
+| `merge_available` | info | 2+ branches exist — merge can synthesize them |
+| `explore_available` | info | exploreCount hasn't been used yet |
+| `layer_available` | info | Confidence tracked but layer not set |
 
 ## Anti-Patterns
 
-- **Accepting binary choices without "both wrong" option** -- always question the framing
+- **Accepting binary choices without "both wrong" option** -- question the framing
 - Starting with high confidence (> 0.7) on complex problems
 - Skipping layer 1 (problem understanding)
-- Linear thinking without branches on first attempt
 - Using `continuation_mode: "done"` before exploring alternatives
 - Setting `explore_count: 1` or `2` (minimum useful is 3-4)
-- Forgetting to set `confidence` parameter
 
 ## Example: Debug Mystery Bug
 
@@ -187,14 +205,13 @@ T3 (L2): "Found root cause" -> explore 3 solutions -> confidence: 0.7
 T4 (L2): "Cleanest approach is Y" -> done -> confidence: 0.85
 ```
 
-**Pattern**: Layer 1 = understand problem, Layer 2 = solution approaches. Branch on low confidence.
-
 ## Activation Checklist
 
 - [ ] Called sequential thinking tool (not just thought about it)
 - [ ] Included "both wrong" third alternative for any A vs B choice (Brenner pattern)
 - [ ] Set layer parameter on each thought
 - [ ] Set confidence parameter on each thought
-- [ ] Branched when confidence < 0.6
+- [ ] Considered branching when confidence < 0.6
+- [ ] Used merge to synthesize when multiple branches explored
 - [ ] Executed search tool when incorporate_search was set
 - [ ] Didn't claim "done" until alternatives explored

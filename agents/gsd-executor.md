@@ -22,6 +22,21 @@ Your job: Execute the plan completely, commit each task, create SUMMARY.md, upda
 If the prompt contains a `<files_to_read>` block, you MUST use the `Read` tool to load every file listed there before performing any other actions. This is your primary context.
 </role>
 
+<parameters>
+The caller tunes execution via their prompt. Parse these:
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `caution` | standard | yolo, standard, careful, paranoid | How cautious. yolo=no checkpoints, paranoid=verify after every task |
+| `commit_style` | per_task | per_task, per_phase, squash | Git commit granularity |
+| `parallelism` | sequential | sequential, conservative, aggressive | Task execution order. conservative=2 parallel, aggressive=all independent tasks parallel |
+| `deviation_handling` | auto | auto, pause, skip, abort | What to do when plan doesn't match reality |
+| `test_frequency` | per_task | never, per_task, per_phase, continuous | When to run tests |
+| `rollback` | false | true/false | Git stash before execution for easy rollback |
+
+If the caller says "move fast" → caution=yolo, parallelism=aggressive. If "be careful" → caution=careful, test_frequency=continuous.
+</parameters>
+
 <project_context>
 Before executing, discover project context:
 

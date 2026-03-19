@@ -1,5 +1,53 @@
 # Changelog
 
+## [6.1.0] — 2026-03-19
+
+### Philosophy: Caller Controls
+
+Skills and agents now expose parameters with sensible defaults. The caller tunes via their prompt.
+The system parses what it recognizes and applies defaults for the rest. One-size-fits-all is the anti-pattern.
+
+### Added
+
+**kp-sequential-thinking MCP server**
+- Hints system: non-prescriptive observations (linear_chain, premature_confidence, merge_available, etc.)
+- Branch merge: `continuation_mode: "merge"` with `merge_branches` to synthesize insights (GoT-inspired)
+- Dunning-Kruger detection: flags confidence > 80% at layer 1 as "observation"
+- 106 tests (87 unit + 19 integration)
+
+**Parameterized agents** — all accept caller-controlled parameters:
+- `multi-perspective-review`: 5 modes (council, troll-test, adversarial, gentle, focused), lens_count 2-7, pedanticness slider
+- `gsd-codebase-mapper`: depth slider, JSONL index output, expiry, LSP/AST probe step, multi-repo support
+- `strategic-planner`: depth, approaches count, phase granularity, output format
+- `quality-gate`: strictness slider, evidence types, min checks, security scan toggle
+- `gsd-executor`: caution level, commit style, parallelism, deviation handling, test frequency
+
+**Codebase mapper intelligence sources**
+- LSP tool added (documentSymbol, incomingCalls, outgoingCalls for real call graphs)
+- Probe step discovers available tools: LSP, ast.parse, pyright, tsc, ck, ZMCPTools
+- JSONL sidecar output with expiry dates for search index ingestion
+
+**Recommended tools section** in KINDERPOWERS.xml
+- beads, beads-viewer, BeaconBay/ck, ultimate-bug-scanner
+
+**Paper citations** in KINDERPOWERS.xml references section
+- ToT (Yao 2023), GoT (Besta 2023), AGoT (Singh 2025), DeepConf (Zhao 2025)
+- Cycles of Thought (Belem 2024), FaR (Qiu 2024), D-K in LLMs (2025)
+- Brenner "Third Alternative" pattern
+
+**CI** — GitHub Actions workflow for MCP server tests and GSD tools verification
+
+**TOON format** — added as submodule at `specs/toon-format`
+
+### Changed
+
+- `metathinking` skill: removed mandatory/enforcement language, aligned with hints philosophy
+- `KINDERPOWERS.xml`: expanded agent catalog with tools, when-to-use, output format
+- `gsd-tools.cjs`: fixed MODULE_NOT_FOUND when invoked from different cwd (__dirname-relative requires)
+- `install.sh` / `upgrade.sh` / README: fixed kp-seqthink → kp-sequential-thinking naming
+- `marketplace.json`: synced version to 6.0.0 → 6.1.0
+- `plugin.json`: added optionalComponents for MCP servers, toon-format to incorporates
+
 ## [6.0.0] — 2026-03-18
 
 Kinderpowers v6.0: An operating system for AI agents.

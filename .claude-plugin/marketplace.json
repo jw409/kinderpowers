@@ -8,7 +8,7 @@
     {
       "name": "kinderpowers",
       "description": "Agency-preserving workflow skills, lifecycle engine, enforcement rules, and optional MCP servers for AI agents",
-      "version": "6.0.0",
+      "version": "6.1.0",
       "source": "./",
       "author": {
         "name": "jw409"
