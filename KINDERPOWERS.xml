@@ -17,10 +17,12 @@
   <section name="emergency-start" what="Install and use in 60 seconds"/>
   <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
   <section name="skill-catalog" what="All 27 skills with levels, triggers, and costs"/>
-  <section name="agent-catalog" what="All 21 agents with capabilities and model requirements"/>
+  <section name="agent-catalog" what="All 22 agents with capabilities, tools, and model requirements"/>
+  <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Sequential Thinking)"/>
   <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
   <section name="hookify-rules" what="3 default enforcement rules (ship disabled)"/>
   <section name="progression" what="L1 → L2 → L3 → L4 capability model"/>
+  <section name="references" what="Papers and prior art that inform the design"/>
   <section name="attestation" what="What has been verified"/>
 </index>
 
@@ -128,36 +130,160 @@
 <!-- ═══════════════════════════════════════════════════════════════
      AGENT CATALOG: 21 agents (5 kinderpowers + 16 GSD)
      ═══════════════════════════════════════════════════════════════ -->
-<agent-catalog count="21">
-  <!-- Kinderpowers agents -->
-  <agent name="code-reviewer" level="1" model="inherit"
-    description="Reviews completed work against plan and coding standards"/>
-  <agent name="strategic-planner" level="3" model="opus"
-    description="Takes a goal → discovery → phased plan with dependencies"/>
-  <agent name="quality-gate" level="3" model="opus"
-    description="Adversarial verification — refuses to pass without evidence"/>
-  <agent name="team-coordinator" level="3" model="opus"
-    description="Orchestrates parallel Claude Code agent teams"/>
-  <agent name="research-extractor" level="2" model="opus"
-    description="Routes: idea extraction, usage evaluation, or deep integration"/>
+<agent-catalog count="22">
+  <!-- ──────────────────────────────────────────────────────────── -->
+  <!-- Kinderpowers agents (6)                                     -->
+  <!-- ──────────────────────────────────────────────────────────── -->
+  <agent name="code-reviewer" level="1" model="inherit">
+    <description>Post-implementation review against plan and coding standards.</description>
+    <tools>Read, Grep, Glob, Bash</tools>
+    <when>After completing a logical chunk of work — feature, bugfix, or refactor step.</when>
+    <output>Structured review with findings, severity, and specific file:line references.</output>
+  </agent>
 
-  <!-- GSD agents -->
-  <agent name="gsd-codebase-mapper" level="4" model="sonnet" description="Parallel codebase analysis"/>
-  <agent name="gsd-debugger" level="4" model="opus" description="Scientific method debugging"/>
-  <agent name="gsd-executor" level="4" model="opus" description="Plan execution with atomic commits"/>
-  <agent name="gsd-integration-checker" level="4" model="opus" description="Cross-phase E2E verification"/>
-  <agent name="gsd-nyquist-auditor" level="4" model="opus" description="Test coverage gap filling"/>
-  <agent name="gsd-phase-researcher" level="4" model="opus" description="Phase implementation research"/>
-  <agent name="gsd-plan-checker" level="4" model="opus" description="Plan quality validation"/>
-  <agent name="gsd-planner" level="4" model="opus" description="Detailed phase planning"/>
-  <agent name="gsd-project-researcher" level="4" model="opus" description="Domain ecosystem research"/>
-  <agent name="gsd-research-synthesizer" level="4" model="sonnet" description="Research output synthesis"/>
-  <agent name="gsd-roadmapper" level="4" model="opus" description="Project roadmap creation"/>
-  <agent name="gsd-ui-auditor" level="4" model="opus" description="6-pillar frontend audit"/>
-  <agent name="gsd-ui-checker" level="4" model="opus" description="UI-SPEC validation"/>
-  <agent name="gsd-ui-researcher" level="4" model="opus" description="UI design contract generation"/>
-  <agent name="gsd-user-profiler" level="4" model="sonnet" description="Developer behavioral profiling"/>
-  <agent name="gsd-verifier" level="4" model="opus" description="Phase goal verification"/>
+  <agent name="multi-perspective-review" level="3" model="opus">
+    <description>Council-mode review: spawns 2-5 disposable lens agents, each reviewing the same
+      artifact from a different perspective. Smart persona selection based on what could break.
+      Default: 5 lenses. Tunable via prompt. Inspired by council-mode patterns.</description>
+    <tools>Read, Grep, Glob, Bash, Agent</tools>
+    <when>Significant work needs review from multiple angles — API design, security changes, architecture.</when>
+    <lenses>Edge Case, Contract, Empathy, Resilience, Performance, Security, Accessibility</lenses>
+    <output>Per-lens findings merged into a single prioritized review with cross-lens conflicts noted.</output>
+    <see-also ref="brenner1963" note="Third Alternative pattern applies to lens selection"/>
+  </agent>
+
+  <agent name="strategic-planner" level="3" model="opus">
+    <description>Goal → discovery → approach selection → phased plan with dependencies.
+      Investigative mode for unknowns, implementation mode for clear specs.</description>
+    <tools>Read, Grep, Glob, Bash, Write</tools>
+    <when>Vague feature requests, complex refactors, anything needing scoping before execution.</when>
+    <output>Strategic brief with phases, dependencies, risk assessment, and success criteria.</output>
+  </agent>
+
+  <agent name="quality-gate" level="3" model="opus">
+    <description>Adversarial verification — refuses to pass without evidence. Runs checks,
+      compares against requirements, looks for what was missed.</description>
+    <tools>Read, Grep, Glob, Bash</tools>
+    <when>Work claimed as complete. Feature ready for merge. Phase boundary.</when>
+    <output>PASS/FAIL verdict with evidence chain. Failing items include specific remediation.</output>
+  </agent>
+
+  <agent name="team-coordinator" level="3" model="opus">
+    <description>Orchestrates parallel Claude Code agent teams. Decomposes work into
+      non-overlapping file domains, spawns workers, manages task assignment and integration.</description>
+    <tools>Read, Grep, Glob, Bash, Agent, Write, Edit</tools>
+    <when>Large tasks that benefit from parallelization — multi-module refactors, feature rollouts.</when>
+    <constraints>Non-overlapping file domains per worker. One task per worker. INJECT upfront.</constraints>
+    <output>Coordinated multi-agent execution with integrated results.</output>
+  </agent>
+
+  <agent name="research-extractor" level="2" model="opus">
+    <description>Three modes: idea extraction (harvest→extract→rank→verify), usage evaluation
+      (assess capabilities/limitations/fit), deep integration (API surface analysis, migration plan).</description>
+    <tools>Read, Grep, Glob, Bash, WebSearch, WebFetch</tools>
+    <when>Evaluating libraries, analyzing reference implementations, extracting ideas from papers.</when>
+    <output>Ranked findings with implementation sketches, difficulty ratings, and source links.</output>
+    <see-also ref="cyclone-pattern" note="harvest → extract → analyze → rank → verify pipeline"/>
+  </agent>
+
+  <!-- ──────────────────────────────────────────────────────────── -->
+  <!-- GSD agents (16) — lifecycle engine workers                  -->
+  <!-- ──────────────────────────────────────────────────────────── -->
+  <agent name="gsd-codebase-mapper" level="4" model="sonnet">
+    <description>Explores codebase with parallel focus areas (tech, arch, quality, concerns).
+      Writes structured analysis documents to reduce orchestrator context load.</description>
+    <tools>Read, Bash, Grep, Glob, Write</tools>
+  </agent>
+
+  <agent name="gsd-debugger" level="4" model="opus">
+    <description>Scientific method debugging: hypothesis → test → narrow → fix.
+      Manages debug sessions with checkpoints for crash recovery.</description>
+    <tools>Read, Write, Edit, Bash, Grep, Glob, WebSearch</tools>
+  </agent>
+
+  <agent name="gsd-executor" level="4" model="opus">
+    <description>Executes plans with atomic commits, deviation handling, checkpoint protocols,
+      and state management. Spawned by execute-phase orchestrator.</description>
+    <tools>Read, Write, Edit, Bash, Grep, Glob</tools>
+  </agent>
+
+  <agent name="gsd-integration-checker" level="4" model="opus">
+    <description>Verifies cross-phase integration and E2E flows. Checks that phases connect
+      properly and user workflows complete end-to-end.</description>
+    <tools>Read, Bash, Grep, Glob</tools>
+  </agent>
+
+  <agent name="gsd-nyquist-auditor" level="4" model="opus">
+    <description>Fills Nyquist validation gaps by generating tests and verifying coverage
+      for phase requirements. Named after Nyquist sampling theorem — test at 2x the
+      rate of change to catch regressions.</description>
+    <tools>Read, Write, Edit, Bash, Glob, Grep</tools>
+  </agent>
+
+  <agent name="gsd-phase-researcher" level="4" model="opus">
+    <description>Researches how to implement a phase before planning. Produces RESEARCH.md
+      consumed by gsd-planner.</description>
+    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch</tools>
+  </agent>
+
+  <agent name="gsd-plan-checker" level="4" model="opus">
+    <description>Goal-backward analysis of plan quality. Verifies plans will achieve
+      phase goal before execution begins.</description>
+    <tools>Read, Bash, Glob, Grep</tools>
+  </agent>
+
+  <agent name="gsd-planner" level="4" model="opus">
+    <description>Creates executable phase plans with task breakdown, dependency analysis,
+      and goal-backward verification.</description>
+    <tools>Read, Write, Bash, Glob, Grep, WebFetch</tools>
+  </agent>
+
+  <agent name="gsd-project-researcher" level="4" model="opus">
+    <description>Researches domain ecosystem before roadmap creation. Produces files in
+      .planning/research/ consumed during roadmap creation.</description>
+    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch</tools>
+  </agent>
+
+  <agent name="gsd-research-synthesizer" level="4" model="sonnet">
+    <description>Synthesizes research outputs from parallel researcher agents into SUMMARY.md.</description>
+    <tools>Read, Write, Bash</tools>
+  </agent>
+
+  <agent name="gsd-roadmapper" level="4" model="opus">
+    <description>Creates project roadmaps with phase breakdown, requirement mapping,
+      success criteria derivation, and coverage validation.</description>
+    <tools>Read, Write, Bash, Glob, Grep</tools>
+  </agent>
+
+  <agent name="gsd-ui-auditor" level="4" model="opus">
+    <description>Retroactive 6-pillar visual audit of implemented frontend code.
+      Pillars: layout, typography, color, spacing, interaction, accessibility.</description>
+    <tools>Read, Write, Bash, Grep, Glob</tools>
+  </agent>
+
+  <agent name="gsd-ui-checker" level="4" model="opus">
+    <description>Validates UI-SPEC.md design contracts against 6 quality dimensions.
+      Produces BLOCK/FLAG/PASS verdicts.</description>
+    <tools>Read, Bash, Glob, Grep</tools>
+  </agent>
+
+  <agent name="gsd-ui-researcher" level="4" model="opus">
+    <description>Produces UI-SPEC.md design contract for frontend phases. Reads upstream
+      artifacts, detects design system state, asks only unanswered questions.</description>
+    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch</tools>
+  </agent>
+
+  <agent name="gsd-user-profiler" level="4" model="sonnet">
+    <description>Analyzes session messages across 8 behavioral dimensions to produce a
+      scored developer profile with confidence levels and evidence.</description>
+    <tools>Read</tools>
+  </agent>
+
+  <agent name="gsd-verifier" level="4" model="opus">
+    <description>Goal-backward verification: checks codebase delivers what phase promised,
+      not just that tasks completed. Creates VERIFICATION.md report.</description>
+    <tools>Read, Write, Bash, Grep, Glob</tools>
+  </agent>
 </agent-catalog>
 
 <!-- ═══════════════════════════════════════════════════════════════
@@ -214,6 +340,117 @@
     <requires>Level 1-3 skills</requires>
   </level>
 </progression>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MCP SERVERS: Optional Rust-native servers
+     ═══════════════════════════════════════════════════════════════ -->
+<mcp-servers count="2" optional="true">
+  <server name="kp-github-mcp" language="rust" transport="stdio">
+    <description>Token-compressed GitHub MCP server. 10-40x fewer tokens per read vs official plugin.</description>
+    <tools count="63">Issues, PRs, commits, branches, releases, tags, files, repos, actions, labels, teams, users, code search.</tools>
+    <resources count="4">github://repos/{owner}/{repo}/issues, /pulls, /readme, repo info</resources>
+    <features>
+      <feature>5-stage compression pipeline: strip waste → flatten → project → compact → auto-format</feature>
+      <feature>Field projection (fields param) and output format control (json/table/text)</feature>
+      <feature>reqwest HTTP primary (0.5s), gh CLI fallback</feature>
+    </features>
+    <install>cd mcp-servers/github &amp;&amp; cargo build --release</install>
+    <register>claude mcp add kp-github --transport stdio -- ./target/release/kp-github-mcp</register>
+    <coverage>484 unit + 23 integration tests, 97% line coverage</coverage>
+  </server>
+
+  <server name="kp-sequential-thinking" language="rust" transport="stdio">
+    <description>Enhanced sequential thinking with hints (not mandates), branching, merge,
+      confidence tracking, Dunning-Kruger detection, and per-model tuning profiles.</description>
+    <tools count="1">sequentialthinking — the caller controls depth, branching, and when to act on hints.</tools>
+    <features>
+      <feature>Hints system: non-prescriptive observations (linear_chain, premature_confidence, merge_available, etc.)</feature>
+      <feature>Branch merge: continuation_mode="merge" with merge_branches to synthesize insights</feature>
+      <feature>Dunning-Kruger detection: flags confidence &gt; 80% at layer 1 as "observation"</feature>
+      <feature>Per-model profiles: Claude, Gemini Flash, DeepSeek, Grok, Llama/Nemotron, custom via JSON</feature>
+      <feature>JSONL logging for learning pipeline harvesting</feature>
+      <feature>Brenner "Third Alternative" and Four Self-Checks in first-call guidance</feature>
+    </features>
+    <install>cd mcp-servers/sequential-thinking &amp;&amp; cargo build --release</install>
+    <register>claude mcp add kp-sequential-thinking --transport stdio -- ./target/release/kp-sequential-thinking</register>
+    <coverage>87 unit + 19 integration tests, 95.6% line coverage</coverage>
+    <env>
+      <var name="SEQUENTIAL_THINKING_MODEL" default="auto-detected" what="Model ID for profile matching"/>
+      <var name="KP_SEQTHINK_LOG_LEVEL" default="info" what="tracing level (error/warn/info/debug)"/>
+    </env>
+  </server>
+</mcp-servers>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     REFERENCES: Papers and prior art informing the design
+     ═══════════════════════════════════════════════════════════════ -->
+<references>
+  <!-- Reasoning frameworks -->
+  <paper id="tot" title="Tree of Thoughts: Deliberate Problem Solving with Large Language Models"
+    authors="Yao, Yu, Zhao, Shafran, Griffiths, Cao, Narasimhan" year="2023"
+    url="https://arxiv.org/abs/2305.10601"
+    informs="Branching architecture in kp-sequential-thinking. ToT frames reasoning as tree search
+      with branching and evaluation — our branchFromThought + branchId implements this."/>
+
+  <paper id="got" title="Graph of Thoughts: Solving Elaborate Problems with Large Language Models"
+    authors="Besta, Blach, Kubicek, Gerstenberger, Podstawski, Gianinazzi, Gajda, Lehmann, Nyczyk, Niewiadomski, Hoefler" year="2023"
+    url="https://arxiv.org/abs/2308.09687"
+    informs="Branch merge capability. GoT extends ToT with arbitrary graph structure where thoughts
+      can merge — our continuation_mode=merge with merge_branches implements convergence.
+      GoT showed 62% quality improvement over ToT on sorting with 31% cost reduction."/>
+
+  <paper id="agot" title="Adaptive Graph of Thoughts: Test-Time Adaptive Reasoning"
+    authors="Singh, Strouse" year="2025"
+    url="https://arxiv.org/abs/2502.05078"
+    informs="Unified framework insight. AGoT showed +46.2% on GPQA by dynamically choosing between
+      linear (CoT), branching (ToT), and graph (GoT) strategies. Our hints system lets the caller
+      make this choice rather than the server enforcing it."/>
+
+  <paper id="deepconf" title="Deep Think with Confidence"
+    authors="Zhao et al." year="2025"
+    url="https://jiaweizzhao.github.io/deepconf/"
+    informs="Confidence-based trace pruning. DeepConf filters low-confidence reasoning traces and
+      terminates early when confidence drops. Our low_confidence_pattern hint surfaces this signal."/>
+
+  <paper id="cot-cycles" title="Cycles of Thought: Measuring LLM Confidence through Stable Explanations"
+    authors="Belem, Carta, Graux, Rousset" year="2024"
+    url="https://arxiv.org/abs/2406.03441"
+    informs="Stability-based confidence. Measures confidence by checking explanation stability
+      across rephrased queries. Our layer_available hint encourages calibrating confidence
+      against reasoning depth."/>
+
+  <paper id="far" title="Fact-and-Reflection Improves Confidence Calibration"
+    authors="Qiu, Jiang, Wang" year="2024"
+    url="https://www.cs.cmu.edu/~sherryw/assets/pubs/2024-far.pdf"
+    informs="Two-pass calibration pattern. FaR generates facts first, then reflects to calibrate.
+      Maps to our layer progression: layer 1 = fact gathering, layer 2 = reflection.
+      Enforcing layer 2+ for high confidence is informed by this."/>
+
+  <paper id="dk-llm" title="The Dunning-Kruger Effect in Large Language Models"
+    authors="Multiple" year="2025"
+    url="https://arxiv.org/abs/2603.09985"
+    informs="Premature confidence detection. LLMs show systematic overconfidence on tasks they
+      handle poorly — mirroring the Dunning-Kruger effect. Our premature_confidence hint
+      flags high confidence at layer 1 as an observation for the caller."/>
+
+  <!-- Philosophy -->
+  <citation id="brenner1963" type="quote"
+    author="Sydney Brenner" context="Nobel lecture / scientific methodology"
+    text="Someone said, 'Either model A is right or model B is right.' And I said, 'You've forgotten
+      there's a third alternative... Both could be wrong.'"
+    informs="Third Alternative pattern in metathinking skill and first-call guidance.
+      Prevents false dichotomy traps in reasoning."/>
+
+  <!-- Ecosystem -->
+  <project id="superpowers" author="Jesse Vincent" url="https://github.com/obra/superpowers"
+    informs="Craft philosophy, skill format, scanner, hook system. The foundation layer."/>
+  <project id="get-shit-done" author="Davíd Braun" url="https://github.com/davidjbauer/get-shit-done"
+    informs="Lifecycle engine, 42 commands, 16 agents, workflow machinery. The execution layer."/>
+  <project id="hookify" author="Diego Perez" url="https://github.com/QuantGeekDev/hookify"
+    informs="Enforcement rule format and Claude Code hook framework."/>
+  <project id="toon-format" url="https://github.com/toon-format/spec"
+    informs="TOON output format specification. Tables over prose, key:value for config."/>
+</references>
 
 <!-- ═══════════════════════════════════════════════════════════════
      ATTESTATION: What has been verified
