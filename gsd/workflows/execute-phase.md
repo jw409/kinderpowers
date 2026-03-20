@@ -15,6 +15,12 @@ Orchestrator coordinates, not executes. Each subagent loads the full execute-pla
 - **Other runtimes (Gemini, Codex, OpenCode):** If Task/subagent API is unavailable, use sequential
   inline execution as the fallback.
 
+**Team mode (v2.1.77+):**
+- When `TeamCreate` tool is available, each wave creates a team for inter-agent communication
+- Executors can share patterns, deviations, and discoveries via `SendMessage`
+- Team is deleted after each wave completes
+- Falls back to fire-and-forget `Task` spawns if `TeamCreate` is unavailable
+
 **Fallback rule:** If a spawned agent completes its work (commits visible, SUMMARY.md exists) but
 the orchestrator never receives the completion signal, treat it as successful based on spot-checks
 and continue to the next wave/plan.
@@ -205,6 +211,77 @@ Execute each wave in sequence. Within a wave: parallel if `PARALLELIZATION=true`
 
    Pass paths only — executors read files themselves with their fresh 200k context.
    This keeps orchestrator context lean (~10-15%).
+
+   **Detect team capability (once per phase, before first wave):**
+
+   Check if `TeamCreate` tool is available. Store result as `TEAM_CAPABLE`.
+
+   **If TEAM_CAPABLE:**
+
+   a. Create wave team:
+   TeamCreate({team_name: "gsd-phase-{PHASE_NUMBER}-wave-{WAVE}", description: "Phase {PHASE_NUMBER} wave {WAVE} executors"})
+
+   b. Spawn executors as named agents:
+   For each plan in wave:
+   ```
+   Agent({
+     name: "executor-{plan_id}",
+     team_name: "gsd-phase-{PHASE_NUMBER}-wave-{WAVE}",
+     subagent_type: "gsd-executor",
+     model: "{executor_model}",
+     run_in_background: true,
+     prompt: "
+       <objective>
+       Execute plan {plan_number} of phase {phase_number}-{phase_name}.
+       Commit each task atomically. Create SUMMARY.md. Update STATE.md and ROADMAP.md.
+       </objective>
+
+       <execution_context>
+       @${CLAUDE_PLUGIN_ROOT}/gsd/workflows/execute-plan.md
+       @${CLAUDE_PLUGIN_ROOT}/gsd/templates/summary.md
+       @${CLAUDE_PLUGIN_ROOT}/gsd/references/checkpoints.md
+       @${CLAUDE_PLUGIN_ROOT}/gsd/references/tdd.md
+       </execution_context>
+
+       <files_to_read>
+       Read these files at execution start using the Read tool:
+       - {phase_dir}/{plan_file} (Plan)
+       - .planning/STATE.md (State)
+       - .planning/config.json (Config, if exists)
+       - ./CLAUDE.md (Project instructions, if exists — follow project-specific guidelines and coding conventions)
+       - .claude/skills/ or .agents/skills/ (Project skills, if either exists — list skills, read SKILL.md for each, follow relevant rules during implementation)
+       </files_to_read>
+
+       <mcp_tools>
+       If CLAUDE.md or project instructions reference MCP tools (e.g. jCodeMunch, context7,
+       or other MCP servers), prefer those tools over Grep/Glob for code navigation when available.
+       MCP tools often save significant tokens by providing structured code indexes.
+       Check tool availability first — if MCP tools are not accessible, fall back to Grep/Glob.
+       </mcp_tools>
+
+       <success_criteria>
+       - [ ] All tasks executed
+       - [ ] Each task committed individually
+       - [ ] SUMMARY.md created in plan directory
+       - [ ] STATE.md updated with position and decisions
+       - [ ] ROADMAP.md updated with plan progress (via roadmap update-plan-progress)
+       </success_criteria>
+
+       If you discover unexpected patterns or deviations that other executors in this wave should know about, use SendMessage({to: '*', message: '[finding]', summary: '[brief]'}).
+     "
+   })
+   ```
+
+   c. Wait for all agents in wave to complete (idle notifications).
+
+   d. Delete wave team:
+   TeamDelete({team_name: "gsd-phase-{PHASE_NUMBER}-wave-{WAVE}"})
+
+   e. Continue to spot-check, pre-wave dependency check, next wave.
+
+   **If NOT TEAM_CAPABLE (fallback):**
+
+   Use existing Task spawn pattern:
 
    ```
    Task(
