@@ -1737,4 +1737,174 @@ mod tests {
         let depth = spawn_hint["spawnMeta"]["recommendedDepth"].as_u64().unwrap();
         assert!(depth >= 3 && depth <= 10, "recommended_depth should be clamped 3-10, got {}", depth);
     }
+
+    // ---- enhanced merge tests (branch outcomes + convergence) ----
+
+    #[test]
+    fn merge_includes_branch_outcomes() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("opt-a".into());
+        b1.confidence = Some(0.7);
+        b1.done_reason = Some("sufficient".into());
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("opt-b".into());
+        b2.confidence = Some(0.8);
+        b2.done_reason = Some("complete".into());
+        engine.process(b2).unwrap();
+
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        merge.merge_branches = Some(vec!["opt-a".into(), "opt-b".into()]);
+        let result = engine.process(merge).unwrap();
+
+        let summary = &result["mergeSummary"];
+        let outcomes = summary["branchOutcomes"].as_array().unwrap();
+        assert_eq!(outcomes.len(), 2);
+
+        let opt_a = outcomes.iter().find(|o| o["branchId"] == "opt-a").unwrap();
+        assert_eq!(opt_a["finalConfidence"], 0.7);
+        assert_eq!(opt_a["doneReason"], "sufficient");
+
+        let opt_b = outcomes.iter().find(|o| o["branchId"] == "opt-b").unwrap();
+        assert_eq!(opt_b["finalConfidence"], 0.8);
+        assert_eq!(opt_b["doneReason"], "complete");
+    }
+
+    #[test]
+    fn merge_convergence_signal_converged() {
+        // Two branches with similar confidence (spread <= 0.2) -> "converged"
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("a".into());
+        b1.confidence = Some(0.75);
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("b".into());
+        b2.confidence = Some(0.85); // spread = 0.1 <= 0.2
+        engine.process(b2).unwrap();
+
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        let result = engine.process(merge).unwrap();
+
+        assert_eq!(result["mergeSummary"]["convergenceSignal"], "converged");
+    }
+
+    #[test]
+    fn merge_convergence_signal_diverged() {
+        // Two branches with very different confidence (spread > 0.4) -> "diverged"
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("a".into());
+        b1.confidence = Some(0.3);
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("b".into());
+        b2.confidence = Some(0.9); // spread = 0.6 > 0.4
+        engine.process(b2).unwrap();
+
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        let result = engine.process(merge).unwrap();
+
+        assert_eq!(result["mergeSummary"]["convergenceSignal"], "diverged");
+    }
+
+    #[test]
+    fn merge_convergence_signal_mixed() {
+        // Spread between 0.2 and 0.4 -> "mixed"
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("a".into());
+        b1.confidence = Some(0.5);
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("b".into());
+        b2.confidence = Some(0.8); // spread = 0.3, between 0.2 and 0.4
+        engine.process(b2).unwrap();
+
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        let result = engine.process(merge).unwrap();
+
+        assert_eq!(result["mergeSummary"]["convergenceSignal"], "mixed");
+    }
+
+    #[test]
+    fn merge_convergence_insufficient_without_confidence() {
+        // Branches without confidence set -> "insufficient"
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("a".into());
+        // No confidence set
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("b".into());
+        // No confidence set
+        engine.process(b2).unwrap();
+
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        let result = engine.process(merge).unwrap();
+
+        assert_eq!(result["mergeSummary"]["convergenceSignal"], "insufficient");
+    }
+
+    #[test]
+    fn merge_branch_outcome_without_done_reason() {
+        // Branch that never set done_reason should have null/missing doneReason
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("a".into());
+        b1.confidence = Some(0.6);
+        // No done_reason
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("b".into());
+        b2.confidence = Some(0.7);
+        engine.process(b2).unwrap();
+
+        let mut merge = make_thought(4, 10);
+        merge.continuation_mode = Some("merge".into());
+        let result = engine.process(merge).unwrap();
+
+        let outcomes = result["mergeSummary"]["branchOutcomes"].as_array().unwrap();
+        for outcome in outcomes {
+            // doneReason should be null (skipped in serialization) or not present
+            assert!(outcome.get("doneReason").is_none() || outcome["doneReason"].is_null(),
+                "doneReason should be absent when not set");
+        }
+    }
 }
