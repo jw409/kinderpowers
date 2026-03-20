@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-19)
 
 **Core value:** Every agent and skill is a parameterized canvas -- server hints, caller decides
-**Current focus:** Phase 03 — beads-integration
+**Current focus:** Phase 05 — skill-parameterization (COMPLETE)
 
 ## Current Position
 
-Phase: 03 (beads-integration) — EXECUTING
-Plan: 1 of 2
+Phase: 05 (skill-parameterization) — COMPLETE
+Plan: 2 of 2
 
 ## Performance Metrics
 
