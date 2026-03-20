@@ -9,6 +9,16 @@ Execute plan by dispatching fresh subagent per task, with two-stage review after
 
 **Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `worker_model` | sonnet | haiku, sonnet, opus | Model for implementation subagents. haiku=deterministic tasks with rich context, sonnet=balanced (default), opus=complex architecture work |
+| `review_between` | true | true, false | Whether to run spec+quality review between each task. false=skip reviews, run single final review only (faster but riskier) |
+| `parallelism` | sequential | sequential, conservative, aggressive | Task dispatch strategy. sequential=one at a time (current), conservative=2 parallel if non-overlapping files, aggressive=all independent tasks parallel |
+
+**Parse from caller prompt.** "Use haiku for workers" -> worker_model=haiku. "Skip intermediate reviews" -> review_between=false. "Run tasks in parallel" -> parallelism=aggressive.
+
 ## When to Use
 
 ```dot
@@ -43,7 +53,7 @@ digraph process {
 
     subgraph cluster_per_task {
         label="Per Task";
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
+        "Dispatch implementer subagent using {worker_model} model (./implementer-prompt.md)" [shape=box];
         "Implementer subagent asks questions?" [shape=diamond];
         "Answer questions, provide context" [shape=box];
         "Implementer subagent implements, tests, commits, self-reviews" [shape=box];
@@ -61,12 +71,12 @@ digraph process {
     "Dispatch final code reviewer subagent for entire implementation" [shape=box];
     "Use kinderpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
+    "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent using {worker_model} model (./implementer-prompt.md)";
     "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
     "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
     "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
+    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="review_between=true (default)"];
     "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms code matches spec?";
     "Spec reviewer subagent confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
     "Implementer subagent fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
@@ -76,11 +86,23 @@ digraph process {
     "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
     "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
     "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
+    "More tasks remain?" -> "Dispatch implementer subagent using {worker_model} model (./implementer-prompt.md)" [label="yes"];
     "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
     "Dispatch final code reviewer subagent for entire implementation" -> "Use kinderpowers:finishing-a-development-branch";
 }
 ```
+
+### Parameter-Conditional Behavior
+
+**worker_model:** Dispatch implementer subagents using the specified model. Override per-task if the task's complexity warrants it (e.g., a haiku default can still use opus for an architecture task).
+
+**review_between=false:** Skip "Dispatch spec reviewer" and "Dispatch code quality reviewer" nodes between tasks. Only run the final code reviewer at the end. When review_between=false, quality gates are deferred to the final review. This is faster but risks compounding issues across tasks.
+
+**parallelism=sequential (default):** Dispatch one task at a time. Wait for implementer + reviewers to complete before starting the next task.
+
+**parallelism=conservative:** Analyze task file domains. Dispatch up to 2 tasks simultaneously if their file domains don't overlap. Wait for both to complete before dispatching the next batch.
+
+**parallelism=aggressive:** Dispatch all tasks with non-overlapping file domains simultaneously. Monitor for conflicts. If a file conflict is detected, serialize the conflicting tasks.
 
 ## Prompt Templates
 
@@ -195,12 +217,14 @@ Done!
 - Controller does more prep work (extracting all tasks upfront)
 - Review loops add iterations
 - But catches issues early (cheaper than debugging later)
+- aggressive parallelism uses more concurrent context but completes faster — monitor total context consumption
 
 ## Watch For
 
 - Use a branch, not main — accidental commits to main are hard to untangle
 - Don't skip reviews — spec compliance first, then code quality
-- One implementation subagent at a time — parallel dispatch causes file conflicts
+- One implementation subagent at a time (parallelism=sequential) — parallel dispatch causes file conflicts
+- When parallelism != sequential, file domain analysis is critical. Overlapping file domains MUST be serialized regardless of parallelism setting.
 - Provide full task text, don't make subagent read the plan file
 - Answer subagent questions fully before they start implementation
 - If reviewer finds issues → implementer fixes → reviewer reviews again → repeat until approved
