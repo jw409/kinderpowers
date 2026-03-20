@@ -1017,6 +1017,22 @@ Use AskUserQuestion:
 node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs: create roadmap ([N] phases)" --files .planning/ROADMAP.md .planning/STATE.md .planning/REQUIREMENTS.md
 ```
 
+## 8.5. Create Project Bead
+
+Create an epic bead to track the entire project lifecycle (silent no-op if beads not installed):
+
+```bash
+BEADS_OK=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead available --raw)
+if [ "$BEADS_OK" = "true" ]; then
+  PROJECT_NAME=$(grep -m1 'name:' .planning/PROJECT.md 2>/dev/null | sed 's/.*name:[[:space:]]*//' || echo "GSD Project")
+  BEAD_ID=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead create "${PROJECT_NAME}" --type epic --tags gsd,project --raw)
+  if [ -n "$BEAD_ID" ]; then
+    node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" config-set project_bead "$BEAD_ID"
+    echo "Created project bead: $BEAD_ID"
+  fi
+fi
+```
+
 ## 9. Done
 
 Present completion summary:

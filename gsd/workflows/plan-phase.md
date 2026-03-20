@@ -488,6 +488,27 @@ Task(
 - **`## CHECKPOINT REACHED`:** Present to user, get response, spawn continuation (step 12)
 - **`## PLANNING INCONCLUSIVE`:** Show attempts, offer: Add context / Retry / Manual
 
+### Create Phase Bead
+
+Create a task bead for this phase as a child of the project epic (silent no-op if beads not installed):
+
+```bash
+BEADS_OK=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead available --raw)
+if [ "$BEADS_OK" = "true" ]; then
+  PARENT_BEAD=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" config-get project_bead --raw 2>/dev/null)
+  PHASE_TITLE="Phase ${PHASE}: ${phase_name}"
+  BEAD_ARGS="\"${PHASE_TITLE}\" --type task --tags gsd,phase-${PHASE}"
+  if [ -n "$PARENT_BEAD" ]; then
+    BEAD_ARGS="${BEAD_ARGS} --parent ${PARENT_BEAD}"
+  fi
+  PHASE_BEAD=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead create ${BEAD_ARGS} --raw)
+  if [ -n "$PHASE_BEAD" ]; then
+    node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state update phase_bead "$PHASE_BEAD"
+    echo "Created phase bead: $PHASE_BEAD (child of $PARENT_BEAD)"
+  fi
+fi
+```
+
 ## 10. Spawn gsd-verifier (mode=plan-quality) Agent
 
 Display banner:
