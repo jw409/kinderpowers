@@ -139,36 +139,254 @@ Based on focus, determine which documents you'll write:
 
 <step name="probe_tools">
 Before exploring, discover what intelligence sources are available. This determines
-how deep your analysis can go. Probe in order — use the best tools present.
+how deep your analysis can go. Run these probes in order — use the BEST tools present.
 
-**Always available (Claude Code built-in):**
-- `LSP` tool — documentSymbol, findReferences, goToDefinition, incomingCalls, outgoingCalls
-  - Test: try `LSP(operation="documentSymbol", filePath="<any source file>")` on a source file
-  - If LSP works → you can extract export graphs, call graphs, real type info
+**LEVEL 3 — ZMCPTools (richest, if configured as MCP server):**
+```
+# Test: try calling mcp__zmcptools__search
+# If available → full BM25 + semantic + tree-sitter AST index
+# Use: mcp__zmcptools__search(query="exports functions classes", repository_path=".")
+# Also: mcp__zmcptools__index() to build/refresh index
+```
 
-**Language-specific (stdlib, no install):**
-- Python `ast.parse()` — run via `uv run python -c "import ast; ..."`
-  - Extracts: function signatures, class hierarchies, imports, decorators
-- Go `go list -json ./...` — module/package info
+**LEVEL 2 — LSP (if language server configured):**
+```
+# Test: LSP(operation="documentSymbol", filePath="<any source file>")
+# If works → real call graphs, export surfaces, dead code detection
+# Best for: arch (incomingCalls/outgoingCalls), concerns (findReferences with 0 refs)
+```
 
-**Type checkers (if installed):**
-- `pyright --outputjson` — structured Python type errors, dead code
-- `tsc --noEmit 2>&amp;1` — TypeScript type errors
-- Test: `which pyright 2>/dev/null`, `which tsc 2>/dev/null`
+**LEVEL 1 — Language-native AST (stdlib, ALWAYS available per-language — USE THIS AS MINIMUM):**
 
-**Search tools (if installed):**
-- `ck` (BeaconBay/ck) — local semantic+BM25 search
-  - Test: `which ck 2>/dev/null`
-- ZMCPTools `mcp__zmcptools__search` — if available as MCP server
+These scripts run via Bash. They're free, universal, and give REAL structure — not grep approximations.
+Copy-paste and run them. They produce structured output haiku or any model can parse.
 
-Report what's available in your confirmation. Use the best tools present for each focus area:
+**Python — ast.parse (stdlib, zero deps):**
+```bash
+uv run python -c "
+import ast, json, pathlib, sys
 
-| Focus | LSP adds | Type checker adds |
-|-------|----------|-------------------|
-| arch | Real call graph, actual layers, export surface | Circular dep detection |
-| tech | Accurate dependency graph | Version mismatch warnings |
-| quality | Unused exports, dead code | Type error count, strictness level |
-| concerns | Unreachable code, orphan functions | Real type errors (not guessed) |
+results = []
+for f in sorted(pathlib.Path('.').rglob('*.py')):
+    if '.venv' in str(f) or 'node_modules' in str(f) or '__pycache__' in str(f):
+        continue
+    try:
+        tree = ast.parse(f.read_text())
+    except SyntaxError:
+        continue
+    classes = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
+    funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and not isinstance(getattr(n, '_parent', None), ast.ClassDef)]
+    imports = []
+    for n in ast.walk(tree):
+        if isinstance(n, ast.ImportFrom) and n.module:
+            imports.append(n.module)
+        elif isinstance(n, ast.Import):
+            imports.extend(a.name for a in n.names)
+    if classes or funcs:
+        results.append({'file': str(f), 'classes': classes, 'functions': funcs[:10], 'imports_from': list(set(imports))[:10]})
+json.dump(results, sys.stdout, indent=2)
+print()
+" 2>/dev/null
+```
+
+**Rust — cargo metadata (built into toolchain):**
+```bash
+cargo metadata --format-version 1 --no-deps 2>/dev/null | uv run python -c "
+import json, sys
+d = json.load(sys.stdin)
+for pkg in d.get('packages', []):
+    print(f\"Package: {pkg['name']} {pkg['version']}\")
+    for t in pkg.get('targets', []):
+        print(f\"  Target: {t['name']} ({', '.join(t['kind'])}): {t['src_path']}\")
+    for dep in pkg.get('dependencies', []):
+        print(f\"  Dep: {dep['name']} {dep.get('req', '')}\")
+" 2>/dev/null
+```
+
+**Node/TypeScript — package.json + ts-morph or manual AST:**
+```bash
+node -e "
+const fs = require('fs');
+const path = require('path');
+function walk(dir, ext) {
+  let results = [];
+  try {
+    for (const f of fs.readdirSync(dir, {withFileTypes: true})) {
+      if (f.name === 'node_modules' || f.name === '.git') continue;
+      const p = path.join(dir, f.name);
+      if (f.isDirectory()) results.push(...walk(p, ext));
+      else if (f.name.endsWith(ext)) results.push(p);
+    }
+  } catch(e) {}
+  return results;
+}
+const files = [...walk('.', '.ts'), ...walk('.', '.tsx'), ...walk('.', '.js')];
+for (const f of files.slice(0, 50)) {
+  const src = fs.readFileSync(f, 'utf8');
+  const exports = (src.match(/export\s+(default\s+)?(function|class|const|let|var|interface|type|enum)\s+(\w+)/g) || []);
+  const imports = (src.match(/from\s+['\"]([^'\"]+)['\"]/g) || []).map(m => m.replace(/from\s+['\"]|['\"]/g, ''));
+  if (exports.length) console.log(JSON.stringify({file: f, exports: exports.slice(0,10), imports_from: [...new Set(imports)].slice(0,10)}));
+}
+" 2>/dev/null
+```
+
+**Go — go list (built into toolchain):**
+```bash
+go list -json ./... 2>/dev/null | uv run python -c "
+import json, sys
+decoder = json.JSONDecoder()
+data = sys.stdin.read()
+pos = 0
+while pos < len(data):
+    data = data[pos:].lstrip()
+    if not data: break
+    obj, end = decoder.raw_decode(data)
+    print(f\"Package: {obj['ImportPath']}\")
+    for imp in obj.get('Imports', [])[:10]:
+        print(f'  Imports: {imp}')
+    pos = end
+" 2>/dev/null
+```
+
+**LEVEL 1 EXTENDED — structural search (the mapper IS the search tool):**
+
+These scripts give you structural code intelligence without any external dependencies.
+A haiku agent running these is cheaper, faster, and more available than any external tool.
+Output is JSONL — one JSON object per line. Smart callers (opus, gemini) use the output
+to answer questions like "what calls this function?" or "show me all error handling patterns."
+
+```bash
+# Python: structural search via AST — answers "what functions exist in module X?"
+uv run python -c "
+import ast, json, pathlib, sys
+query = sys.argv[1] if len(sys.argv) > 1 else ''
+results = []
+for f in sorted(pathlib.Path('.').rglob('*.py')):
+    if any(skip in str(f) for skip in ['.venv', 'node_modules', '__pycache__', '.git']):
+        continue
+    try:
+        src = f.read_text()
+        tree = ast.parse(src)
+    except (SyntaxError, UnicodeDecodeError):
+        continue
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            sig = f'{node.name}({', '.join(a.arg for a in node.args.args)})'
+            if not query or query.lower() in node.name.lower() or query.lower() in src[node.col_offset:node.end_col_offset or node.col_offset+100].lower():
+                results.append({'file': str(f), 'line': node.lineno, 'kind': 'function', 'name': node.name, 'signature': sig})
+        elif isinstance(node, ast.ClassDef):
+            bases = [getattr(b, 'id', getattr(b, 'attr', '?')) for b in node.bases]
+            if not query or query.lower() in node.name.lower():
+                results.append({'file': str(f), 'line': node.lineno, 'kind': 'class', 'name': node.name, 'bases': bases})
+for r in results[:50]:
+    print(json.dumps(r))
+" '${QUERY}' 2>/dev/null
+```
+
+```bash
+# Python: import graph — answers "what depends on what?"
+uv run python -c "
+import ast, json, pathlib
+graph = {}
+for f in sorted(pathlib.Path('.').rglob('*.py')):
+    if any(skip in str(f) for skip in ['.venv', 'node_modules', '__pycache__', '.git']):
+        continue
+    try:
+        tree = ast.parse(f.read_text())
+    except (SyntaxError, UnicodeDecodeError):
+        continue
+    imports = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module:
+            imports.add(node.module.split('.')[0])
+        elif isinstance(node, ast.Import):
+            for a in node.names:
+                imports.add(a.name.split('.')[0])
+    if imports:
+        graph[str(f)] = sorted(imports)
+# Find cycles
+print(json.dumps(graph, indent=2))
+" 2>/dev/null
+```
+
+```bash
+# Rust: structural search via cargo + grep on pub items
+grep -rn '^pub\s\+\(fn\|struct\|enum\|trait\|type\|mod\|const\)' src/ --include='*.rs' 2>/dev/null | \
+  uv run python -c "
+import sys, json, re
+for line in sys.stdin:
+    m = re.match(r'(.+):(\d+):pub\s+(fn|struct|enum|trait|type|mod|const)\s+(\w+)', line.strip())
+    if m:
+        print(json.dumps({'file': m.group(1), 'line': int(m.group(2)), 'kind': m.group(3), 'name': m.group(4)}))
+" 2>/dev/null
+```
+
+These scripts output JSONL — one JSON object per line. Same shape as ck search results.
+A smart caller (opus, gemini) can pipe this into analysis: "find all functions that import
+from the auth module" or "which classes inherit from BaseHandler?"
+
+**LEVEL 0 — grep (FALLBACK ONLY — use when nothing above works):**
+Config file discovery, TODO/FIXME comments, file sizes. Do NOT use grep for architecture or concerns — the results are unreliable.
+
+**Type checkers (bonus, if installed — run AFTER level 1-4 probes):**
+```bash
+which pyright 2>/dev/null && pyright --outputjson . 2>/dev/null | head -200
+which tsc 2>/dev/null && npx tsc --noEmit 2>&1 | head -100
+```
+
+**Report your intelligence level in the confirmation:**
+```
+Intelligence sources: Level 3 (ck) + Level 1 (ast.parse) + pyright
+```
+
+**LEVEL 1.5 — BM25/FTS5 (SQLite, stdlib in Python, always available):**
+```bash
+# Build a searchable index of all source files — answers "where is X mentioned?"
+uv run python -c "
+import sqlite3, pathlib, json
+db = sqlite3.connect(':memory:')
+db.execute('CREATE VIRTUAL TABLE code USING fts5(file, content, tokenize=\"porter unicode61\")')
+for f in sorted(pathlib.Path('.').rglob('*')):
+    if f.suffix in ('.py','.rs','.ts','.tsx','.js','.go','.md') and not any(s in str(f) for s in ['.venv','node_modules','__pycache__','.git','target']):
+        try: db.execute('INSERT INTO code VALUES (?,?)', (str(f), f.read_text()[:50000]))
+        except: pass
+db.commit()
+# Search for a term
+import sys
+query = sys.argv[1] if len(sys.argv) > 1 else 'error'
+rows = db.execute('SELECT file, snippet(code, 1, \">>>\", \"<<<\", \"...\", 20) FROM code WHERE code MATCH ? ORDER BY rank LIMIT 20', (query,)).fetchall()
+for file, snippet in rows:
+    print(json.dumps({'file': file, 'snippet': snippet[:200]}))
+" '${QUERY}' 2>/dev/null
+```
+This gives you BM25-ranked full-text search over the entire codebase in <1 second.
+No install needed — SQLite FTS5 is built into Python's sqlite3 module.
+
+**LEVEL 0 — grep (FALLBACK ONLY — use when nothing above works):**
+Config file discovery, TODO/FIXME comments, file sizes. Do NOT use grep for architecture or concerns — the results are unreliable.
+
+**Analysis Framework (the prompt provides the structure, the scripts fill it in):**
+
+The caller provides these questions. The mapper runs scripts to answer them. Haiku doesn't
+need to invent the analysis — it runs the scripts and fills in the template.
+
+| Question | Script to run | Output goes in |
+|----------|---------------|---------------|
+| What modules exist? | Level 1 AST: function/class extraction | ARCHITECTURE.md, STRUCTURE.md |
+| What depends on what? | Level 1 AST: import graph | ARCHITECTURE.md (Module Coupling) |
+| Are there import cycles? | Level 1 AST: import graph → cycle detection | CONCERNS.md (Layer Violations) |
+| What's the API surface? | Level 1 AST: public function signatures | ARCHITECTURE.md (Export Surface) |
+| Where is X mentioned? | Level 1.5 FTS5: full-text search | Any doc — cross-reference check |
+| What types exist? | Level 1 AST: class extraction with bases | ARCHITECTURE.md (Key Abstractions) |
+| What's untested? | Level 1 AST: compare src/ functions vs test/ functions | CONCERNS.md (Coverage Gaps) |
+| What are the entry points? | Level 1 AST: files with `if __name__` / `fn main` / `export default` | STRUCTURE.md |
+
+| Focus | Level 1 (AST) gives you | Level 1.5 (FTS5) adds | Level 2+ (LSP/ZMCPTools) adds |
+|-------|------------------------|----------------------|-------------------------------|
+| arch | Import graph, class hierarchies, signatures | Cross-reference verification | Real call graph, verified layers |
+| tech | Dependency list, actual import usage | "Where is this dep used?" | Version conflict detection |
+| quality | Naming patterns, actual export list | Pattern consistency search | Unused exports, dead code |
+| concerns | Import cycles, orphan files | "Where is this config read?" | Type errors, phantom config |
 </step>
 
 <step name="explore_codebase">
@@ -260,6 +478,51 @@ Write document(s) to `.planning/codebase/` using the templates below.
 4. Always include file paths with backticks
 
 **ALWAYS use the Write tool to create files** — never use `Bash(cat << 'EOF')` or heredoc commands for file creation.
+</step>
+
+<step name="self_assess">
+After writing documents, assess what you captured vs what exists. This lets the caller
+know where the gaps are — haiku can't fill gaps it doesn't know about.
+
+Run this coverage check:
+```bash
+# Count what exists vs what you documented
+echo "=== Coverage Report ==="
+
+# Total source files
+TOTAL_FILES=$(find . -name '*.py' -o -name '*.rs' -o -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.go' | grep -v node_modules | grep -v .venv | grep -v __pycache__ | grep -v .git | wc -l)
+echo "Source files in repo: $TOTAL_FILES"
+
+# Files mentioned in your docs
+MENTIONED=$(grep -oh '`[^`]*\.\(py\|rs\|ts\|tsx\|js\|go\)`' .planning/codebase/*.md 2>/dev/null | sort -u | wc -l)
+echo "Files mentioned in docs: $MENTIONED"
+
+# Coverage ratio
+echo "Coverage: $MENTIONED / $TOTAL_FILES files"
+
+# Large files not analyzed (>200 lines, potential complexity)
+echo ""
+echo "Large files (>200 lines):"
+find . -name '*.py' -o -name '*.rs' -o -name '*.ts' -o -name '*.go' | grep -v node_modules | grep -v .venv | grep -v __pycache__ | grep -v .git | xargs wc -l 2>/dev/null | sort -rn | head -10
+```
+
+Include the coverage report in your confirmation:
+
+```
+## Coverage Report
+
+- Source files: {TOTAL} total, {MENTIONED} documented ({RATIO}%)
+- Intelligence level: {Level N} ({tools used})
+- Large undocumented files: {list if any}
+- Known gaps: {what you couldn't analyze and why}
+- Confidence: {high|medium|low} — {reason}
+```
+
+**Why this matters:** The caller (opus/gemini) uses this to decide whether to:
+- Accept the map as-is (high coverage, high confidence)
+- Re-run with deeper tools (low coverage, LSP available but not used)
+- Spawn a follow-up agent for specific gaps (large files missed)
+- Flag the map as unreliable (low coverage, grep-only)
 </step>
 
 <step name="emit_jsonl_if_requested">
