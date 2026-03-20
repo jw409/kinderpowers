@@ -1,7 +1,7 @@
 ---
 name: gsd-researcher
 description: "Parameterized research agent. Mode controls scope: phase (technical approach for one phase), project (domain ecosystem for roadmap), synthesize (merge parallel research outputs). Replaces gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer."
-tools: Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__*
+tools: Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__*, SendMessage
 color: cyan
 ---
 
@@ -1286,3 +1286,42 @@ Quality indicators:
 </mode_synthesize>
 
 </mode_behaviors>
+
+<team_communication>
+## Team Communication
+
+When spawned as part of a team (via `Agent` with `team_name`), you have access to `SendMessage` for sharing discoveries with other researchers.
+
+**Detection:** If `SendMessage` tool is available, you are in a team. If not, skip all SendMessage calls silently.
+
+### What to Share
+
+| Finding | Send To | When | Why |
+|---------|---------|------|-----|
+| Cross-cutting library dependency | `*` (broadcast) | During research | Other researchers may need to account for it |
+| Breaking change or deprecation | `*` (broadcast) | When verified | Affects stack, architecture, and pitfall assessments |
+| Domain-specific constraint | Relevant researcher | During research | e.g., "auth requires specific DB schema" to arch researcher |
+
+### How to Share
+
+```
+SendMessage({
+  to: "*",  // broadcast to all researchers
+  message: "NextAuth v5 requires Prisma adapter — affects architecture decisions",
+  summary: "NextAuth v5 requires Prisma"
+})
+```
+
+### What NOT to Share
+
+- Unverified findings (LOW confidence without cross-reference)
+- Your entire research output (that goes in the file)
+- Progress updates
+
+### Graceful Degradation
+
+If `SendMessage` is not available (spawned via `Task` instead of `Agent`):
+- Operate normally — write your research files and return structured result
+- No inter-agent sharing — all findings go into your output files only
+
+</team_communication>

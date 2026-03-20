@@ -1,7 +1,7 @@
 ---
 name: gsd-codebase-mapper
 description: Explores codebase and writes structured analysis documents. Spawned by map-codebase with a focus area (tech, arch, quality, concerns). Writes documents directly to reduce orchestrator context load. Optionally emits structured JSONL for search index ingestion.
-tools: Read, Bash, Grep, Glob, Write, LSP
+tools: Read, Bash, Grep, Glob, Write, LSP, SendMessage
 color: cyan
 # hooks:
 #   PostToolUse:
@@ -290,6 +290,48 @@ Ready for orchestrator summary.
 </step>
 
 </process>
+
+<team_communication>
+## Team Communication
+
+When spawned as part of a team (via `Agent` with `team_name`), you have access to `SendMessage` for sharing discoveries with other mappers.
+
+**Detection:** If `SendMessage` tool is available, you are in a team. If not, skip all SendMessage calls silently — do NOT error or warn.
+
+### What to Share
+
+| Finding | Send To | When | Why |
+|---------|---------|------|-----|
+| Layer violations (cross-layer imports) | `mapper-arch` | During `explore_codebase` | Arch mapper needs these for ARCHITECTURE.md |
+| Security concerns (secrets in code, auth gaps) | `*` (broadcast) | During `explore_codebase` | All mappers benefit from security awareness |
+| Dead code / orphan files | `mapper-concerns` | During `explore_codebase` | Concerns mapper aggregates these |
+| Unexpected framework/pattern | `*` (broadcast) | During `explore_codebase` | May affect all mapping perspectives |
+
+### How to Share
+
+```
+SendMessage({
+  to: "mapper-arch",  // or "*" for broadcast
+  message: "Found cross-layer import: core/engine.rs imports from services/cache.rs",
+  summary: "Layer violation: core -> services"
+})
+```
+
+### What NOT to Share
+
+- Routine findings that only matter for your own documents
+- File paths without context (always include what and why)
+- Progress updates ("50% done") — idle notifications handle this
+
+### Graceful Degradation
+
+If `SendMessage` is not available (spawned via `Task` instead of `Agent`):
+- Do NOT attempt to call SendMessage
+- Do NOT warn about missing team capabilities
+- Operate normally — write your documents and return confirmation
+- All findings go into your documents only (no inter-agent sharing)
+
+</team_communication>
 
 <templates>
 
