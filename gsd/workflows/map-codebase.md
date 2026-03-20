@@ -83,19 +83,89 @@ Continue to spawn_agents.
 </step>
 
 <step name="detect_runtime_capabilities">
-Before spawning agents, detect whether the current runtime supports the `Task` tool for subagent delegation.
+Before spawning agents, detect whether the current runtime supports team-based or task-based subagent delegation.
 
-**Runtimes with Task tool:** Claude Code, Cursor (native subagent support)
+**Runtimes with TeamCreate tool:** Claude Code v2.1.77+ (team-based collaboration with SendMessage)
+**Runtimes with Task tool:** Claude Code, Cursor (native subagent support, fire-and-forget)
 **Runtimes WITHOUT Task tool:** Antigravity, Gemini CLI, OpenCode, Codex, and others
 
-**How to detect:** Check if you have access to a `Task` tool. If you do NOT have a `Task` tool (or only have tools like `browser_subagent` which is for web browsing, NOT code analysis):
+**How to detect (priority order):**
 
-→ **Skip `spawn_agents` and `collect_confirmations`** — go directly to `sequential_mapping` instead.
+1. Check if you have access to a `TeamCreate` tool. If yes → use `team_spawn` path in spawn_agents.
+2. Check if you have access to a `Task` tool. If yes → use `task_spawn` path in spawn_agents.
+3. Neither available → go to `sequential_mapping`.
 
-**CRITICAL:** Never use `browser_subagent` or `Explore` as a substitute for `Task`. The `browser_subagent` tool is exclusively for web page interaction and will fail for codebase analysis. If `Task` is unavailable, perform the mapping sequentially in-context.
+**CRITICAL:** Never use `browser_subagent` or `Explore` as a substitute for `Task`. The `browser_subagent` tool is exclusively for web page interaction and will fail for codebase analysis. If neither `TeamCreate` nor `Task` is available, perform the mapping sequentially in-context.
 </step>
 
-<step name="spawn_agents" condition="Task tool is available">
+<step name="spawn_agents" condition="TeamCreate tool is available">
+Create a mapping team for inter-agent communication via SendMessage.
+
+TeamCreate({team_name: "gsd-mapping", description: "Parallel codebase mapping — 4 focus areas"})
+
+Spawn 4 named mapper agents using Agent (NOT Task):
+
+**Agent 1: Tech Focus**
+
+```
+Agent({
+  name: "mapper-tech",
+  team_name: "gsd-mapping",
+  subagent_type: "gsd-codebase-mapper",
+  model: "{mapper_model}",
+  run_in_background: true,
+  prompt: "Focus: tech\n\nAnalyze this codebase for technology stack and external integrations.\n\nWrite these documents to .planning/codebase/:\n- STACK.md - Languages, runtime, frameworks, dependencies, configuration\n- INTEGRATIONS.md - External APIs, databases, auth providers, webhooks\n\nExplore thoroughly. Write documents directly using templates.\nWhen done, SendMessage({to: '*', message: 'Tech mapping complete', summary: 'Wrote STACK.md and INTEGRATIONS.md'}).\nReturn confirmation only."
+})
+```
+
+**Agent 2: Architecture Focus**
+
+```
+Agent({
+  name: "mapper-arch",
+  team_name: "gsd-mapping",
+  subagent_type: "gsd-codebase-mapper",
+  model: "{mapper_model}",
+  run_in_background: true,
+  prompt: "Focus: arch\n\nAnalyze this codebase architecture and directory structure.\n\nWrite these documents to .planning/codebase/:\n- ARCHITECTURE.md - Pattern, layers, data flow, abstractions, entry points\n- STRUCTURE.md - Directory layout, key locations, naming conventions\n\nExplore thoroughly. Write documents directly using templates.\nWhen done, SendMessage({to: '*', message: 'Architecture mapping complete', summary: 'Wrote ARCHITECTURE.md and STRUCTURE.md'}).\nReturn confirmation only."
+})
+```
+
+**Agent 3: Quality Focus**
+
+```
+Agent({
+  name: "mapper-quality",
+  team_name: "gsd-mapping",
+  subagent_type: "gsd-codebase-mapper",
+  model: "{mapper_model}",
+  run_in_background: true,
+  prompt: "Focus: quality\n\nAnalyze this codebase for coding conventions and testing patterns.\n\nWrite these documents to .planning/codebase/:\n- CONVENTIONS.md - Code style, naming, patterns, error handling\n- TESTING.md - Framework, structure, mocking, coverage\n\nExplore thoroughly. Write documents directly using templates.\nWhen done, SendMessage({to: '*', message: 'Quality mapping complete', summary: 'Wrote CONVENTIONS.md and TESTING.md'}).\nReturn confirmation only."
+})
+```
+
+**Agent 4: Concerns Focus**
+
+```
+Agent({
+  name: "mapper-concerns",
+  team_name: "gsd-mapping",
+  subagent_type: "gsd-codebase-mapper",
+  model: "{mapper_model}",
+  run_in_background: true,
+  prompt: "Focus: concerns\n\nAnalyze this codebase for technical debt, known issues, and areas of concern.\n\nWrite this document to .planning/codebase/:\n- CONCERNS.md - Tech debt, bugs, security, performance, fragile areas\n\nIf you receive a message about layer violations from mapper-arch, incorporate those findings.\nExplore thoroughly. Write document directly using template.\nWhen done, SendMessage({to: '*', message: 'Concerns mapping complete', summary: 'Wrote CONCERNS.md'}).\nReturn confirmation only."
+})
+```
+
+Wait for all 4 agents to complete (idle notifications).
+
+**Shutdown team:**
+TeamDelete({team_name: "gsd-mapping"})
+
+Continue to verify_output.
+</step>
+
+<step name="spawn_agents" condition="Task tool is available but TeamCreate is NOT">
 Spawn 4 parallel gsd-codebase-mapper agents.
 
 Use Task tool with `subagent_type="gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true` for parallel execution.

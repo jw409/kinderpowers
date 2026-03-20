@@ -537,6 +537,248 @@ Check if this is greenfield or subsequent milestone:
 - If no "Validated" requirements in PROJECT.md → Greenfield (building from scratch)
 - If "Validated" requirements exist → Subsequent milestone (adding to existing app)
 
+**Detect team capability:**
+
+Check if `TeamCreate` tool is available.
+
+**If TeamCreate available:**
+
+TeamCreate({team_name: "gsd-research", description: "Parallel domain research — 4 dimensions"})
+
+Display spawning indicator:
+```
+◆ Spawning 4 researchers as team (gsd-research)...
+  → researcher-stack
+  → researcher-features
+  → researcher-arch
+  → researcher-pitfalls
+```
+
+Spawn 4 named researcher agents using Agent (NOT Task):
+
+```
+Agent({
+  name: "researcher-stack",
+  team_name: "gsd-research",
+  subagent_type: "gsd-researcher",
+  model: "{researcher_model}",
+  run_in_background: true,
+  prompt: "Your mode is: project\n\n<research_type>
+Project Research — Stack dimension for [domain].
+</research_type>
+
+<milestone_context>
+[greenfield OR subsequent]
+
+Greenfield: Research the standard stack for building [domain] from scratch.
+Subsequent: Research what's needed to add [target features] to an existing [domain] app. Don't re-research the existing system.
+</milestone_context>
+
+<question>
+What's the standard 2025 stack for [domain]?
+</question>
+
+<files_to_read>
+- {project_path} (Project context and goals)
+</files_to_read>
+
+<downstream_consumer>
+Your STACK.md feeds into roadmap creation. Be prescriptive:
+- Specific libraries with versions
+- Clear rationale for each choice
+- What NOT to use and why
+</downstream_consumer>
+
+<quality_gate>
+- [ ] Versions are current (verify with Context7/official docs, not training data)
+- [ ] Rationale explains WHY, not just WHAT
+- [ ] Confidence levels assigned to each recommendation
+</quality_gate>
+
+<output>
+Write to: .planning/research/STACK.md
+Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/STACK.md
+</output>
+\nWhen done, SendMessage({to: '*', message: 'Stack research complete', summary: '[key finding]'}).
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Stack research")
+```
+
+```
+Agent({
+  name: "researcher-features",
+  team_name: "gsd-research",
+  subagent_type: "gsd-researcher",
+  model: "{researcher_model}",
+  run_in_background: true,
+  prompt: "Your mode is: project\n\n<research_type>
+Project Research — Features dimension for [domain].
+</research_type>
+
+<milestone_context>
+[greenfield OR subsequent]
+
+Greenfield: What features do [domain] products have? What's table stakes vs differentiating?
+Subsequent: How do [target features] typically work? What's expected behavior?
+</milestone_context>
+
+<question>
+What features do [domain] products have? What's table stakes vs differentiating?
+</question>
+
+<files_to_read>
+- {project_path} (Project context)
+</files_to_read>
+
+<downstream_consumer>
+Your FEATURES.md feeds into requirements definition. Categorize clearly:
+- Table stakes (must have or users leave)
+- Differentiators (competitive advantage)
+- Anti-features (things to deliberately NOT build)
+</downstream_consumer>
+
+<quality_gate>
+- [ ] Categories are clear (table stakes vs differentiators vs anti-features)
+- [ ] Complexity noted for each feature
+- [ ] Dependencies between features identified
+</quality_gate>
+
+<output>
+Write to: .planning/research/FEATURES.md
+Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/FEATURES.md
+</output>
+\nWhen done, SendMessage({to: '*', message: 'Features research complete', summary: '[key finding]'}).
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Features research")
+```
+
+```
+Agent({
+  name: "researcher-arch",
+  team_name: "gsd-research",
+  subagent_type: "gsd-researcher",
+  model: "{researcher_model}",
+  run_in_background: true,
+  prompt: "Your mode is: project\n\n<research_type>
+Project Research — Architecture dimension for [domain].
+</research_type>
+
+<milestone_context>
+[greenfield OR subsequent]
+
+Greenfield: How are [domain] systems typically structured? What are major components?
+Subsequent: How do [target features] integrate with existing [domain] architecture?
+</milestone_context>
+
+<question>
+How are [domain] systems typically structured? What are major components?
+</question>
+
+<files_to_read>
+- {project_path} (Project context)
+</files_to_read>
+
+<downstream_consumer>
+Your ARCHITECTURE.md informs phase structure in roadmap. Include:
+- Component boundaries (what talks to what)
+- Data flow (how information moves)
+- Suggested build order (dependencies between components)
+</downstream_consumer>
+
+<quality_gate>
+- [ ] Components clearly defined with boundaries
+- [ ] Data flow direction explicit
+- [ ] Build order implications noted
+</quality_gate>
+
+<output>
+Write to: .planning/research/ARCHITECTURE.md
+Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/ARCHITECTURE.md
+</output>
+\nWhen done, SendMessage({to: '*', message: 'Architecture research complete', summary: '[key finding]'}).
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Architecture research")
+```
+
+```
+Agent({
+  name: "researcher-pitfalls",
+  team_name: "gsd-research",
+  subagent_type: "gsd-researcher",
+  model: "{researcher_model}",
+  run_in_background: true,
+  prompt: "Your mode is: project\n\n<research_type>
+Project Research — Pitfalls dimension for [domain].
+</research_type>
+
+<milestone_context>
+[greenfield OR subsequent]
+
+Greenfield: What do [domain] projects commonly get wrong? Critical mistakes?
+Subsequent: What are common mistakes when adding [target features] to [domain]?
+</milestone_context>
+
+<question>
+What do [domain] projects commonly get wrong? Critical mistakes?
+</question>
+
+<files_to_read>
+- {project_path} (Project context)
+</files_to_read>
+
+<downstream_consumer>
+Your PITFALLS.md prevents mistakes in roadmap/planning. For each pitfall:
+- Warning signs (how to detect early)
+- Prevention strategy (how to avoid)
+- Which phase should address it
+</downstream_consumer>
+
+<quality_gate>
+- [ ] Pitfalls are specific to this domain (not generic advice)
+- [ ] Prevention strategies are actionable
+- [ ] Phase mapping included where relevant
+</quality_gate>
+
+<output>
+Write to: .planning/research/PITFALLS.md
+Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/PITFALLS.md
+</output>
+\nWhen done, SendMessage({to: '*', message: 'Pitfalls research complete', summary: '[key finding]'}).
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Pitfalls research")
+```
+
+After all 4 agents complete, spawn synthesizer in the same team:
+
+```
+Agent({
+  name: "synthesizer",
+  team_name: "gsd-research",
+  subagent_type: "gsd-researcher",
+  model: "{synthesizer_model}",
+  run_in_background: false,
+  prompt: "Your mode is: synthesize\n\n
+<task>
+Synthesize research outputs into SUMMARY.md.
+</task>
+
+<files_to_read>
+- .planning/research/STACK.md
+- .planning/research/FEATURES.md
+- .planning/research/ARCHITECTURE.md
+- .planning/research/PITFALLS.md
+</files_to_read>
+
+<output>
+Write to: .planning/research/SUMMARY.md
+Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/SUMMARY.md
+Commit after writing.
+</output>
+"
+})
+```
+
+After synthesizer completes:
+TeamDelete({team_name: "gsd-research"})
+
+**If TeamCreate NOT available (fallback):**
+
 Display spawning indicator:
 ```
 ◆ Spawning 4 researchers in parallel...
@@ -546,7 +788,7 @@ Display spawning indicator:
   → Pitfalls research
 ```
 
-Spawn 4 parallel gsd-researcher (mode=project) agents with path references:
+Spawn 4 parallel gsd-researcher (mode=project) agents using Task (fire-and-forget):
 
 ```
 Task(prompt="Your mode is: project\n\n<research_type>
