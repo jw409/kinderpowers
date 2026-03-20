@@ -31,6 +31,7 @@ description: Use when facing complex decisions, debugging mysteries, or architec
 | `explore_width` | 4 | 2-7 | Default explore_count when widening |
 | `self_checks` | true | true/false | Run the four self-checks at layer 1 |
 | `search_wiring` | true | true/false | Auto-execute search when incorporate_search is set |
+| `spawn_strategy` | none | none, convergent, divergent, hierarchical | How to handle spawn_candidate hints from the server |
 
 The server surfaces **hints** — observations about your reasoning pattern. You decide what to act on. The server never blocks or enforces.
 
@@ -188,6 +189,82 @@ The kp-sequential-thinking server surfaces non-prescriptive hints. You decide wh
 | `explore_available` | info | exploreCount hasn't been used yet |
 | `layer_available` | info | Confidence tracked but layer not set |
 
+## Spawn Strategy
+
+When the server surfaces a `spawn_candidate` hint, the `spawn_strategy` parameter controls the response:
+
+### none (default)
+
+Ignore spawn_candidate hints. All exploration happens within the current thinking session. Use when:
+- Single-agent work with no orchestrator
+- Simple problems that don't warrant parallelism
+- Context budget is tight
+
+### convergent
+
+Spawn subagents that explore branch points independently, then merge results. Each subagent gets the same goal but a different starting branch. The parent waits for all subagents, then uses `continuation_mode: "merge"` to synthesize. Use when:
+- You need agreement/consensus across approaches
+- The problem has a single correct answer explored from multiple angles
+- The `convergenceSignal` in the merge summary matters to the caller
+
+Pattern:
+```
+1. Server hints spawn_candidate with N branch_points
+2. Spawn N subagents, each exploring one branch_point
+3. Each subagent runs sequential_thinking with recommended_depth thoughts
+4. Parent merges: continuation_mode="merge", merge_branches=[all branch IDs]
+5. Check mergeSummary.convergenceSignal: "converged" = high confidence answer
+```
+
+### divergent
+
+Spawn subagents that explore branch points independently WITHOUT merging. Each subagent produces an independent result. The orchestrator selects the best. Use when:
+- You want the widest possible solution space
+- Multiple valid answers exist (creative tasks, brainstorming)
+- Pruning happens after exploration, not during
+
+Pattern:
+```
+1. Server hints spawn_candidate with N branch_points
+2. Spawn N subagents, each exploring one branch_point
+3. Each subagent runs to done_reason independently
+4. Orchestrator reviews all results, selects or combines
+5. No merge step needed
+```
+
+### hierarchical
+
+Spawn subagents in layers. Layer 1 subagents explore, report to a layer 2 synthesizer, which may spawn its own subagents. Use when:
+- Deep, multi-level problems (architecture, system design)
+- Delegation to specialized subagents at different layers
+- The `recommendedModel` in spawn_meta varies by layer depth
+
+Pattern:
+```
+1. Server hints spawn_candidate at layer 1
+2. Spawn subagents for each branch_point with delegate_to_next_layer=true
+3. Layer 2 subagent may itself trigger spawn_candidate
+4. Results flow up: layer 3 -> layer 2 -> layer 1 merge
+5. Parent uses layer-aware merge
+```
+
+### Connecting to Server Hints
+
+The `spawn_candidate` hint includes `spawnMeta`:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `branchPoints` | string[] | Branch IDs or proposal names to explore |
+| `recommendedDepth` | number | Suggested thought count for subagents (3-10) |
+| `recommendedModel` | string | "same", "cheaper", or "thinking" |
+
+When `spawn_strategy` is not `none`, use these fields to configure subagent spawning:
+- `branchPoints` -> one subagent per point (or batch if too many)
+- `recommendedDepth` -> set as subagent's `total_thoughts`
+- `recommendedModel` -> map to agent model selection ("thinking" = opus, "cheaper" = sonnet, "same" = current)
+
+The merge summary now includes `branchOutcomes` (per-branch finalConfidence and doneReason) and `convergenceSignal` to help assess results.
+
 ## Anti-Patterns
 
 - **Accepting binary choices without "both wrong" option** -- question the framing
@@ -195,6 +272,7 @@ The kp-sequential-thinking server surfaces non-prescriptive hints. You decide wh
 - Skipping layer 1 (problem understanding)
 - Using `continuation_mode: "done"` before exploring alternatives
 - Setting `explore_count: 1` or `2` (minimum useful is 3-4)
+- **Spawning without strategy** -- if you spawn subagents, set spawn_strategy explicitly. Default "none" means hints are informational only.
 
 ## Example: Debug Mystery Bug
 
