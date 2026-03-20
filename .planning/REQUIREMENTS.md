@@ -20,7 +20,7 @@
 - [x] **COLLAPSE-03**: gsd-ui agent with mode parameter (spec/audit/validate) replaces 3 agents
 - [x] **COLLAPSE-04**: gsd-planner absorbs roadmapper via scope parameter (phase/milestone/project)
 - [x] **COLLAPSE-05**: Old agent .md files become thin aliases (set defaults, delegate to new agent)
-- [ ] **COLLAPSE-06**: GSD workflow files reference new parameterized agents
+- [x] **COLLAPSE-06**: GSD workflow files reference new parameterized agents
 
 ### Beads Integration (#5)
 
@@ -80,7 +80,7 @@
 | COLLAPSE-03 | Phase 2 | Complete |
 | COLLAPSE-04 | Phase 2 | Complete |
 | COLLAPSE-05 | Phase 2 | Complete |
-| COLLAPSE-06 | Phase 2 | Pending |
+| COLLAPSE-06 | Phase 2 | Complete |
 | BEADS-01 | Phase 3 | Pending |
 | BEADS-02 | Phase 3 | Pending |
 | BEADS-03 | Phase 3 | Pending |
