@@ -29,7 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. When branches merge, the mergeSummary includes per-branch finalConfidence, doneReason, and a convergenceSignal indicating whether branches agreed
   3. The metathinking skill accepts spawn_strategy parameter (none/convergent/divergent/hierarchical) and routes accordingly
   4. At least 10 new Rust tests pass covering spawn hint generation and enhanced merge behavior
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 01-01-PLAN.md — Add spawn_candidate hint with SpawnMeta to thinking engine
+- [ ] 01-02-PLAN.md — Enhance MergeSummary with branch outcomes and convergence signal
+- [ ] 01-03-PLAN.md — Add spawn_strategy parameter to metathinking skill
 
 ### Phase 2: Agent Collapse
 **Goal**: Callers interact with 8 parameterized GSD agents instead of 16 fixed-purpose ones, with old names still working as aliases
@@ -86,7 +90,7 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Sequential Thinking Spawn Hints | 0/TBD | Not started | - |
+| 1. Sequential Thinking Spawn Hints | 0/3 | Planning complete | - |
 | 2. Agent Collapse | 0/TBD | Not started | - |
 | 3. Beads Integration | 0/TBD | Not started | - |
 | 4. Agent Parameterization | 0/TBD | Not started | - |
