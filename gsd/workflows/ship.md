@@ -185,6 +185,18 @@ If `commit_docs` is true:
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
 ```
+
+**Close phase bead with PR link (silent no-op if beads not installed):**
+
+```bash
+BEADS_OK=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead available --raw)
+if [ "$BEADS_OK" = "true" ]; then
+  PHASE_BEAD=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state get phase_bead 2>/dev/null | tr -d '"[:space:]')
+  if [ -n "$PHASE_BEAD" ] && [ "$PHASE_BEAD" != "null" ]; then
+    node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead close "$PHASE_BEAD" --notes "Shipped: PR #${PR_NUMBER} (${PR_URL})"
+  fi
+fi
+```
 </step>
 
 <step name="report">

@@ -140,6 +140,18 @@ Report: "Found {plan_count} plans in {phase_dir} ({incomplete_count} incomplete)
 node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state begin-phase --phase "${PHASE_NUMBER}" --name "${PHASE_NAME}" --plans "${PLAN_COUNT}"
 ```
 This updates Status, Last Activity, Current focus, Current Position, and plan counts in STATE.md so frontmatter and body text reflect the active phase immediately.
+
+**Update phase bead to in_progress (silent no-op if beads not installed):**
+
+```bash
+BEADS_OK=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead available --raw)
+if [ "$BEADS_OK" = "true" ]; then
+  PHASE_BEAD=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state get phase_bead 2>/dev/null | tr -d '"[:space:]')
+  if [ -n "$PHASE_BEAD" ] && [ "$PHASE_BEAD" != "null" ]; then
+    node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead update "$PHASE_BEAD" --status in_progress --notes "Executing ${PLAN_COUNT} plans"
+  fi
+fi
+```
 </step>
 
 <step name="discover_and_group_plans">

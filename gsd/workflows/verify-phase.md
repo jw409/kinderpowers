@@ -226,6 +226,20 @@ REPORT_PATH="$PHASE_DIR/${PHASE_NUM}-VERIFICATION.md"
 Fill template sections: frontmatter (phase/timestamp/status/score), goal achievement, artifact table, wiring table, requirements coverage, anti-patterns, human verification, gaps summary, fix plans (if gaps_found), metadata.
 
 See ${CLAUDE_PLUGIN_ROOT}/gsd/templates/verification-report.md for complete template.
+
+**Attach verification evidence to phase bead (silent no-op if beads not installed):**
+
+```bash
+BEADS_OK=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead available --raw)
+if [ "$BEADS_OK" = "true" ]; then
+  PHASE_BEAD=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state get phase_bead 2>/dev/null | tr -d '"[:space:]')
+  if [ -n "$PHASE_BEAD" ] && [ "$PHASE_BEAD" != "null" ]; then
+    VERIFY_STATUS=$(grep "^status:" "$REPORT_PATH" | cut -d: -f2 | tr -d ' ')
+    VERIFY_SCORE=$(grep "^score:" "$REPORT_PATH" | cut -d: -f2 | tr -d ' ')
+    node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead update "$PHASE_BEAD" --notes "Verification: ${VERIFY_STATUS} (${VERIFY_SCORE})"
+  fi
+fi
+```
 </step>
 
 <step name="return_to_orchestrator">
