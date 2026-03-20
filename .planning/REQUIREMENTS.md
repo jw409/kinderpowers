@@ -15,8 +15,8 @@
 
 ### Agent Collapse (#4)
 
-- [ ] **COLLAPSE-01**: gsd-researcher agent with mode parameter (phase/project/synthesize) replaces 3 agents
-- [ ] **COLLAPSE-02**: gsd-verifier agent with mode parameter (goal-backward/integration/plan-quality/coverage) replaces 4 agents
+- [x] **COLLAPSE-01**: gsd-researcher agent with mode parameter (phase/project/synthesize) replaces 3 agents
+- [x] **COLLAPSE-02**: gsd-verifier agent with mode parameter (goal-backward/integration/plan-quality/coverage) replaces 4 agents
 - [x] **COLLAPSE-03**: gsd-ui agent with mode parameter (spec/audit/validate) replaces 3 agents
 - [x] **COLLAPSE-04**: gsd-planner absorbs roadmapper via scope parameter (phase/milestone/project)
 - [ ] **COLLAPSE-05**: Old agent .md files become thin aliases (set defaults, delegate to new agent)
@@ -75,8 +75,8 @@
 | SPAWN-03 | Phase 1 | Complete |
 | SPAWN-04 | Phase 1 | Complete |
 | SPAWN-05 | Phase 1 | Complete |
-| COLLAPSE-01 | Phase 2 | Pending |
-| COLLAPSE-02 | Phase 2 | Pending |
+| COLLAPSE-01 | Phase 2 | Complete |
+| COLLAPSE-02 | Phase 2 | Complete |
 | COLLAPSE-03 | Phase 2 | Complete |
 | COLLAPSE-04 | Phase 2 | Complete |
 | COLLAPSE-05 | Phase 2 | Pending |
