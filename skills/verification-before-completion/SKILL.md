@@ -11,13 +11,27 @@ Run the verification command. Read the output. Then make the claim.
 
 **Core principle:** Evidence before claims.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `evidence_bar` | standard | low, standard, high, auditor | How much evidence required before claiming completion. low=single passing test run, standard=test+build (current), high=test+build+lint+types, auditor=all checks + independent reproduction |
+| `auto_run` | true | true, false | Whether to automatically run verification commands. false=prompt user to run manually (useful in environments where auto-run is restricted) |
+| `check_types` | all | tests, build, lint, types, all | Which verification checks to perform. Comma-separated or 'all'. Controls which items in the Verification Checklist are required |
+
+Parse from caller prompt. "Just check tests pass" -> check_types=tests, evidence_bar=low. "Full audit" -> evidence_bar=auditor. "Don't run commands automatically" -> auto_run=false.
+
 ## The Gate
 
 ```
 BEFORE claiming any status:
 
 1. IDENTIFY: What command proves this claim?
+   Based on check_types, determine which commands are needed:
+   tests=test runner, build=build command, lint=linter, types=type checker, all=all of the above.
 2. RUN: Execute the command (fresh, complete)
+   When auto_run=false, present the command and ask the user to run it.
+   Proceed only after user provides output.
 3. READ: Full output, check exit code, count failures
 4. VERIFY: Does output confirm the claim?
    - If NO: State actual status with evidence
@@ -38,6 +52,12 @@ Skipping any step means the claim is unverified — state it as such
 | Regression test works | Red-green cycle verified | Test passes once |
 | Agent completed | VCS diff shows changes | Agent reports "success" |
 | Requirements met | Line-by-line checklist | Tests passing |
+
+**Adapts to `evidence_bar` parameter:**
+- `evidence_bar=low`: A single verification command passing is sufficient.
+- `evidence_bar=standard`: Test command + build command minimum (current behavior).
+- `evidence_bar=high`: All checks must pass: tests, build, lint, and type check. Partial passes are not sufficient.
+- `evidence_bar=auditor`: All checks pass AND independent reproduction: re-run in clean environment, verify from scratch. No caching, no shortcuts.
 
 ## Patterns to Watch For
 
@@ -92,13 +112,15 @@ AVOID: Trust agent report without independent verification
 
 ## Verification Checklist
 
-Before claiming any work is complete, run through this checklist:
+Before claiming any work is complete, run through this checklist.
+When `check_types` is specific (e.g., `check_types=tests`), only that section's items are required.
+When `check_types=all` (default), all items below are required.
 
 ### Code Changes
-- [ ] Tests pass (ran the actual test command, read the output)
-- [ ] Build succeeds (ran the build, checked exit code)
-- [ ] Linter clean (if applicable -- linter passing != build passing)
-- [ ] No regressions (full test suite, not just new tests)
+- [ ] `[tests]` Tests pass (ran the actual test command, read the output)
+- [ ] `[build]` Build succeeds (ran the build, checked exit code)
+- [ ] `[lint]` Linter clean (if applicable -- linter passing != build passing)
+- [ ] `[tests]` No regressions (full test suite, not just new tests)
 
 ### Bug Fixes
 - [ ] Original symptom verified fixed (test the actual bug scenario)
@@ -117,7 +139,7 @@ Before claiming any work is complete, run through this checklist:
 
 ### Deep Inspection Protocol
 
-When verifying non-trivial output (logs, data files, test results):
+Triggered when `evidence_bar=high` or `evidence_bar=auditor`. Also apply whenever verifying non-trivial output (logs, data files, test results):
 
 1. **Count total first**: How many lines/items/tests?
 2. **Sample beginning/middle/end**: Don't just read the first 20 lines
