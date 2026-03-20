@@ -24,11 +24,11 @@
 
 ### Beads Integration (#5)
 
-- [ ] **BEADS-01**: /gsd:new-project creates epic bead when beads available
-- [ ] **BEADS-02**: /gsd:plan-phase creates task bead as child of epic
-- [ ] **BEADS-03**: /gsd:execute-phase marks phase bead in_progress
-- [ ] **BEADS-04**: /gsd:verify-work attaches verification evidence to bead notes
-- [ ] **BEADS-05**: /gsd:ship closes phase bead with PR link
+- [x] **BEADS-01**: /gsd:new-project creates epic bead when beads available
+- [x] **BEADS-02**: /gsd:plan-phase creates task bead as child of epic
+- [x] **BEADS-03**: /gsd:execute-phase marks phase bead in_progress
+- [x] **BEADS-04**: /gsd:verify-work attaches verification evidence to bead notes
+- [x] **BEADS-05**: /gsd:ship closes phase bead with PR link
 - [x] **BEADS-06**: beadsAvailable() check in gsd-tools.cjs — graceful degradation
 
 ### Parameterization (#6)
@@ -81,11 +81,11 @@
 | COLLAPSE-04 | Phase 2 | Complete |
 | COLLAPSE-05 | Phase 2 | Complete |
 | COLLAPSE-06 | Phase 2 | Complete |
-| BEADS-01 | Phase 3 | Pending |
-| BEADS-02 | Phase 3 | Pending |
-| BEADS-03 | Phase 3 | Pending |
-| BEADS-04 | Phase 3 | Pending |
-| BEADS-05 | Phase 3 | Pending |
+| BEADS-01 | Phase 3 | Complete |
+| BEADS-02 | Phase 3 | Complete |
+| BEADS-03 | Phase 3 | Complete |
+| BEADS-04 | Phase 3 | Complete |
+| BEADS-05 | Phase 3 | Complete |
 | BEADS-06 | Phase 3 | Complete |
 | PARAM-01 | Phase 4 | Pending |
 | PARAM-02 | Phase 4 | Pending |
