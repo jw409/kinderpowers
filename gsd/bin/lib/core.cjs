@@ -684,6 +684,67 @@ function getMilestonePhaseFilter(cwd) {
   return isDirInMilestone;
 }
 
+// ─── Bead integration ────────────────────────────────────────────────────────
+
+let _beadsAvailableCache = null;
+function beadsAvailable() {
+  if (_beadsAvailableCache !== null) return _beadsAvailableCache;
+  try {
+    execSync('which bd', { stdio: 'ignore' });
+    _beadsAvailableCache = true;
+  } catch {
+    _beadsAvailableCache = false;
+  }
+  return _beadsAvailableCache;
+}
+
+function beadExec(args) {
+  if (!beadsAvailable()) return null;
+  try {
+    const result = execSync(`bd ${args}`, { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe'] });
+    return result.trim();
+  } catch (e) {
+    // Silent failure — bead operations are best-effort
+    return null;
+  }
+}
+
+function beadCreate(opts) {
+  const { title, type, parent, tags } = opts;
+  if (!title) return null;
+  let cmd = `create "${title}"`;
+  if (type) cmd += ` --type ${type}`;
+  if (parent) cmd += ` --parent ${parent}`;
+  if (tags && tags.length) cmd += ` --tags ${tags.join(',')}`;
+  const result = beadExec(cmd);
+  if (!result) return null;
+  // bd create outputs the bead ID
+  const idMatch = result.match(/([a-z0-9]{4})/);
+  return idMatch ? idMatch[1] : null;
+}
+
+function beadUpdate(id, opts) {
+  if (!id) return null;
+  const { status, notes } = opts;
+  let cmd = `update ${id}`;
+  if (status) cmd += ` --status ${status}`;
+  if (notes) cmd += ` --notes "${notes.replace(/"/g, '\\"')}"`;
+  return beadExec(cmd);
+}
+
+function beadClose(id, opts = {}) {
+  if (!id) return null;
+  const { notes } = opts;
+  let cmd = `close ${id}`;
+  if (notes) cmd += ` --notes "${notes.replace(/"/g, '\\"')}"`;
+  return beadExec(cmd);
+}
+
+function beadShow(id) {
+  if (!id) return null;
+  return beadExec(`show ${id}`);
+}
+
 module.exports = {
   output,
   error,
@@ -709,4 +770,10 @@ module.exports = {
   replaceInCurrentMilestone,
   toPosixPath,
   MODEL_ALIAS_MAP,
+  beadsAvailable,
+  beadExec,
+  beadCreate,
+  beadUpdate,
+  beadClose,
+  beadShow,
 };
