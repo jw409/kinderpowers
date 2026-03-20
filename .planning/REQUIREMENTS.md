@@ -8,10 +8,10 @@
 ### Sequential Thinking Orchestration (#2)
 
 - [x] **SPAWN-01**: kp-sequential-thinking server surfaces `spawn_candidate` hint with spawn_meta (branch points, recommended depth, recommended model)
-- [ ] **SPAWN-02**: Enhanced mergeSummary includes branchOutcomes (finalConfidence, doneReason per branch) and convergenceSignal
+- [x] **SPAWN-02**: Enhanced mergeSummary includes branchOutcomes (finalConfidence, doneReason per branch) and convergenceSignal
 - [x] **SPAWN-03**: Metathinking skill parses spawn_strategy parameter (none/convergent/divergent/hierarchical)
 - [x] **SPAWN-04**: Rust tests for spawn hint generation (>= 5 new tests)
-- [ ] **SPAWN-05**: Rust tests for enhanced merge with branch outcomes (>= 5 new tests)
+- [x] **SPAWN-05**: Rust tests for enhanced merge with branch outcomes (>= 5 new tests)
 
 ### Agent Collapse (#4)
 
@@ -71,10 +71,10 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SPAWN-01 | Phase 1 | Complete |
-| SPAWN-02 | Phase 1 | Pending |
+| SPAWN-02 | Phase 1 | Complete |
 | SPAWN-03 | Phase 1 | Complete |
 | SPAWN-04 | Phase 1 | Complete |
-| SPAWN-05 | Phase 1 | Pending |
+| SPAWN-05 | Phase 1 | Complete |
 | COLLAPSE-01 | Phase 2 | Pending |
 | COLLAPSE-02 | Phase 2 | Pending |
 | COLLAPSE-03 | Phase 2 | Pending |
