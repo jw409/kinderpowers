@@ -46,10 +46,10 @@
 
 ### Team Mode (#7)
 
-- [ ] **TEAM-01**: GSD workflows (map-codebase, execute-phase, new-project) use TeamCreate + named Agent spawns instead of Task(background)
+- [x] **TEAM-01**: GSD workflows (map-codebase, execute-phase, new-project) use TeamCreate + named Agent spawns instead of Task(background)
 - [x] **TEAM-02**: Agent .md files (mapper, executor, researcher, verifier) have Team Communication section with what/when/how to share via SendMessage
-- [ ] **TEAM-03**: Team lifecycle managed in all team-enabled workflows (TeamCreate at start, TeamDelete after completion)
-- [ ] **TEAM-04**: All team-enabled workflows fall back to Task(background) when TeamCreate tool is unavailable
+- [x] **TEAM-03**: Team lifecycle managed in all team-enabled workflows (TeamCreate at start, TeamDelete after completion)
+- [x] **TEAM-04**: All team-enabled workflows fall back to Task(background) when TeamCreate tool is unavailable
 
 ## v2 Requirements
 
@@ -104,10 +104,10 @@
 | PARAM-08 | Phase 5 | Pending |
 | PARAM-09 | Phase 5 | Complete |
 | PARAM-10 | Phase 5 | Complete |
-| TEAM-01 | Phase 6 | Pending |
+| TEAM-01 | Phase 6 | Complete |
 | TEAM-02 | Phase 6 | Complete |
-| TEAM-03 | Phase 6 | Pending |
-| TEAM-04 | Phase 6 | Pending |
+| TEAM-03 | Phase 6 | Complete |
+| TEAM-04 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 31 total
