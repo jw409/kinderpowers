@@ -76,7 +76,10 @@ Plans:
   2. research-extractor accepts mode, depth, and output parameters
   3. team-coordinator accepts worker_count, worker_model, isolation, and coordination parameters
   4. gsd-debugger accepts method, max_hypotheses, checkpoint_frequency, and escalation parameters
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — Parameterize code-reviewer and research-extractor agents
+- [ ] 04-02-PLAN.md — Parameterize team-coordinator and gsd-debugger agents
 
 ### Phase 5: Skill Parameterization
 **Goal**: 6 skills accept caller-controlled parameters in their YAML frontmatter, completing the "server hints, caller decides" vision across all layers
@@ -88,7 +91,11 @@ Plans:
   3. test-driven-development skill accepts strictness, coverage_target, test_style parameters
   4. verification-before-completion skill accepts evidence_bar, auto_run, check_types parameters
   5. adversarial-review and subagent-driven-development skills accept their respective parameters
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 05-01-PLAN.md — Parameterize systematic-debugging and brainstorming skills
+- [ ] 05-02-PLAN.md — Parameterize test-driven-development and verification-before-completion skills
+- [ ] 05-03-PLAN.md — Parameterize adversarial-review and subagent-driven-development skills
 
 ## Progress
 
@@ -101,5 +108,5 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 | 1. Sequential Thinking Spawn Hints | 0/3 | Planning complete | - |
 | 2. Agent Collapse | 3/4 | In Progress|  |
 | 3. Beads Integration | 0/2 | Planning complete | - |
-| 4. Agent Parameterization | 0/TBD | Not started | - |
-| 5. Skill Parameterization | 0/TBD | Not started | - |
+| 4. Agent Parameterization | 0/2 | Planning complete | - |
+| 5. Skill Parameterization | 0/3 | Planning complete | - |
