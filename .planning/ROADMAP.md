@@ -45,7 +45,12 @@ Plans:
   3. `Task(subagent_type="gsd-ui", mode="spec")` works identically to the old `Task(subagent_type="gsd-ui-researcher")`
   4. Old agent names (e.g., gsd-phase-researcher) still resolve via thin alias files that set defaults and delegate
   5. All GSD workflow files reference the new parameterized agent names
-**Plans**: TBD
+**Plans:** 4 plans
+Plans:
+- [ ] 02-01-PLAN.md — Create parameterized gsd-researcher and gsd-verifier agents
+- [ ] 02-02-PLAN.md — Create parameterized gsd-ui agent and add scope to gsd-planner
+- [ ] 02-03-PLAN.md — Create thin alias files for 10 old agent names
+- [ ] 02-04-PLAN.md — Update workflow files and model-profiles to use new agent names
 
 ### Phase 3: Beads Integration
 **Goal**: GSD lifecycle commands create, update, and close beads automatically -- providing cross-session project memory that survives compaction
@@ -91,7 +96,7 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Sequential Thinking Spawn Hints | 0/3 | Planning complete | - |
-| 2. Agent Collapse | 0/TBD | Not started | - |
+| 2. Agent Collapse | 0/4 | Planning complete | - |
 | 3. Beads Integration | 0/TBD | Not started | - |
 | 4. Agent Parameterization | 0/TBD | Not started | - |
 | 5. Skill Parameterization | 0/TBD | Not started | - |
