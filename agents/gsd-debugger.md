@@ -29,6 +29,21 @@ If the prompt contains a `<files_to_read>` block, you MUST use the `Read` tool t
 - Maintain persistent debug file state (survives context resets)
 - Return structured results (ROOT CAUSE FOUND, DEBUG COMPLETE, CHECKPOINT REACHED)
 - Handle checkpoints when user input is unavoidable
+
+## Parameters (caller controls)
+
+The caller tunes debugging behavior via their prompt. Parse these from the task description:
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `method` | scientific | scientific, bisect, printf, hypothesis | Primary investigation strategy. scientific=full hypothesis testing cycle, bisect=binary search through code/history, printf=observability-first logging, hypothesis=jump straight to hypothesis testing |
+| `max_hypotheses` | 5 | 3-10 | Maximum hypotheses to track before forcing a decision or escalation |
+| `checkpoint_frequency` | per_hypothesis | never, per_hypothesis, per_test | How often to write checkpoint state to debug file. never=only on completion, per_hypothesis=after each hypothesis formed, per_test=after every test |
+| `escalation` | manual | manual, auto | What happens when max_hypotheses exhausted without resolution. manual=checkpoint to user, auto=restart with fresh approach |
+
+Parse from caller prompt. "Use git bisect" -> method=bisect. "Add lots of logging" -> method=printf. "Track up to 8 ideas" -> max_hypotheses=8. "Auto-restart if stuck" -> escalation=auto.
+
+If the caller doesn't specify, use defaults. Default behavior (scientific, 5, per_hypothesis, manual) is identical to pre-parameterization behavior.
 </role>
 
 <philosophy>
@@ -227,6 +242,17 @@ try {
 </hypothesis_testing>
 
 <investigation_techniques>
+
+## Method Selection (uses `method` parameter)
+
+The `method` parameter determines which investigation strategy to lead with:
+
+- **scientific** (default): Full Phase 0-4 cycle -- evidence gathering, hypothesis formation, testing, evaluation. The most thorough approach. Current behavior when no parameter specified.
+- **bisect**: Start with "Binary Search / Divide and Conquer" technique. Use git bisect for regression bugs, binary search for code path isolation. Skip rubber duck / minimal reproduction unless bisect is inconclusive.
+- **printf**: Start with "Observability First" -- add logging everywhere before forming hypotheses. Good when the system is opaque and you need visibility before you can even guess what's wrong.
+- **hypothesis**: Skip Phase 1 evidence gathering, jump directly to Phase 2 hypothesis formation. Useful when the caller already has a strong suspicion and wants to test it immediately.
+
+All methods can fall back to the full scientific cycle if their primary strategy doesn't resolve the issue.
 
 ## Binary Search / Divide and Conquer
 
@@ -849,6 +875,8 @@ files_changed: []
 
 **CRITICAL:** Update the file BEFORE taking action, not after. If context resets mid-action, the file shows what was about to happen.
 
+**Update frequency** (uses `checkpoint_frequency`): Write checkpoint state to the debug file based on the checkpoint_frequency parameter. never=only on status transitions (gathering->investigating->fixing etc.), per_hypothesis=after each hypothesis formed or eliminated, per_test=after every experimental test run. Default (per_hypothesis) preserves current behavior.
+
 ## Status Transitions
 
 ```
@@ -956,6 +984,7 @@ Gather symptoms through questioning. Update file after EACH answer.
   - If `goal: find_root_cause_only` -> proceed to return_diagnosis
   - Otherwise -> proceed to fix_and_verify
 - **ELIMINATED:** Append to Eliminated section, form new hypothesis, return to Phase 2
+  - If eliminated count >= `max_hypotheses` and no confirmed root cause: If escalation=auto, clear eliminated list and restart from Phase 0 with "known_dead_ends" context (carry forward what was ruled out). If escalation=manual, return CHECKPOINT REACHED with investigation state for user decision.
 
 **Context management:** After 5+ evidence entries, ensure Current Focus is updated. Suggest "/clear - run /gsd:debug to resume" if context filling up.
 </step>
