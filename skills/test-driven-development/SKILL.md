@@ -11,6 +11,16 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 **Core principle:** Seeing the test fail proves it tests something real. Skipping this trades certainty for speed.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `strictness` | standard | minimal, standard, strict | How rigidly to follow TDD. minimal=test after if needed, standard=test first (Iron Principle), strict=no production code without failing test, no exceptions |
+| `coverage_target` | none | none, lines, branches, mutations | What coverage metric to enforce. none=no coverage gate, lines=line coverage %, branches=branch coverage %, mutations=mutation testing |
+| `test_style` | auto | auto, unit, integration, e2e, property | Preferred test type. auto=choose based on code being tested (current behavior) |
+
+Parse from caller prompt. "Quick prototype, skip TDD" -> strictness=minimal. "Full TDD, no shortcuts" -> strictness=strict. "Aim for branch coverage" -> coverage_target=branches. "Property-based tests" -> test_style=property.
+
 ## When to Use
 
 **Strongly recommended for:**
@@ -33,6 +43,11 @@ NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 **What this buys you:** Tests written before code verify *requirements*. Tests written after code verify *implementation* — you test what you built, not what should exist.
 
 Wrote code before the test? Options: delete and restart with TDD (recommended), or proceed knowing your tests may be testing implementation rather than behavior.
+
+**Adapts to `strictness` parameter:**
+- `strictness=minimal`: Production code first is acceptable. Write tests after to verify behavior. The tradeoff: tests may verify implementation, not requirements.
+- `strictness=standard`: Current text above applies — test first is the expected path.
+- `strictness=strict`: NO EXCEPTIONS. Every production line requires a pre-existing failing test. Prototypes, generated code, config files -- all get tests first.
 
 ## Red-Green-Refactor
 
@@ -178,6 +193,8 @@ Keep tests green. Don't add behavior.
 
 Next failing test for next feature.
 
+**When `strictness=minimal`:** The cycle becomes GREEN (write code) -> TEST (add tests) -> REFACTOR. You lose the RED verification that tests catch real failures. Proceed knowingly.
+
 ## Good Tests
 
 | Quality | Good | Bad |
@@ -185,6 +202,13 @@ Next failing test for next feature.
 | **Minimal** | One thing. "and" in name? Split it. | `test('validates email and domain and whitespace')` |
 | **Clear** | Name describes behavior | `test('test1')` |
 | **Shows intent** | Demonstrates desired API | Obscures what code should do |
+
+**Adapts to `test_style` parameter:**
+- `test_style=property`: Define invariants rather than specific input/output pairs. Use the testing framework's property-based testing support (e.g., fast-check, hypothesis). Example: "for all valid emails, submitForm returns no error."
+- `test_style=e2e`: Test complete user journeys. Accept longer setup and execution time. One test covers the full flow rather than isolated units.
+- `test_style=integration`: Test interactions between components. More setup than unit, narrower scope than e2e.
+- `test_style=unit`: Test isolated functions/methods. Mock dependencies at the boundary.
+- `test_style=auto` (default): Choose based on what is being tested — unit for pure functions, integration for multi-component behavior, e2e for user-facing flows.
 
 ## Why Test-First vs Test-After
 
@@ -249,6 +273,9 @@ Before marking work complete:
 - [ ] Output clean (no errors, warnings)
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered
+- [ ] When `coverage_target=lines`: Line coverage meets threshold
+- [ ] When `coverage_target=branches`: Branch coverage meets threshold
+- [ ] When `coverage_target=mutations`: Mutation testing score meets threshold
 
 ## When Stuck
 
