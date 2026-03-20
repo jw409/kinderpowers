@@ -8,7 +8,7 @@ color: cyan
 #     - matcher: "Write|Edit"
 #       hooks:
 #         - type: command
-#           command: "npx eslint --fix $FILE 2>/dev/null || true"
+#           command: "npx eslint --fix $FILE"
 ---
 
 <role>
@@ -186,12 +186,12 @@ for f in sorted(pathlib.Path('.').rglob('*.py')):
         results.append({'file': str(f), 'classes': classes, 'functions': funcs[:10], 'imports_from': list(set(imports))[:10]})
 json.dump(results, sys.stdout, indent=2)
 print()
-" 2>/dev/null
+"
 ```
 
 **Rust — cargo metadata (built into toolchain):**
 ```bash
-cargo metadata --format-version 1 --no-deps 2>/dev/null | uv run python -c "
+cargo metadata --format-version 1 --no-deps 2>&1 | uv run python -c "
 import json, sys
 d = json.load(sys.stdin)
 for pkg in d.get('packages', []):
@@ -200,7 +200,7 @@ for pkg in d.get('packages', []):
         print(f\"  Target: {t['name']} ({', '.join(t['kind'])}): {t['src_path']}\")
     for dep in pkg.get('dependencies', []):
         print(f\"  Dep: {dep['name']} {dep.get('req', '')}\")
-" 2>/dev/null
+"
 ```
 
 **Node/TypeScript — package.json + ts-morph or manual AST:**
@@ -227,12 +227,12 @@ for (const f of files.slice(0, 50)) {
   const imports = (src.match(/from\s+['\"]([^'\"]+)['\"]/g) || []).map(m => m.replace(/from\s+['\"]|['\"]/g, ''));
   if (exports.length) console.log(JSON.stringify({file: f, exports: exports.slice(0,10), imports_from: [...new Set(imports)].slice(0,10)}));
 }
-" 2>/dev/null
+"
 ```
 
 **Go — go list (built into toolchain):**
 ```bash
-go list -json ./... 2>/dev/null | uv run python -c "
+go list -json ./... 2>&1 | uv run python -c "
 import json, sys
 decoder = json.JSONDecoder()
 data = sys.stdin.read()
@@ -245,7 +245,7 @@ while pos < len(data):
     for imp in obj.get('Imports', [])[:10]:
         print(f'  Imports: {imp}')
     pos = end
-" 2>/dev/null
+"
 ```
 
 **LEVEL 1 EXTENDED — structural search (the mapper IS the search tool):**
@@ -280,7 +280,7 @@ for f in sorted(pathlib.Path('.').rglob('*.py')):
                 results.append({'file': str(f), 'line': node.lineno, 'kind': 'class', 'name': node.name, 'bases': bases})
 for r in results[:50]:
     print(json.dumps(r))
-" '${QUERY}' 2>/dev/null
+" '${QUERY}'
 ```
 
 ```bash
@@ -306,19 +306,19 @@ for f in sorted(pathlib.Path('.').rglob('*.py')):
         graph[str(f)] = sorted(imports)
 # Find cycles
 print(json.dumps(graph, indent=2))
-" 2>/dev/null
+"
 ```
 
 ```bash
 # Rust: structural search via cargo + grep on pub items
-grep -rn '^pub\s\+\(fn\|struct\|enum\|trait\|type\|mod\|const\)' src/ --include='*.rs' 2>/dev/null | \
+grep -rn '^pub\s\+\(fn\|struct\|enum\|trait\|type\|mod\|const\)' src/ --include='*.rs' 2>&1 | \
   uv run python -c "
 import sys, json, re
 for line in sys.stdin:
     m = re.match(r'(.+):(\d+):pub\s+(fn|struct|enum|trait|type|mod|const)\s+(\w+)', line.strip())
     if m:
         print(json.dumps({'file': m.group(1), 'line': int(m.group(2)), 'kind': m.group(3), 'name': m.group(4)}))
-" 2>/dev/null
+"
 ```
 
 These scripts output JSONL — one JSON object per line. Same shape as ck search results.
@@ -330,8 +330,8 @@ Config file discovery, TODO/FIXME comments, file sizes. Do NOT use grep for arch
 
 **Type checkers (bonus, if installed — run AFTER level 1-4 probes):**
 ```bash
-which pyright 2>/dev/null && pyright --outputjson . 2>/dev/null | head -200
-which tsc 2>/dev/null && npx tsc --noEmit 2>&1 | head -100
+command -v pyright > /dev/null && pyright --outputjson . 2>&1 | head -200
+command -v tsc > /dev/null && npx tsc --noEmit 2>&1 | head -100
 ```
 
 **Report your intelligence level in the confirmation:**
@@ -357,7 +357,7 @@ query = sys.argv[1] if len(sys.argv) > 1 else 'error'
 rows = db.execute('SELECT file, snippet(code, 1, \">>>\", \"<<<\", \"...\", 20) FROM code WHERE code MATCH ? ORDER BY rank LIMIT 20', (query,)).fetchall()
 for file, snippet in rows:
     print(json.dumps({'file': file, 'snippet': snippet[:200]}))
-" '${QUERY}' 2>/dev/null
+" '${QUERY}'
 ```
 This gives you BM25-ranked full-text search over the entire codebase in <1 second.
 No install needed — SQLite FTS5 is built into Python's sqlite3 module.
@@ -403,7 +403,7 @@ are primary. Grep is fallback only.
    - Walk the top 10-20 source files with documentSymbol to build the real export surface
 
 2. **Type checker second** — if pyright/tsc available:
-   - Python: `uv run pyright --outputjson <dir> 2>/dev/null | head -500` → structured type errors
+   - Python: `uv run pyright --outputjson <dir> 2>&1 | head -500` → structured type errors
    - TypeScript: `npx tsc --noEmit 2>&1 | head -200` → type errors
    - These are REAL findings, not grep guesses. Every type error is an architectural finding.
 
@@ -494,7 +494,7 @@ TOTAL_FILES=$(find . -name '*.py' -o -name '*.rs' -o -name '*.ts' -o -name '*.ts
 echo "Source files in repo: $TOTAL_FILES"
 
 # Files mentioned in your docs
-MENTIONED=$(grep -oh '`[^`]*\.\(py\|rs\|ts\|tsx\|js\|go\)`' .planning/codebase/*.md 2>/dev/null | sort -u | wc -l)
+MENTIONED=$(grep -oh '`[^`]*\.\(py\|rs\|ts\|tsx\|js\|go\)`' .planning/codebase/*.md 2>&1 | sort -u | wc -l)
 echo "Files mentioned in docs: $MENTIONED"
 
 # Coverage ratio
@@ -503,7 +503,7 @@ echo "Coverage: $MENTIONED / $TOTAL_FILES files"
 # Large files not analyzed (>200 lines, potential complexity)
 echo ""
 echo "Large files (>200 lines):"
-find . -name '*.py' -o -name '*.rs' -o -name '*.ts' -o -name '*.go' | grep -v node_modules | grep -v .venv | grep -v __pycache__ | grep -v .git | xargs wc -l 2>/dev/null | sort -rn | head -10
+find . -name '*.py' -o -name '*.rs' -o -name '*.ts' -o -name '*.go' | grep -v node_modules | grep -v .venv | grep -v __pycache__ | grep -v .git | xargs wc -l 2>&1 | sort -rn | head -10
 ```
 
 Include the coverage report in your confirmation:
