@@ -84,6 +84,22 @@ pub struct Hint {
     pub message: String,
     /// How notable this observation is: "info", "suggestion", "observation"
     pub severity: String,
+    /// Optional structured metadata (only present for spawn_candidate hints)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spawn_meta: Option<SpawnMeta>,
+}
+
+/// Metadata for a spawn_candidate hint. Callers use this to decide
+/// whether and how to spawn subagents for parallel exploration.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SpawnMeta {
+    /// Branch IDs that could be explored in parallel by subagents
+    pub branch_points: Vec<String>,
+    /// Suggested thinking depth for spawned agents (based on remaining thoughts)
+    pub recommended_depth: u32,
+    /// Suggested model tier: "same", "cheaper", "thinking" based on confidence and layer
+    pub recommended_model: String,
 }
 
 /// Summary of a branch merge operation.
@@ -367,6 +383,7 @@ impl ThinkingEngine {
                     self.consecutive_linear_thoughts
                 ),
                 severity: "suggestion".into(),
+                spawn_meta: None,
             });
         }
 
@@ -376,6 +393,7 @@ impl ThinkingEngine {
                 kind: "explore_available".into(),
                 message: "exploreCount is available but unused. Try: exploreCount: 4, proposals: [...] to widen exploration.".into(),
                 severity: "info".into(),
+                spawn_meta: None,
             });
         }
 
@@ -388,6 +406,7 @@ impl ThinkingEngine {
                     self.low_conf_without_branch_count
                 ),
                 severity: "suggestion".into(),
+                spawn_meta: None,
             });
         }
 
@@ -401,6 +420,7 @@ impl ThinkingEngine {
                         conf * 100.0, layer, validated.thought_number
                     ),
                     severity: "observation".into(),
+                    spawn_meta: None,
                 });
             }
         }
@@ -411,6 +431,7 @@ impl ThinkingEngine {
                 kind: "layer_available".into(),
                 message: "Confidence is tracked but layer is not set. Layers (1=problem, 2=approach, 3=details) help calibrate whether confidence is warranted at this stage.".into(),
                 severity: "info".into(),
+                spawn_meta: None,
             });
         }
 
@@ -428,6 +449,67 @@ impl ThinkingEngine {
                     branch_names.join(", ")
                 ),
                 severity: "info".into(),
+                spawn_meta: None,
+            });
+        }
+
+        // --- Hint: spawn_candidate when parallel exploration would help ---
+        let spawn_candidate = {
+            let is_wide_explore = validated.continuation_mode.as_deref() == Some("explore")
+                && validated.explore_count.unwrap_or(0) >= 3
+                && validated.proposals.as_ref().map_or(false, |p| p.len() >= 3);
+
+            let has_uncertain_branches = self.branches.len() >= 2
+                && self.branches.values().any(|thoughts| {
+                    thoughts.last().map_or(false, |t| {
+                        t.confidence.map_or(false, |c| c < self.profile.branching_threshold)
+                    })
+                });
+
+            let is_branching_with_existing = validated.continuation_mode.as_deref() == Some("branch")
+                && validated.branch_from_thought.is_some()
+                && self.branches.len() >= 2;
+
+            is_wide_explore || has_uncertain_branches || is_branching_with_existing
+        };
+
+        if spawn_candidate {
+            let branch_points: Vec<String> = if validated.continuation_mode.as_deref() == Some("explore") {
+                // For explore mode, use proposal descriptions as branch point names
+                validated.proposals.as_ref()
+                    .map(|p| p.iter().enumerate().map(|(i, _desc)| {
+                        format!("proposal-{}", i + 1)
+                    }).collect())
+                    .unwrap_or_default()
+            } else {
+                // For branch mode, use existing branch names
+                self.branches.keys().cloned().collect()
+            };
+
+            let remaining = validated.total_thoughts.saturating_sub(validated.thought_number);
+            let recommended_depth = remaining.max(3).min(10);
+
+            let recommended_model = if validated.confidence.unwrap_or(0.5) < 0.3 {
+                "thinking".to_string()  // Very uncertain = use stronger model
+            } else if validated.layer.unwrap_or(1) <= 1 {
+                "same".to_string()  // Still at problem understanding = same model
+            } else {
+                "cheaper".to_string()  // Deeper layers with moderate confidence = cheaper OK
+            };
+
+            hints.push(Hint {
+                kind: "spawn_candidate".into(),
+                message: format!(
+                    "Parallel exploration opportunity: {} branch points detected. \
+                     Spawning subagents could explore these concurrently.",
+                    branch_points.len()
+                ),
+                severity: "suggestion".into(),
+                spawn_meta: Some(SpawnMeta {
+                    branch_points,
+                    recommended_depth,
+                    recommended_model,
+                }),
             });
         }
 
