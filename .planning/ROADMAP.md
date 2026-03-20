@@ -108,7 +108,7 @@ Plans:
   3. Team lifecycle is managed (TeamCreate at start, TeamDelete after completion) in all team-enabled workflows
   4. All team-enabled workflows fall back to Task(background) when TeamCreate is unavailable
   5. Agents gracefully handle not being in a team (no SendMessage errors when spawned via Task)
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
 - [ ] 06-01-PLAN.md — Add TeamCreate/Agent/TeamDelete to 3 multi-agent workflow files
 - [ ] 06-02-PLAN.md — Add Team Communication sections to 4 agent files
@@ -126,4 +126,4 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 | 3. Beads Integration | 0/2 | Planning complete | - |
 | 4. Agent Parameterization | 2/2 | Complete   | 2026-03-20 |
 | 5. Skill Parameterization | 3/3 | Complete   | 2026-03-20 |
-| 6. Team Mode | 0/2 | Planning complete | - |
+| 6. Team Mode | 1/2 | In Progress|  |
