@@ -11,6 +11,16 @@ Find root cause before attempting fixes. Symptom fixes waste time and can create
 
 **Core principle:** Understand the problem before changing the code.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `depth` | standard | quick, standard, exhaustive | Investigation thoroughness. quick=Phase 1+3 only (skip pattern analysis), standard=all 4 phases, exhaustive=all phases with mandatory multi-component evidence gathering |
+| `hypothesis_count` | 3 | 2-8 | Number of hypotheses to generate before investigating any. Higher=more thorough, lower=faster |
+| `reproduce_first` | true | true, false | Whether to require consistent reproduction before investigating. false=proceed on reported symptoms alone |
+
+**Parsing hints:** Parse from caller prompt. "Quick debug" -> depth=quick. "Be thorough" -> depth=exhaustive. "I can describe it but can't reproduce" -> reproduce_first=false. "Generate lots of theories" -> hypothesis_count=6.
+
 ## When to Use
 
 Use for ANY technical issue:
@@ -44,6 +54,7 @@ Complete each phase before proceeding to the next, unless you have a clear reaso
    - Can you trigger it reliably?
    - What are the exact steps?
    - If not reproducible → gather more data, don't guess
+   - When reproduce_first=false, proceed to Step 3 using reported symptoms. Note: this reduces confidence in findings.
 
 3. **Check Recent Changes**
    - Git diff, recent commits
@@ -51,6 +62,8 @@ Complete each phase before proceeding to the next, unless you have a clear reaso
    - Environmental differences
 
 4. **Gather Evidence in Multi-Component Systems**
+
+   When depth=exhaustive, ALWAYS perform multi-component boundary logging regardless of system complexity.
 
    ```
    For EACH component boundary:
@@ -95,6 +108,8 @@ Complete each phase before proceeding to the next, unless you have a clear reaso
 
 ### Phase 2: Pattern Analysis
 
+When depth=quick, skip this phase entirely -- go from Phase 1 directly to Phase 3.
+
 1. **Find Working Examples** — locate similar working code in the codebase
 2. **Compare Against References** — read reference implementations completely, don't skim
 3. **Identify Differences** — list every difference, however small
@@ -102,7 +117,7 @@ Complete each phase before proceeding to the next, unless you have a clear reaso
 
 ### Phase 3: Hypothesis and Testing
 
-1. **Form Single Hypothesis** — "I think X is the root cause because Y"
+1. **Generate Hypotheses** — Generate {hypothesis_count} hypotheses before investigating any. Default 3 -- increase for complex systems, decrease for obvious bugs. Form each as: "I think X is the root cause because Y"
 2. **Test Minimally** — smallest possible change, one variable at a time
 3. **Verify Before Continuing** — worked? Phase 4. Didn't? Form new hypothesis. Don't stack fixes.
 4. **When You Don't Know** — say so. Ask for help. Research more.
@@ -114,8 +129,8 @@ Complete each phase before proceeding to the next, unless you have a clear reaso
 3. **Verify Fix** — test passes? No other tests broken? Issue resolved?
 4. **If Fix Doesn't Work**
    - Count: How many fixes have you tried?
-   - If < 3: Return to Phase 1 with new information
-   - **If ≥ 3: Question the architecture** — each fix revealing new problems in different places suggests a structural issue, not a local bug
+   - If < {hypothesis_count}: Return to Phase 1 with new information
+   - **If >= {hypothesis_count}: Question the architecture** — each fix revealing new problems in different places suggests a structural issue, not a local bug
    - Discuss with your human partner before attempting more fixes
 
 ## Signals to Return to Phase 1
@@ -139,12 +154,12 @@ When your partner says:
 
 ## Quick Reference
 
-| Phase | Key Activities | Success Criteria |
-|-------|---------------|------------------|
-| **1. Root Cause** | Read errors, reproduce, check changes, gather evidence | Understand WHAT and WHY |
-| **2. Pattern** | Find working examples, compare | Identify differences |
-| **3. Hypothesis** | Form theory, test minimally | Confirmed or new hypothesis |
-| **4. Implementation** | Create test, fix, verify | Bug resolved, tests pass |
+| Phase | Key Activities | Success Criteria | Parameter Effects |
+|-------|---------------|------------------|-------------------|
+| **1. Root Cause** | Read errors, reproduce, check changes, gather evidence | Understand WHAT and WHY | reproduce_first=false: skip Step 2; depth=exhaustive: mandatory boundary logging |
+| **2. Pattern** | Find working examples, compare | Identify differences | depth=quick: skip entirely |
+| **3. Hypothesis** | Form {hypothesis_count} theories, test minimally | Confirmed or new hypothesis | hypothesis_count: controls how many hypotheses before investigation |
+| **4. Implementation** | Create test, fix, verify | Bug resolved, tests pass | hypothesis_count: threshold for "question the architecture" |
 
 ## When Investigation Reveals "No Root Cause"
 
