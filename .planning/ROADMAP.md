@@ -62,7 +62,10 @@ Plans:
   3. Phase execution and verification update bead status (in_progress, evidence attached)
   4. Running /gsd:ship closes the phase bead with a PR link
   5. All bead operations degrade gracefully (no errors, just skipped) when beads CLI is not installed
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 03-01-PLAN.md — Add beadsAvailable() and bead CLI helpers to gsd-tools
+- [ ] 03-02-PLAN.md — Wire bead lifecycle calls into all 5 GSD workflow files
 
 ### Phase 4: Agent Parameterization
 **Goal**: The 4 remaining non-parameterized agents (code-reviewer, research-extractor, team-coordinator, gsd-debugger) accept caller-controlled parameters
@@ -97,6 +100,6 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 |-------|----------------|--------|-----------|
 | 1. Sequential Thinking Spawn Hints | 0/3 | Planning complete | - |
 | 2. Agent Collapse | 3/4 | In Progress|  |
-| 3. Beads Integration | 0/TBD | Not started | - |
+| 3. Beads Integration | 0/2 | Planning complete | - |
 | 4. Agent Parameterization | 0/TBD | Not started | - |
 | 5. Skill Parameterization | 0/TBD | Not started | - |
