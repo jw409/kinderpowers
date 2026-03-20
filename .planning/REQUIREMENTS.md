@@ -9,7 +9,7 @@
 
 - [ ] **SPAWN-01**: kp-sequential-thinking server surfaces `spawn_candidate` hint with spawn_meta (branch points, recommended depth, recommended model)
 - [ ] **SPAWN-02**: Enhanced mergeSummary includes branchOutcomes (finalConfidence, doneReason per branch) and convergenceSignal
-- [ ] **SPAWN-03**: Metathinking skill parses spawn_strategy parameter (none/convergent/divergent/hierarchical)
+- [x] **SPAWN-03**: Metathinking skill parses spawn_strategy parameter (none/convergent/divergent/hierarchical)
 - [ ] **SPAWN-04**: Rust tests for spawn hint generation (>= 5 new tests)
 - [ ] **SPAWN-05**: Rust tests for enhanced merge with branch outcomes (>= 5 new tests)
 
@@ -72,7 +72,7 @@
 |-------------|-------|--------|
 | SPAWN-01 | Phase 1 | Pending |
 | SPAWN-02 | Phase 1 | Pending |
-| SPAWN-03 | Phase 1 | Pending |
+| SPAWN-03 | Phase 1 | Complete |
 | SPAWN-04 | Phase 1 | Pending |
 | SPAWN-05 | Phase 1 | Pending |
 | COLLAPSE-01 | Phase 2 | Pending |
