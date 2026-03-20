@@ -1,5 +1,61 @@
 # Changelog
 
+## [6.2.0] — 2026-03-20
+
+### Philosophy: Caller Controls Everything
+
+6 phases executed in parallel via GSD, dogfooding kinderpowers on itself. 31 requirements, 16 plans, ~25 agents spawned.
+
+### Added
+
+**Phase 1: Sequential Thinking Spawn Hints**
+- `spawn_candidate` hint with SpawnMeta (branch_points, recommended_depth, recommended_model)
+- Enhanced MergeSummary with BranchOutcome (per-branch finalConfidence, doneReason) and convergenceSignal (converged/diverged/mixed/insufficient)
+- `spawn_strategy` parameter in metathinking skill (none/convergent/divergent/hierarchical)
+- 12 new Rust tests (123 total, 104 unit + 19 integration)
+
+**Phase 2: Agent Collapse (16 → 8)**
+- `gsd-researcher` replaces phase-researcher + project-researcher + research-synthesizer (mode: phase/project/synthesize)
+- `gsd-verifier` replaces verifier + integration-checker + plan-checker + nyquist-auditor (mode: goal-backward/integration/plan-quality/coverage)
+- `gsd-ui` replaces ui-researcher + ui-auditor + ui-checker (mode: spec/audit/validate)
+- `gsd-planner` absorbs roadmapper via scope parameter (phase/milestone/project)
+- 10 old agents replaced with thin alias stubs (backward compatible)
+- 12 workflow files + 3 command files + model-profiles.cjs migrated
+- Net reduction: 4,429 lines
+
+**Phase 3: Beads Integration**
+- `beadsAvailable()` cached check + 6 bead helper functions in core.cjs
+- `bead` subcommands in gsd-tools.cjs (available, create, update, close, show)
+- Bead lifecycle wired into 5 GSD workflows: new-project (epic), plan-phase (task), execute-phase (in_progress), verify (evidence), ship (close with PR)
+- Graceful degradation: zero errors when beads not installed
+
+**Phase 4: Agent Parameterization**
+- code-reviewer: focus, pedanticness, scope
+- research-extractor: mode, depth, output
+- team-coordinator: worker_count, worker_model, isolation, coordination
+- gsd-debugger: method, max_hypotheses, checkpoint_frequency, escalation
+
+**Phase 5: Skill Parameterization**
+- systematic-debugging: depth, hypothesis_count, reproduce_first
+- brainstorming: breadth, mode, time_box
+- test-driven-development: strictness, coverage_target, test_style
+- verification-before-completion: evidence_bar, auto_run, check_types
+- adversarial-review: intensity, min_findings, focus
+- subagent-driven-development: worker_model, review_between, parallelism
+
+**Phase 6: Team Mode**
+- GSD workflows use TeamCreate + named Agent spawns instead of Task(background)
+- map-codebase: TeamCreate("gsd-mapping") with 4 named mapper agents
+- execute-phase: per-wave TeamCreate with named executor agents
+- new-project: TeamCreate("gsd-research") with 4 researchers + synthesizer
+- 4 agents gain Team Communication sections (mapper, executor, researcher, verifier)
+- Fallback to Task(background) when TeamCreate unavailable
+- Graceful degradation: SendMessage calls skipped silently when not in team
+
+### Changed
+
+- All version references bumped 6.1.0 → 6.2.0
+
 ## [6.1.0] — 2026-03-19
 
 ### Philosophy: Caller Controls
