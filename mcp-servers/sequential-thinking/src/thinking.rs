@@ -102,6 +102,22 @@ pub struct SpawnMeta {
     pub recommended_model: String,
 }
 
+/// Per-branch outcome extracted during merge.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BranchOutcome {
+    /// Branch identifier
+    pub branch_id: String,
+    /// Confidence of the last thought in this branch (None if never set)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub final_confidence: Option<f64>,
+    /// Done reason from the last thought (None if branch didn't conclude)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub done_reason: Option<String>,
+    /// Number of thoughts in this branch
+    pub thought_count: usize,
+}
+
 /// Summary of a branch merge operation.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -109,6 +125,12 @@ pub struct MergeSummary {
     pub merged_branches: Vec<String>,
     pub thought_counts: HashMap<String, usize>,
     pub missing_branches: Vec<String>,
+    /// Per-branch outcomes with final confidence and done_reason
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch_outcomes: Option<Vec<BranchOutcome>>,
+    /// Whether branches agreed: "converged" (confidences within 0.2), "diverged" (spread > 0.4), "mixed", or "insufficient" (< 2 branches with confidence)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub convergence_signal: Option<String>,
 }
 
 // ============================================================================
@@ -527,10 +549,46 @@ impl ThinkingEngine {
                         missing.push(branch_name.clone());
                     }
                 }
+
+                // Extract branch outcomes
+                let mut outcomes: Vec<BranchOutcome> = Vec::new();
+                for branch_name in &merged {
+                    if let Some(thoughts) = self.branches.get(branch_name) {
+                        let last = thoughts.last();
+                        outcomes.push(BranchOutcome {
+                            branch_id: branch_name.clone(),
+                            final_confidence: last.and_then(|t| t.confidence),
+                            done_reason: last.and_then(|t| t.done_reason.clone()),
+                            thought_count: thoughts.len(),
+                        });
+                    }
+                }
+
+                // Compute convergence signal
+                let confidences: Vec<f64> = outcomes.iter()
+                    .filter_map(|o| o.final_confidence)
+                    .collect();
+                let convergence_signal = if confidences.len() < 2 {
+                    "insufficient".to_string()
+                } else {
+                    let min = confidences.iter().cloned().fold(f64::INFINITY, f64::min);
+                    let max = confidences.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+                    let spread = max - min;
+                    if spread <= 0.2 {
+                        "converged".to_string()
+                    } else if spread > 0.4 {
+                        "diverged".to_string()
+                    } else {
+                        "mixed".to_string()
+                    }
+                };
+
                 Some(MergeSummary {
                     merged_branches: merged,
                     thought_counts: counts,
                     missing_branches: missing,
+                    branch_outcomes: Some(outcomes),
+                    convergence_signal: Some(convergence_signal),
                 })
             } else {
                 // Merge all branches by default
@@ -539,10 +597,46 @@ impl ThinkingEngine {
                 for (name, thoughts) in &self.branches {
                     counts.insert(name.clone(), thoughts.len());
                 }
+
+                // Extract branch outcomes
+                let mut outcomes: Vec<BranchOutcome> = Vec::new();
+                for branch_name in &merged {
+                    if let Some(thoughts) = self.branches.get(branch_name) {
+                        let last = thoughts.last();
+                        outcomes.push(BranchOutcome {
+                            branch_id: branch_name.clone(),
+                            final_confidence: last.and_then(|t| t.confidence),
+                            done_reason: last.and_then(|t| t.done_reason.clone()),
+                            thought_count: thoughts.len(),
+                        });
+                    }
+                }
+
+                // Compute convergence signal
+                let confidences: Vec<f64> = outcomes.iter()
+                    .filter_map(|o| o.final_confidence)
+                    .collect();
+                let convergence_signal = if confidences.len() < 2 {
+                    "insufficient".to_string()
+                } else {
+                    let min = confidences.iter().cloned().fold(f64::INFINITY, f64::min);
+                    let max = confidences.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+                    let spread = max - min;
+                    if spread <= 0.2 {
+                        "converged".to_string()
+                    } else if spread > 0.4 {
+                        "diverged".to_string()
+                    } else {
+                        "mixed".to_string()
+                    }
+                };
+
                 Some(MergeSummary {
                     merged_branches: merged,
                     thought_counts: counts,
                     missing_branches: Vec::new(),
+                    branch_outcomes: Some(outcomes),
+                    convergence_signal: Some(convergence_signal),
                 })
             }
         } else {
