@@ -135,7 +135,7 @@ const path = require('path');
 // Resolve lib relative to this script, not cwd — fixes MODULE_NOT_FOUND
 // when invoked from a working directory that isn't gsd/bin/
 const _lib = (name) => path.join(__dirname, 'lib', name);
-const { error } = require(_lib('core.cjs'));
+const { error, beadsAvailable, beadCreate, beadUpdate, beadClose, beadShow } = require(_lib('core.cjs'));
 const state = require(_lib('state.cjs'));
 const phase = require(_lib('phase.cjs'));
 const roadmap = require(_lib('roadmap.cjs'));
@@ -181,7 +181,7 @@ async function main() {
   const command = args[0];
 
   if (!command) {
-    error('Usage: gsd-tools <command> [args] [--raw] [--cwd <path>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, init');
+    error('Usage: gsd-tools <command> [args] [--raw] [--cwd <path>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, init, bead\n\nBead Integration:\n  bead available                    Check if beads CLI (bd) is installed\n  bead create [title]               Create a bead (--type, --parent, --tags)\n  bead update <id>                  Update bead (--status, --notes)\n  bead close <id> [--notes N]       Close a bead\n  bead show <id>                    Show bead details');
   }
 
   switch (command) {
@@ -715,6 +715,74 @@ async function main() {
       const autoFlag = args.includes('--auto');
       const forceFlag = args.includes('--force');
       profileOutput.cmdGenerateClaudeMd(cwd, { output: outputPath, auto: autoFlag, force: forceFlag }, raw);
+      break;
+    }
+
+    case 'bead': {
+      const subcommand = args[1];
+      if (subcommand === 'available') {
+        const available = beadsAvailable();
+        if (raw) {
+          process.stdout.write(available ? 'true' : 'false');
+          process.exit(0);
+        }
+        process.stdout.write(JSON.stringify({ available }));
+        process.exit(0);
+      } else if (subcommand === 'create') {
+        const titleIdx = args.indexOf('--title');
+        const typeIdx = args.indexOf('--type');
+        const parentIdx = args.indexOf('--parent');
+        const tagsIdx = args.indexOf('--tags');
+        const result = beadCreate({
+          title: titleIdx !== -1 ? args[titleIdx + 1] : args[2],
+          type: typeIdx !== -1 ? args[typeIdx + 1] : null,
+          parent: parentIdx !== -1 ? args[parentIdx + 1] : null,
+          tags: tagsIdx !== -1 ? args[tagsIdx + 1].split(',') : null,
+        });
+        if (raw) {
+          process.stdout.write(result || '');
+          process.exit(0);
+        }
+        process.stdout.write(JSON.stringify({ bead_id: result }));
+        process.exit(0);
+      } else if (subcommand === 'update') {
+        const id = args[2];
+        const statusIdx = args.indexOf('--status');
+        const notesIdx = args.indexOf('--notes');
+        const result = beadUpdate(id, {
+          status: statusIdx !== -1 ? args[statusIdx + 1] : null,
+          notes: notesIdx !== -1 ? args[notesIdx + 1] : null,
+        });
+        if (raw) {
+          process.stdout.write(result || '');
+          process.exit(0);
+        }
+        process.stdout.write(JSON.stringify({ updated: !!result }));
+        process.exit(0);
+      } else if (subcommand === 'close') {
+        const id = args[2];
+        const notesIdx = args.indexOf('--notes');
+        const result = beadClose(id, {
+          notes: notesIdx !== -1 ? args[notesIdx + 1] : null,
+        });
+        if (raw) {
+          process.stdout.write(result || '');
+          process.exit(0);
+        }
+        process.stdout.write(JSON.stringify({ closed: !!result }));
+        process.exit(0);
+      } else if (subcommand === 'show') {
+        const id = args[2];
+        const result = beadShow(id);
+        if (raw) {
+          process.stdout.write(result || '');
+          process.exit(0);
+        }
+        process.stdout.write(JSON.stringify({ info: result }));
+        process.exit(0);
+      } else {
+        error('Unknown bead subcommand. Available: available, create, update, close, show');
+      }
       break;
     }
 
