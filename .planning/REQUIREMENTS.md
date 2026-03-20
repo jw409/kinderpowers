@@ -29,7 +29,7 @@
 - [ ] **BEADS-03**: /gsd:execute-phase marks phase bead in_progress
 - [ ] **BEADS-04**: /gsd:verify-work attaches verification evidence to bead notes
 - [ ] **BEADS-05**: /gsd:ship closes phase bead with PR link
-- [ ] **BEADS-06**: beadsAvailable() check in gsd-tools.cjs — graceful degradation
+- [x] **BEADS-06**: beadsAvailable() check in gsd-tools.cjs — graceful degradation
 
 ### Parameterization (#6)
 
@@ -86,7 +86,7 @@
 | BEADS-03 | Phase 3 | Pending |
 | BEADS-04 | Phase 3 | Pending |
 | BEADS-05 | Phase 3 | Pending |
-| BEADS-06 | Phase 3 | Pending |
+| BEADS-06 | Phase 3 | Complete |
 | PARAM-01 | Phase 4 | Pending |
 | PARAM-02 | Phase 4 | Pending |
 | PARAM-03 | Phase 4 | Pending |
