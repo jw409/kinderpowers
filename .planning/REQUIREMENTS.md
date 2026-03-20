@@ -37,12 +37,12 @@
 - [x] **PARAM-02**: research-extractor agent: mode, depth, output parameters
 - [x] **PARAM-03**: team-coordinator agent: worker_count, worker_model, isolation, coordination parameters
 - [x] **PARAM-04**: gsd-debugger agent: method, max_hypotheses, checkpoint_frequency, escalation parameters
-- [ ] **PARAM-05**: systematic-debugging skill: depth, hypothesis_count, reproduce_first parameters
-- [ ] **PARAM-06**: brainstorming skill: breadth, mode, time_box parameters
+- [x] **PARAM-05**: systematic-debugging skill: depth, hypothesis_count, reproduce_first parameters
+- [x] **PARAM-06**: brainstorming skill: breadth, mode, time_box parameters
 - [ ] **PARAM-07**: test-driven-development skill: strictness, coverage_target, test_style parameters
 - [ ] **PARAM-08**: verification-before-completion skill: evidence_bar, auto_run, check_types parameters
-- [ ] **PARAM-09**: adversarial-review skill: intensity, min_findings, focus parameters
-- [ ] **PARAM-10**: subagent-driven-development skill: worker_model, review_between, parallelism parameters
+- [x] **PARAM-09**: adversarial-review skill: intensity, min_findings, focus parameters
+- [x] **PARAM-10**: subagent-driven-development skill: worker_model, review_between, parallelism parameters
 
 ## v2 Requirements
 
@@ -91,12 +91,12 @@
 | PARAM-02 | Phase 4 | Complete |
 | PARAM-03 | Phase 4 | Complete |
 | PARAM-04 | Phase 4 | Complete |
-| PARAM-05 | Phase 5 | Pending |
-| PARAM-06 | Phase 5 | Pending |
+| PARAM-05 | Phase 5 | Complete |
+| PARAM-06 | Phase 5 | Complete |
 | PARAM-07 | Phase 5 | Pending |
 | PARAM-08 | Phase 5 | Pending |
-| PARAM-09 | Phase 5 | Pending |
-| PARAM-10 | Phase 5 | Pending |
+| PARAM-09 | Phase 5 | Complete |
+| PARAM-10 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 27 total

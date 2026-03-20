@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 2: Agent Collapse** - Consolidate 16 GSD agents into 8 parameterized agents with aliases
 - [ ] **Phase 3: Beads Integration** - Wire bead lifecycle into GSD commands for cross-session memory
 - [x] **Phase 4: Agent Parameterization** - Add caller-controlled parameters to remaining 4 agents (completed 2026-03-20)
-- [ ] **Phase 5: Skill Parameterization** - Add caller-controlled parameters to 6 skills
+- [x] **Phase 5: Skill Parameterization** - Add caller-controlled parameters to 6 skills (completed 2026-03-20)
 
 ## Phase Details
 
@@ -91,7 +91,7 @@ Plans:
   3. test-driven-development skill accepts strictness, coverage_target, test_style parameters
   4. verification-before-completion skill accepts evidence_bar, auto_run, check_types parameters
   5. adversarial-review and subagent-driven-development skills accept their respective parameters
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 05-01-PLAN.md — Parameterize systematic-debugging and brainstorming skills
 - [ ] 05-02-PLAN.md — Parameterize test-driven-development and verification-before-completion skills
@@ -109,4 +109,4 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 | 2. Agent Collapse | 3/4 | In Progress|  |
 | 3. Beads Integration | 0/2 | Planning complete | - |
 | 4. Agent Parameterization | 2/2 | Complete   | 2026-03-20 |
-| 5. Skill Parameterization | 0/3 | Planning complete | - |
+| 5. Skill Parameterization | 3/3 | Complete   | 2026-03-20 |
