@@ -16,7 +16,7 @@
 <index>
   <section name="emergency-start" what="Install and use in 60 seconds"/>
   <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
-  <section name="skill-catalog" what="All 27 skills with levels, triggers, and costs"/>
+  <section name="skill-catalog" what="All 26 skills with levels, triggers, and costs"/>
   <section name="agent-catalog" what="All 14 agents with capabilities, tools, and model requirements"/>
   <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Sequential Thinking)"/>
   <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
@@ -67,10 +67,12 @@
 </invariants>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SKILL CATALOG: 27 skills across 4 levels
+     SKILL CATALOG: 26 skills across 4 levels
      ═══════════════════════════════════════════════════════════════ -->
-<skill-catalog count="27">
+<skill-catalog count="26">
   <!-- Level 1: Coding Assistant -->
+  <skill name="using-kinderpowers" level="1" trigger="orientation, first use of kinderpowers"
+    description="Establishes how skills work as invitations with documented costs, not commands without escape"/>
   <skill name="brainstorming" level="1" trigger="before creative work, features, components, behavior changes"
     description="Explores user intent, requirements and design before implementation"/>
   <skill name="test-driven-development" level="1" trigger="implementing any feature or bugfix"
