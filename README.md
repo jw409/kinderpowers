@@ -21,7 +21,7 @@ Superpowers gives agents engineering discipline. GSD gives them a lifecycle engi
 graph LR
     L1["<b>L1: Coding Assistant</b><br/>6 skills · 1 agent<br/><i>brainstorm → TDD → debug → verify → review</i>"]
     L2["<b>L2: Agentic Worker</b><br/>17 skills · beads tracking<br/><i>plan → execute → remember → extract</i>"]
-    L3["<b>L3: Team Orchestrator</b><br/>3 skills · 5+16 agents<br/><i>decompose → dispatch → coordinate → integrate</i>"]
+    L3["<b>L3: Team Orchestrator</b><br/>3 skills · 6+8 agents<br/><i>decompose → dispatch → coordinate → integrate</i>"]
     L4["<b>L4: Dark Factory</b><br/>42 commands · 3 rules<br/><i>roadmap → plan → execute → verify → ship</i>"]
     L1 --> L2 --> L3 --> L4
     style L1 fill:#e8f5e9,stroke:#4caf50
@@ -58,7 +58,7 @@ When you want full autonomy:
 
 Roadmap → plan → execute → verify → ship. For each phase. You review at phase boundaries. The agent manages everything else.
 
-**You don't need to know 26 skills, 22 agents, or 42 commands.** They're auto-routed. The sections below are for power users who want to understand the machinery — or pick specific skills for specific situations.
+**You don't need to know 26 skills, 14 agents, or 42 commands.** They're auto-routed. The sections below are for power users who want to understand the machinery — or pick specific skills for specific situations.
 
 ---
 
@@ -176,7 +176,7 @@ Kinderpowers L3 gives you structured parallel execution: non-overlapping file do
 
 **Agents:** strategic-planner, quality-gate, team-coordinator, research-extractor, multi-perspective-review, code-reviewer
 
-**GSD Agents (16):** codebase-mapper, debugger, executor, integration-checker, nyquist-auditor, phase-researcher, plan-checker, planner, project-researcher, research-synthesizer, roadmapper, ui-auditor, ui-checker, ui-researcher, user-profiler, verifier
+**GSD Agents (8):** gsd-codebase-mapper, gsd-debugger, gsd-executor, gsd-researcher, gsd-verifier, gsd-ui, gsd-planner, gsd-user-profiler (parameterized in v6.2.0 — old aliases like gsd-roadmapper, gsd-phase-researcher exist as stubs)
 
 <details>
 <summary>Before / After</summary>
@@ -343,13 +343,14 @@ Everything below is auto-routed. Skills inject when relevant files are touched. 
 | team-orchestration | L3 | Coordinating multiple Claude Code agents in parallel |
 | dispatching-parallel-agents | L3 | 2+ independent tasks with no shared state |
 | dispatching-to-runtimes | L3 | Writing prompts for Gemini, GPT, or local models |
+| using-kinderpowers | meta | Understanding the kinderpowers system itself |
 
 Skills are invitations, not commands. Every recommendation documents the cost of skipping it.
 
 </details>
 
 <details>
-<summary><b>22 Agents</b> — spawned automatically by skills and GSD commands</summary>
+<summary><b>14 Agents (6 kinderpowers + 8 GSD)</b> — spawned automatically by skills and GSD commands</summary>
 
 **Kinderpowers Agents (6)**
 
@@ -362,26 +363,20 @@ Skills are invitations, not commands. Every recommendation documents the cost of
 | research-extractor | opus | Read, Grep, Glob, Bash, WebSearch, WebFetch | Idea extraction / usage evaluation / deep integration |
 | multi-perspective-review | opus | Read, Grep, Glob, Bash, Agent | Council mode — spawns disposable review lenses |
 
-**GSD Agents (16)** — lifecycle automation
+**GSD Agents (8)** — parameterized lifecycle automation (v6.2.0)
 
 | Agent | Purpose |
 |-------|---------|
-| gsd-planner | Detailed phase plans with task breakdown |
+| gsd-planner | Parameterized planning (scope: phase, project). Replaces gsd-roadmapper |
 | gsd-executor | Plan execution with atomic commits |
-| gsd-verifier | Phase goal verification |
+| gsd-verifier | Parameterized verification (mode: goal-backward, integration, plan-quality, coverage). Replaces gsd-integration-checker, gsd-plan-checker, gsd-nyquist-auditor |
 | gsd-debugger | Scientific method debugging with persistent state |
-| gsd-phase-researcher | Phase implementation research |
-| gsd-project-researcher | Domain ecosystem research |
-| gsd-research-synthesizer | Research output synthesis |
-| gsd-roadmapper | Project roadmap creation |
+| gsd-researcher | Parameterized research (mode: phase, project, synthesize). Replaces gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer |
 | gsd-codebase-mapper | Parallel codebase analysis |
-| gsd-plan-checker | Plan quality validation before execution |
-| gsd-integration-checker | Cross-phase E2E verification |
-| gsd-nyquist-auditor | Test coverage gap filling |
-| gsd-ui-researcher | UI design contract generation |
-| gsd-ui-auditor | 6-pillar frontend audit |
-| gsd-ui-checker | UI-SPEC validation |
+| gsd-ui | Parameterized UI agent (mode: spec, audit, validate). Replaces gsd-ui-researcher, gsd-ui-auditor, gsd-ui-checker |
 | gsd-user-profiler | Developer behavioral profiling |
+
+Old agent names (gsd-roadmapper, gsd-phase-researcher, etc.) exist as alias stubs that delegate to the parameterized agents above.
 
 Tool restrictions are intentional: reviewers can't write code, planners can't spawn agents, extractors get web access. The `tools` frontmatter field controls what each agent can do.
 
@@ -442,19 +437,21 @@ Enable with `hookify:configure` or copy from `hookify-rules/` to your hookify in
 </details>
 
 <details>
-<summary><b>2 MCP Servers</b> — Rust-native, install independently, 7x-27x token savings</summary>
+<summary><b>2 MCP Servers</b> — Rust-native, install independently, 7x token savings</summary>
 
 ### kp-github-mcp — drop-in GitHub plugin replacement
 
 The official Claude Code GitHub plugin returns raw API responses. Listing 5 issues burns ~7,700 tokens on avatar URLs, node IDs, empty arrays, and nested user objects nobody asked for. kp-github-mcp runs the same queries through a 5-stage compression pipeline and returns only what matters.
 
-| Query | Official Plugin | kp-github (default) | kp-github (projected) |
-|-------|----------------|--------------------|-----------------------|
-| 5 open issues | ~7,700 tokens | ~1,100 tokens | ~280 tokens |
-| **Reduction** | 1x | **7x** | **27x** |
+| Query | Official Plugin | kp-github (default) |
+|-------|----------------|-------------------|
+| 5 open issues | ~7,700 tokens | ~1,100 tokens |
+| **Reduction** | 1x | **7x** |
+
+Pre-built binaries for linux-x86_64 and macOS-arm64 are included. If you don't have Rust, the plugin system uses these automatically.
 
 ```bash
-# Install (requires Rust toolchain)
+# Install (requires Rust toolchain, or use pre-built binaries)
 cd mcp-servers/github && cargo build --release
 claude mcp add kp-github --transport stdio -- ./target/release/kp-github-mcp
 
@@ -534,7 +531,7 @@ graph TB
 
     subgraph "Lifecycle Engine"
         gsd_cmds["<b>GSD commands (42)</b><br/>roadmap · plan · execute<br/>verify · debug · ship"]
-        gsd_agents["<b>GSD agents (16)</b><br/>planner · executor · verifier<br/>debugger · researcher · mapper"]
+        gsd_agents["<b>GSD agents (8)</b><br/>planner · executor · verifier<br/>debugger · researcher · mapper · ui · profiler"]
     end
 
     subgraph "Worker Layer"
@@ -571,7 +568,7 @@ cd ~/.claude/plugins/kinderpowers
 ./setup.sh
 ```
 
-`setup.sh` creates symlinks for GSD commands (`~/.claude/commands/gsd/`), GSD agents (`~/.claude/agents/gsd-*.md`), and the GSD runtime (`~/.claude/get-shit-done/`). Idempotent — safe to re-run. Installs hookify rules if hookify is present.
+`setup.sh` creates the GSD runtime symlink (`~/.claude/get-shit-done/`), installs hookify rules if hookify is present, and sets up the agent-outcome-logger hook. Idempotent — safe to re-run. GSD commands and agents are registered automatically by the plugin system — setup.sh does not symlink them.
 
 For other platforms (Cursor, Codex, OpenCode), see the upstream [superpowers docs](https://github.com/obra/superpowers) and substitute this repo.
 
@@ -595,7 +592,7 @@ The kinderpowers way: "Strongly recommended. Skip cost: [what you lose]."
 ## Credits
 
 - **[superpowers](https://github.com/obra/superpowers)** by Jesse Vincent — the craft philosophy, skill format, scanner, and hook system that started it all
-- **[get-shit-done](https://github.com/davidjbauer/get-shit-done)** by Davíd Braun — the lifecycle engine, 42 commands, 16 agents, and workflow machinery
+- **[get-shit-done](https://github.com/davidjbauer/get-shit-done)** by Davíd Braun — the lifecycle engine, 42 commands, 8 parameterized agents, and workflow machinery
 - **[hookify](https://github.com/QuantGeekDev/hookify)** by Diego Perez — the enforcement rule format and Claude Code hook framework
 - **[jw409](https://github.com/jw409)** — progression model, agency-preserving philosophy, council mode, new skills and agents
 
