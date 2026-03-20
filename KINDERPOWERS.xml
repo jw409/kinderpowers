@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<kinderpowers-manifest version="6.1.0" architecture="plugin-first">
+<kinderpowers-manifest version="6.2.0" architecture="plugin-first">
 
 <!--
   kinderpowers: AN OPERATING SYSTEM FOR AI AGENTS
@@ -17,7 +17,7 @@
   <section name="emergency-start" what="Install and use in 60 seconds"/>
   <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
   <section name="skill-catalog" what="All 27 skills with levels, triggers, and costs"/>
-  <section name="agent-catalog" what="All 22 agents with capabilities, tools, and model requirements"/>
+  <section name="agent-catalog" what="All 14 agents with capabilities, tools, and model requirements"/>
   <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Sequential Thinking)"/>
   <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
   <section name="hookify-rules" what="3 default enforcement rules (ship disabled)"/>
@@ -128,9 +128,9 @@
 </skill-catalog>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     AGENT CATALOG: 21 agents (5 kinderpowers + 16 GSD)
+     AGENT CATALOG: 14 agents (6 kinderpowers + 8 GSD)
      ═══════════════════════════════════════════════════════════════ -->
-<agent-catalog count="22">
+<agent-catalog count="14">
   <!-- ──────────────────────────────────────────────────────────── -->
   <!-- Kinderpowers agents (6)                                     -->
   <!-- ──────────────────────────────────────────────────────────── -->
@@ -187,7 +187,7 @@
   </agent>
 
   <!-- ──────────────────────────────────────────────────────────── -->
-  <!-- GSD agents (16) — lifecycle engine workers                  -->
+  <!-- GSD agents (8) — collapsed from 16 via parameterized modes   -->
   <!-- ──────────────────────────────────────────────────────────── -->
   <agent name="gsd-codebase-mapper" level="4" model="sonnet">
     <description>Explores codebase with parallel focus areas (tech, arch, quality, concerns).
@@ -197,92 +197,47 @@
 
   <agent name="gsd-debugger" level="4" model="opus">
     <description>Scientific method debugging: hypothesis → test → narrow → fix.
-      Manages debug sessions with checkpoints for crash recovery.</description>
+      Manages debug sessions with checkpoints for crash recovery. Parameters control assertion depth.</description>
     <tools>Read, Write, Edit, Bash, Grep, Glob, WebSearch</tools>
+    <parameters>depth (quick/standard/deep), max_hypotheses (numeric bound)</parameters>
   </agent>
 
   <agent name="gsd-executor" level="4" model="opus">
     <description>Executes plans with atomic commits, deviation handling, checkpoint protocols,
-      and state management. Spawned by execute-phase orchestrator.</description>
+      and state management. Spawned by execute-phase orchestrator. Parameters control rollback strictness.</description>
     <tools>Read, Write, Edit, Bash, Grep, Glob</tools>
+    <parameters>rollback_mode (strict/lenient/none), checkpoint_frequency (task/phase/manual)</parameters>
   </agent>
 
-  <agent name="gsd-integration-checker" level="4" model="opus">
-    <description>Verifies cross-phase integration and E2E flows. Checks that phases connect
-      properly and user workflows complete end-to-end.</description>
-    <tools>Read, Bash, Grep, Glob</tools>
+  <agent name="gsd-researcher" level="4" model="opus">
+    <description>Parameterized research agent with 3 modes: phase (implementation research), project (domain ecosystem), synthesize (merge outputs). Replaces gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer.</description>
+    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, SendMessage</tools>
+    <parameters>mode (phase/project/synthesize), depth (quick/standard/deep)</parameters>
   </agent>
 
-  <agent name="gsd-nyquist-auditor" level="4" model="opus">
-    <description>Fills Nyquist validation gaps by generating tests and verifying coverage
-      for phase requirements. Named after Nyquist sampling theorem — test at 2x the
-      rate of change to catch regressions.</description>
-    <tools>Read, Write, Edit, Bash, Glob, Grep</tools>
+  <agent name="gsd-verifier" level="4" model="opus">
+    <description>Parameterized verification agent with 4 modes: goal-backward (phase goals), integration (cross-phase E2E), plan-quality (pre-execution check), coverage (test gap filling). Replaces gsd-verifier, gsd-integration-checker, gsd-plan-checker, gsd-nyquist-auditor.</description>
+    <tools>Read, Write, Bash, Grep, Glob, SendMessage</tools>
+    <parameters>mode (goal-backward/integration/plan-quality/coverage), strictness (lenient/standard/strict)</parameters>
   </agent>
 
-  <agent name="gsd-phase-researcher" level="4" model="opus">
-    <description>Researches how to implement a phase before planning. Produces RESEARCH.md
-      consumed by gsd-planner.</description>
-    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch</tools>
-  </agent>
-
-  <agent name="gsd-plan-checker" level="4" model="opus">
-    <description>Goal-backward analysis of plan quality. Verifies plans will achieve
-      phase goal before execution begins.</description>
-    <tools>Read, Bash, Glob, Grep</tools>
+  <agent name="gsd-ui" level="4" model="opus">
+    <description>Parameterized UI agent with 3 modes: spec (design contract), audit (6-pillar visual review), validate (spec compliance check). Replaces gsd-ui-researcher, gsd-ui-auditor, gsd-ui-checker.</description>
+    <tools>Read, Write, Bash, Grep, Glob, SendMessage</tools>
+    <parameters>mode (spec/audit/validate), pillars (which of 6 to check)</parameters>
   </agent>
 
   <agent name="gsd-planner" level="4" model="opus">
     <description>Creates executable phase plans with task breakdown, dependency analysis,
-      and goal-backward verification.</description>
-    <tools>Read, Write, Bash, Glob, Grep, WebFetch</tools>
-  </agent>
-
-  <agent name="gsd-project-researcher" level="4" model="opus">
-    <description>Researches domain ecosystem before roadmap creation. Produces files in
-      .planning/research/ consumed during roadmap creation.</description>
-    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch</tools>
-  </agent>
-
-  <agent name="gsd-research-synthesizer" level="4" model="sonnet">
-    <description>Synthesizes research outputs from parallel researcher agents into SUMMARY.md.</description>
-    <tools>Read, Write, Bash</tools>
-  </agent>
-
-  <agent name="gsd-roadmapper" level="4" model="opus">
-    <description>Creates project roadmaps with phase breakdown, requirement mapping,
-      success criteria derivation, and coverage validation.</description>
-    <tools>Read, Write, Bash, Glob, Grep</tools>
-  </agent>
-
-  <agent name="gsd-ui-auditor" level="4" model="opus">
-    <description>Retroactive 6-pillar visual audit of implemented frontend code.
-      Pillars: layout, typography, color, spacing, interaction, accessibility.</description>
-    <tools>Read, Write, Bash, Grep, Glob</tools>
-  </agent>
-
-  <agent name="gsd-ui-checker" level="4" model="opus">
-    <description>Validates UI-SPEC.md design contracts against 6 quality dimensions.
-      Produces BLOCK/FLAG/PASS verdicts.</description>
-    <tools>Read, Bash, Glob, Grep</tools>
-  </agent>
-
-  <agent name="gsd-ui-researcher" level="4" model="opus">
-    <description>Produces UI-SPEC.md design contract for frontend phases. Reads upstream
-      artifacts, detects design system state, asks only unanswered questions.</description>
-    <tools>Read, Write, Bash, Grep, Glob, WebSearch, WebFetch</tools>
+      and goal-backward verification. scope=project absorbs roadmapper functionality.</description>
+    <tools>Read, Write, Bash, Glob, Grep, WebFetch, SendMessage</tools>
+    <parameters>scope (phase/milestone/project), task_size (small/medium/large)</parameters>
   </agent>
 
   <agent name="gsd-user-profiler" level="4" model="sonnet">
     <description>Analyzes session messages across 8 behavioral dimensions to produce a
       scored developer profile with confidence levels and evidence.</description>
     <tools>Read</tools>
-  </agent>
-
-  <agent name="gsd-verifier" level="4" model="opus">
-    <description>Goal-backward verification: checks codebase delivers what phase promised,
-      not just that tasks completed. Creates VERIFICATION.md report.</description>
-    <tools>Read, Write, Bash, Grep, Glob</tools>
   </agent>
 </agent-catalog>
 
