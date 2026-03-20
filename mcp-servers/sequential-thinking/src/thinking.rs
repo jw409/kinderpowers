@@ -1517,4 +1517,130 @@ mod tests {
         let hints = result["hints"].as_array().unwrap();
         assert!(hints.iter().any(|h| h["kind"] == "layer_available"));
     }
+
+    // ---- spawn_candidate hint tests ----
+
+    #[test]
+    fn spawn_hint_on_wide_explore() {
+        let mut engine = make_engine();
+        let mut t = make_thought(1, 10);
+        t.continuation_mode = Some("explore".into());
+        t.explore_count = Some(4);
+        t.proposals = Some(vec![
+            "Approach A".into(),
+            "Approach B".into(),
+            "Approach C".into(),
+            "Approach D".into(),
+        ]);
+        t.confidence = Some(0.4);
+        let result = engine.process(t).unwrap();
+        let hints = result["hints"].as_array().unwrap();
+        let spawn_hint = hints.iter().find(|h| h["kind"] == "spawn_candidate");
+        assert!(spawn_hint.is_some(), "expected spawn_candidate hint on wide explore");
+        let meta = &spawn_hint.unwrap()["spawnMeta"];
+        assert!(meta.is_object(), "expected spawnMeta object");
+        assert_eq!(meta["branchPoints"].as_array().unwrap().len(), 4);
+        assert!(meta["recommendedDepth"].as_u64().unwrap() >= 3);
+        assert!(meta["recommendedModel"].is_string());
+    }
+
+    #[test]
+    fn spawn_hint_on_uncertain_branches() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        // Create two branches with low confidence
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("opt-a".into());
+        b1.confidence = Some(0.3); // below branching_threshold (0.6)
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("opt-b".into());
+        b2.confidence = Some(0.4);
+        let result = engine.process(b2).unwrap();
+
+        let hints = result["hints"].as_array().unwrap();
+        let spawn_hint = hints.iter().find(|h| h["kind"] == "spawn_candidate");
+        assert!(spawn_hint.is_some(), "expected spawn_candidate on uncertain branches");
+        let meta = &spawn_hint.unwrap()["spawnMeta"];
+        let branch_points = meta["branchPoints"].as_array().unwrap();
+        assert_eq!(branch_points.len(), 2);
+    }
+
+    #[test]
+    fn spawn_hint_on_branching_with_existing() {
+        let mut engine = make_engine();
+        engine.process(make_thought(1, 10)).unwrap();
+
+        let mut b1 = make_thought(2, 10);
+        b1.branch_from_thought = Some(1);
+        b1.branch_id = Some("path-a".into());
+        engine.process(b1).unwrap();
+
+        let mut b2 = make_thought(3, 10);
+        b2.branch_from_thought = Some(1);
+        b2.branch_id = Some("path-b".into());
+        engine.process(b2).unwrap();
+
+        // Third branch triggers spawn_candidate
+        let mut b3 = make_thought(4, 10);
+        b3.continuation_mode = Some("branch".into());
+        b3.branch_from_thought = Some(1);
+        b3.branch_id = Some("path-c".into());
+        let result = engine.process(b3).unwrap();
+
+        let hints = result["hints"].as_array().unwrap();
+        assert!(hints.iter().any(|h| h["kind"] == "spawn_candidate"),
+            "expected spawn_candidate when branching with 2+ existing branches");
+    }
+
+    #[test]
+    fn no_spawn_hint_on_simple_explore() {
+        // explore_count < 3 should NOT trigger spawn_candidate
+        let mut engine = make_engine();
+        let mut t = make_thought(1, 5);
+        t.continuation_mode = Some("explore".into());
+        t.explore_count = Some(2);
+        t.proposals = Some(vec!["A".into(), "B".into()]);
+        let result = engine.process(t).unwrap();
+        if let Some(hints) = result.get("hints") {
+            let hints = hints.as_array().unwrap();
+            assert!(!hints.iter().any(|h| h["kind"] == "spawn_candidate"),
+                "should NOT get spawn_candidate with only 2 proposals");
+        }
+    }
+
+    #[test]
+    fn spawn_hint_recommended_model_thinking_on_very_low_confidence() {
+        let mut engine = make_engine();
+        let mut t = make_thought(1, 10);
+        t.continuation_mode = Some("explore".into());
+        t.explore_count = Some(4);
+        t.proposals = Some(vec!["A".into(), "B".into(), "C".into(), "D".into()]);
+        t.confidence = Some(0.2); // very low -> should recommend "thinking"
+        let result = engine.process(t).unwrap();
+        let hints = result["hints"].as_array().unwrap();
+        let spawn_hint = hints.iter().find(|h| h["kind"] == "spawn_candidate").unwrap();
+        assert_eq!(spawn_hint["spawnMeta"]["recommendedModel"], "thinking");
+    }
+
+    #[test]
+    fn spawn_hint_recommended_depth_uses_remaining_thoughts() {
+        let mut engine = make_engine();
+        // Process thought 1 first
+        engine.process(make_thought(1, 15)).unwrap();
+        let mut t = make_thought(2, 15); // 13 remaining, clamped to 10
+        t.continuation_mode = Some("explore".into());
+        t.explore_count = Some(3);
+        t.proposals = Some(vec!["A".into(), "B".into(), "C".into()]);
+        t.confidence = Some(0.4);
+        let result = engine.process(t).unwrap();
+        let hints = result["hints"].as_array().unwrap();
+        let spawn_hint = hints.iter().find(|h| h["kind"] == "spawn_candidate").unwrap();
+        let depth = spawn_hint["spawnMeta"]["recommendedDepth"].as_u64().unwrap();
+        assert!(depth >= 3 && depth <= 10, "recommended_depth should be clamped 3-10, got {}", depth);
+    }
 }
