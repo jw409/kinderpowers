@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Sequential Thinking Spawn Hints** - Rust MCP server surfaces spawn candidates and enhanced merge summaries
 - [ ] **Phase 2: Agent Collapse** - Consolidate 16 GSD agents into 8 parameterized agents with aliases
 - [ ] **Phase 3: Beads Integration** - Wire bead lifecycle into GSD commands for cross-session memory
-- [ ] **Phase 4: Agent Parameterization** - Add caller-controlled parameters to remaining 4 agents
+- [x] **Phase 4: Agent Parameterization** - Add caller-controlled parameters to remaining 4 agents (completed 2026-03-20)
 - [ ] **Phase 5: Skill Parameterization** - Add caller-controlled parameters to 6 skills
 
 ## Phase Details
@@ -76,7 +76,7 @@ Plans:
   2. research-extractor accepts mode, depth, and output parameters
   3. team-coordinator accepts worker_count, worker_model, isolation, and coordination parameters
   4. gsd-debugger accepts method, max_hypotheses, checkpoint_frequency, and escalation parameters
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 04-01-PLAN.md — Parameterize code-reviewer and research-extractor agents
 - [ ] 04-02-PLAN.md — Parameterize team-coordinator and gsd-debugger agents
@@ -108,5 +108,5 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 | 1. Sequential Thinking Spawn Hints | 0/3 | Planning complete | - |
 | 2. Agent Collapse | 3/4 | In Progress|  |
 | 3. Beads Integration | 0/2 | Planning complete | - |
-| 4. Agent Parameterization | 0/2 | Planning complete | - |
+| 4. Agent Parameterization | 2/2 | Complete   | 2026-03-20 |
 | 5. Skill Parameterization | 0/3 | Planning complete | - |

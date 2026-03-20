@@ -35,8 +35,8 @@
 
 - [x] **PARAM-01**: code-reviewer agent: focus, pedanticness, scope parameters
 - [x] **PARAM-02**: research-extractor agent: mode, depth, output parameters
-- [ ] **PARAM-03**: team-coordinator agent: worker_count, worker_model, isolation, coordination parameters
-- [ ] **PARAM-04**: gsd-debugger agent: method, max_hypotheses, checkpoint_frequency, escalation parameters
+- [x] **PARAM-03**: team-coordinator agent: worker_count, worker_model, isolation, coordination parameters
+- [x] **PARAM-04**: gsd-debugger agent: method, max_hypotheses, checkpoint_frequency, escalation parameters
 - [ ] **PARAM-05**: systematic-debugging skill: depth, hypothesis_count, reproduce_first parameters
 - [ ] **PARAM-06**: brainstorming skill: breadth, mode, time_box parameters
 - [ ] **PARAM-07**: test-driven-development skill: strictness, coverage_target, test_style parameters
@@ -89,8 +89,8 @@
 | BEADS-06 | Phase 3 | Complete |
 | PARAM-01 | Phase 4 | Complete |
 | PARAM-02 | Phase 4 | Complete |
-| PARAM-03 | Phase 4 | Pending |
-| PARAM-04 | Phase 4 | Pending |
+| PARAM-03 | Phase 4 | Complete |
+| PARAM-04 | Phase 4 | Complete |
 | PARAM-05 | Phase 5 | Pending |
 | PARAM-06 | Phase 5 | Pending |
 | PARAM-07 | Phase 5 | Pending |
