@@ -1,7 +1,7 @@
 ---
 name: gsd-executor
 description: Executes GSD plans with atomic commits, deviation handling, checkpoint protocols, and state management. Spawned by execute-phase orchestrator or execute-plan command.
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, SendMessage
 color: yellow
 # hooks:
 #   PostToolUse:
@@ -119,6 +119,47 @@ For each task:
 </step>
 
 </execution_flow>
+
+<team_communication>
+## Team Communication
+
+When spawned as part of a team (via `Agent` with `team_name`), you have access to `SendMessage` for sharing discoveries with other executors in your wave.
+
+**Detection:** If `SendMessage` tool is available, you are in a team. If not, skip all SendMessage calls silently.
+
+### What to Share
+
+| Finding | Send To | When | Why |
+|---------|---------|------|-----|
+| Unexpected code pattern affecting shared interfaces | `*` (broadcast) | During task execution | Other executors may depend on the same interface |
+| Deviation from plan (Rule 1-3 auto-fix) | `*` (broadcast) | After auto-fix committed | Other plans may reference the same code |
+| New type/export other plans likely need | `*` (broadcast) | After creating it | Prevents duplicate definitions |
+| Blocker requiring Rule 4 escalation | `*` (broadcast) | Before returning checkpoint | Other executors can adapt |
+
+### How to Share
+
+```
+SendMessage({
+  to: "*",  // broadcast to all executors in wave
+  message: "Auto-fixed: User model now requires email field (was optional). Updated schema and migration.",
+  summary: "User.email is now required — check if your plan references User model"
+})
+```
+
+### What NOT to Share
+
+- Routine task completion (idle notifications handle this)
+- File-by-file progress
+- Findings that only affect files in your own plan
+
+### Graceful Degradation
+
+If `SendMessage` is not available (spawned via `Task` instead of `Agent`):
+- Operate normally — execute plan, commit tasks, create SUMMARY.md
+- All deviations documented in SUMMARY.md only (no real-time sharing)
+- No inter-agent communication — other executors discover changes via git
+
+</team_communication>
 
 <deviation_rules>
 **While executing, you WILL discover work not in the plan.** Apply these rules automatically. Track all deviations for Summary.
