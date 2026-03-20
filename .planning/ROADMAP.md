@@ -17,6 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 3: Beads Integration** - Wire bead lifecycle into GSD commands for cross-session memory
 - [x] **Phase 4: Agent Parameterization** - Add caller-controlled parameters to remaining 4 agents (completed 2026-03-20)
 - [x] **Phase 5: Skill Parameterization** - Add caller-controlled parameters to 6 skills (completed 2026-03-20)
+- [ ] **Phase 6: Team Mode** - Replace fire-and-forget Task spawns with TeamCreate + SendMessage collaboration
 
 ## Phase Details
 
@@ -97,10 +98,25 @@ Plans:
 - [ ] 05-02-PLAN.md — Parameterize test-driven-development and verification-before-completion skills
 - [ ] 05-03-PLAN.md — Parameterize adversarial-review and subagent-driven-development skills
 
+### Phase 6: Team Mode
+**Goal**: Multi-agent GSD workflows use TeamCreate + named Agent spawns with SendMessage collaboration instead of fire-and-forget Task(background), with graceful fallback for older runtimes
+**Depends on**: Phase 5
+**Requirements**: TEAM-01, TEAM-02, TEAM-03, TEAM-04
+**Success Criteria** (what must be TRUE):
+  1. map-codebase, execute-phase, and new-project workflows use TeamCreate + Agent when TeamCreate tool is available
+  2. All 4 GSD agent .md files (mapper, executor, researcher, verifier) have Team Communication sections with what/when/how to share
+  3. Team lifecycle is managed (TeamCreate at start, TeamDelete after completion) in all team-enabled workflows
+  4. All team-enabled workflows fall back to Task(background) when TeamCreate is unavailable
+  5. Agents gracefully handle not being in a team (no SendMessage errors when spawned via Task)
+**Plans:** 2 plans
+Plans:
+- [ ] 06-01-PLAN.md — Add TeamCreate/Agent/TeamDelete to 3 multi-agent workflow files
+- [ ] 06-02-PLAN.md — Add Team Communication sections to 4 agent files
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6
 Note: Phases 1 and 2 are independent (different file domains) and could execute in parallel.
 
 | Phase | Plans Complete | Status | Completed |
@@ -110,3 +126,4 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 | 3. Beads Integration | 0/2 | Planning complete | - |
 | 4. Agent Parameterization | 2/2 | Complete   | 2026-03-20 |
 | 5. Skill Parameterization | 3/3 | Complete   | 2026-03-20 |
+| 6. Team Mode | 0/2 | Planning complete | - |

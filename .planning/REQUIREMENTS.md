@@ -44,6 +44,13 @@
 - [x] **PARAM-09**: adversarial-review skill: intensity, min_findings, focus parameters
 - [x] **PARAM-10**: subagent-driven-development skill: worker_model, review_between, parallelism parameters
 
+### Team Mode (#7)
+
+- [ ] **TEAM-01**: GSD workflows (map-codebase, execute-phase, new-project) use TeamCreate + named Agent spawns instead of Task(background)
+- [ ] **TEAM-02**: Agent .md files (mapper, executor, researcher, verifier) have Team Communication section with what/when/how to share via SendMessage
+- [ ] **TEAM-03**: Team lifecycle managed in all team-enabled workflows (TeamCreate at start, TeamDelete after completion)
+- [ ] **TEAM-04**: All team-enabled workflows fall back to Task(background) when TeamCreate tool is unavailable
+
 ## v2 Requirements
 
 ### Inter-Agent Communication (party mode)
@@ -54,7 +61,7 @@
 
 ### Self-Tuning Pipeline
 
-- **TUNE-01**: Sequential thinking JSONL logs analyzed for pattern→outcome correlations
+- **TUNE-01**: Sequential thinking JSONL logs analyzed for pattern->outcome correlations
 - **TUNE-02**: Profile parameters auto-adjusted based on historical branch success rates
 
 ## Out of Scope
@@ -97,11 +104,15 @@
 | PARAM-08 | Phase 5 | Pending |
 | PARAM-09 | Phase 5 | Complete |
 | PARAM-10 | Phase 5 | Complete |
+| TEAM-01 | Phase 6 | Pending |
+| TEAM-02 | Phase 6 | Pending |
+| TEAM-03 | Phase 6 | Pending |
+| TEAM-04 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 27 total
-- Mapped to phases: 27
-- Unmapped: 0 ✓
+- v1 requirements: 31 total
+- Mapped to phases: 31
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-19*
