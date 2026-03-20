@@ -18,7 +18,7 @@ if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
 
 ```bash
-UI_AUDITOR_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" resolve-model gsd-ui-auditor --raw)
+UI_AUDITOR_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" resolve-model gsd-ui --raw)
 ```
 
 Display banner:
@@ -56,7 +56,7 @@ Build file list for auditor:
 - UI-SPEC.md (if exists — audit baseline)
 - CONTEXT.md (if exists — locked decisions)
 
-## 3. Spawn gsd-ui-auditor
+## 3. Spawn gsd-ui (mode=audit)
 
 ```
 ◆ Spawning UI auditor...
@@ -65,7 +65,9 @@ Build file list for auditor:
 Build prompt:
 
 ```markdown
-Read ~/.claude/agents/gsd-ui-auditor.md for instructions.
+Your mode is: audit
+
+Read ~/.claude/agents/gsd-ui.md for instructions.
 
 <objective>
 Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
@@ -91,7 +93,7 @@ Omit null file paths.
 ```
 Task(
   prompt=ui_audit_prompt,
-  subagent_type="gsd-ui-auditor",
+  subagent_type="gsd-ui",
   model="{UI_AUDITOR_MODEL}",
   description="UI Audit Phase {N}"
 )
@@ -150,7 +152,7 @@ node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs(${padded_phase})
 - [ ] Phase validated
 - [ ] SUMMARY.md files found (execution completed)
 - [ ] Existing review handled (re-audit/view)
-- [ ] gsd-ui-auditor spawned with correct context
+- [ ] gsd-ui (mode=audit) spawned with correct context
 - [ ] UI-REVIEW.md created in phase directory
 - [ ] Score summary displayed to user
 - [ ] Next steps presented

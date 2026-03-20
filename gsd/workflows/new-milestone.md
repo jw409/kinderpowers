@@ -117,11 +117,11 @@ AskUserQuestion: "Research the domain ecosystem for new features before defining
 mkdir -p .planning/research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents. Each uses this template with dimension-specific fields:
+Spawn 4 parallel gsd-researcher (mode=project) agents. Each uses this template with dimension-specific fields:
 
 **Common structure for all 4 researchers:**
 ```
-Task(prompt="
+Task(prompt="Your mode is: project\n\n
 <research_type>Project Research — {DIMENSION} for [new features].</research_type>
 
 <milestone_context>
@@ -144,7 +144,7 @@ Focus ONLY on what's needed for the NEW features.
 Write to: .planning/research/{FILE}
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/{FILE}
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="{DIMENSION} research")
+", subagent_type="gsd-researcher", model="{researcher_model}", description="{DIMENSION} research")
 ```
 
 **Dimension-specific fields:**
@@ -160,7 +160,7 @@ Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/{FILE}
 After all 4 complete, spawn synthesizer:
 
 ```
-Task(prompt="
+Task(prompt="Your mode is: synthesize\n\n
 Synthesize research outputs into SUMMARY.md.
 
 <files_to_read>
@@ -173,7 +173,7 @@ Synthesize research outputs into SUMMARY.md.
 Write to: .planning/research/SUMMARY.md
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/SUMMARY.md
 Commit after writing.
-", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="gsd-researcher", model="{synthesizer_model}", description="Synthesize research")
 ```
 
 Display key findings from SUMMARY.md:
@@ -273,7 +273,7 @@ node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs: define mileston
 **Starting phase number:** Read MILESTONES.md for last phase number. Continue from there (v1.0 ended at phase 5 → v1.1 starts at phase 6).
 
 ```
-Task(prompt="
+Task(prompt="Your scope is: project\n\n
 <planning_context>
 <files_to_read>
 - .planning/PROJECT.md
@@ -296,7 +296,7 @@ Create roadmap for milestone v[X.Y]:
 
 Write files first, then return.
 </instructions>
-", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="gsd-planner", model="{roadmapper_model}", description="Create roadmap")
 ```
 
 **Handle return:**
@@ -375,7 +375,7 @@ Also: `/gsd:plan-phase [N]` — skip discussion, plan directly
 - [ ] Research completed (if selected) — 4 parallel agents, milestone-aware
 - [ ] Requirements gathered and scoped per category
 - [ ] REQUIREMENTS.md created with REQ-IDs
-- [ ] gsd-roadmapper spawned with phase numbering context
+- [ ] gsd-planner (scope=project) spawned with phase numbering context
 - [ ] Roadmap files written immediately (not draft)
 - [ ] User feedback incorporated (if any)
 - [ ] ROADMAP.md phases continue from previous milestone

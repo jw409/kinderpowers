@@ -290,7 +290,7 @@ Spawn a single focused researcher (not 4 parallel researchers like full phases â
 
 ```
 Task(
-  prompt="
+  prompt="Your mode is: phase\n\n
 <research_context>
 
 **Mode:** quick-task
@@ -322,7 +322,7 @@ Use standard research format but keep it lean â€” skip sections that don't apply
 Return: ## RESEARCH COMPLETE with file path
 </output>
 ",
-  subagent_type="gsd-phase-researcher",
+  subagent_type="gsd-researcher",
   model="{planner_model}",
   description="Research: ${DESCRIPTION}"
 )
@@ -437,8 +437,8 @@ ${DISCUSS_MODE ? '- Context compliance: Does the plan honor locked decisions fro
 
 ```
 Task(
-  prompt=checker_prompt,
-  subagent_type="gsd-plan-checker",
+  prompt="Your mode is: plan-quality\n\n" + checker_prompt,
+  subagent_type="gsd-verifier",
   model="{checker_model}",
   description="Check quick plan: ${DESCRIPTION}"
 )

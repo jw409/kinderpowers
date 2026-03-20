@@ -546,10 +546,10 @@ Display spawning indicator:
   → Pitfalls research
 ```
 
-Spawn 4 parallel gsd-project-researcher agents with path references:
+Spawn 4 parallel gsd-researcher (mode=project) agents with path references:
 
 ```
-Task(prompt="<research_type>
+Task(prompt="Your mode is: project\n\n<research_type>
 Project Research — Stack dimension for [domain].
 </research_type>
 
@@ -585,9 +585,9 @@ Your STACK.md feeds into roadmap creation. Be prescriptive:
 Write to: .planning/research/STACK.md
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/STACK.md
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Stack research")
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Stack research")
 
-Task(prompt="<research_type>
+Task(prompt="Your mode is: project\n\n<research_type>
 Project Research — Features dimension for [domain].
 </research_type>
 
@@ -623,9 +623,9 @@ Your FEATURES.md feeds into requirements definition. Categorize clearly:
 Write to: .planning/research/FEATURES.md
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/FEATURES.md
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Features research")
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Features research")
 
-Task(prompt="<research_type>
+Task(prompt="Your mode is: project\n\n<research_type>
 Project Research — Architecture dimension for [domain].
 </research_type>
 
@@ -661,9 +661,9 @@ Your ARCHITECTURE.md informs phase structure in roadmap. Include:
 Write to: .planning/research/ARCHITECTURE.md
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/ARCHITECTURE.md
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Architecture research")
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Architecture research")
 
-Task(prompt="<research_type>
+Task(prompt="Your mode is: project\n\n<research_type>
 Project Research — Pitfalls dimension for [domain].
 </research_type>
 
@@ -699,13 +699,13 @@ Your PITFALLS.md prevents mistakes in roadmap/planning. For each pitfall:
 Write to: .planning/research/PITFALLS.md
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/PITFALLS.md
 </output>
-", subagent_type="gsd-project-researcher", model="{researcher_model}", description="Pitfalls research")
+", subagent_type="gsd-researcher", model="{researcher_model}", description="Pitfalls research")
 ```
 
 After all 4 agents complete, spawn synthesizer to create SUMMARY.md:
 
 ```
-Task(prompt="
+Task(prompt="Your mode is: synthesize\n\n
 <task>
 Synthesize research outputs into SUMMARY.md.
 </task>
@@ -722,7 +722,7 @@ Write to: .planning/research/SUMMARY.md
 Use template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/research-project/SUMMARY.md
 Commit after writing.
 </output>
-", subagent_type="gsd-research-synthesizer", model="{synthesizer_model}", description="Synthesize research")
+", subagent_type="gsd-researcher", model="{synthesizer_model}", description="Synthesize research")
 ```
 
 Display research complete banner and key findings:
@@ -898,10 +898,10 @@ Display stage banner:
 ◆ Spawning roadmapper...
 ```
 
-Spawn gsd-roadmapper agent with path references:
+Spawn gsd-planner (scope=project) agent with path references:
 
 ```
-Task(prompt="
+Task(prompt="Your scope is: project\n\n
 <planning_context>
 
 <files_to_read>
@@ -924,7 +924,7 @@ Create roadmap:
 
 Write files first, then return. This ensures artifacts persist even if context is lost.
 </instructions>
-", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Create roadmap")
+", subagent_type="gsd-planner", model="{roadmapper_model}", description="Create roadmap")
 ```
 
 **Handle roadmapper return:**
@@ -992,7 +992,7 @@ Use AskUserQuestion:
 - Get user's adjustment notes
 - Re-spawn roadmapper with revision context:
   ```
-  Task(prompt="
+  Task(prompt="Your scope is: project\n\n
   <revision>
   User feedback on roadmap:
   [user's notes]
@@ -1004,7 +1004,7 @@ Use AskUserQuestion:
   Update the roadmap based on feedback. Edit files in place.
   Return ROADMAP REVISED with changes made.
   </revision>
-  ", subagent_type="gsd-roadmapper", model="{roadmapper_model}", description="Revise roadmap")
+  ", subagent_type="gsd-planner", model="{roadmapper_model}", description="Revise roadmap")
   ```
 - Present revised roadmap
 - Loop until user approves
@@ -1100,7 +1100,7 @@ Exit skill and invoke SlashCommand("/gsd:discuss-phase 1 --auto")
 - [ ] Requirements gathered (from research or conversation)
 - [ ] User scoped each category (v1/v2/out of scope)
 - [ ] REQUIREMENTS.md created with REQ-IDs → **committed**
-- [ ] gsd-roadmapper spawned with context
+- [ ] gsd-planner (scope=project) spawned with context
 - [ ] Roadmap files written immediately (not draft)
 - [ ] User feedback incorporated (if any)
 - [ ] ROADMAP.md created with phases, requirement mappings, success criteria

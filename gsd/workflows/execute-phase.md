@@ -31,15 +31,15 @@ Always use the exact name from this list — do not fall back to 'general-purpos
 - gsd-executor — Executes plan tasks, commits, creates SUMMARY.md
 - gsd-verifier — Verifies phase completion, checks quality gates
 - gsd-planner — Creates detailed plans from phase scope
-- gsd-phase-researcher — Researches technical approaches for a phase
-- gsd-plan-checker — Reviews plan quality before execution
+- gsd-researcher (mode=phase) — Researches technical approaches for a phase
+- gsd-verifier (mode=plan-quality) — Reviews plan quality before execution
 - gsd-debugger — Diagnoses and fixes issues
 - gsd-codebase-mapper — Maps project structure and dependencies
-- gsd-integration-checker — Checks cross-phase integration
-- gsd-nyquist-auditor — Validates verification coverage
-- gsd-ui-researcher — Researches UI/UX approaches
-- gsd-ui-checker — Reviews UI implementation quality
-- gsd-ui-auditor — Audits UI against design requirements
+- gsd-verifier (mode=integration) — Checks cross-phase integration
+- gsd-verifier (mode=coverage) — Validates verification coverage
+- gsd-ui (mode=spec) — Researches UI/UX approaches
+- gsd-ui (mode=validate) — Reviews UI implementation quality
+- gsd-ui (mode=audit) — Audits UI against design requirements
 </available_agent_types>
 
 <process>
