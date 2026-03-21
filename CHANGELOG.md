@@ -1,5 +1,28 @@
 # Changelog
 
+## [6.2.2] — 2026-03-20
+
+### Added
+
+- `comprehensive-pr-review` skill — 7-persona team review with tiered depth, pedanticness slider, debate, self-improvement loop. Adapted from meshly v3 protocol.
+- UCP (Universal Commerce Protocol) added to recommended tools — commerce interop for agents building stores
+- Mapper intelligence ladder — AST scripts (ast.parse, cargo metadata, FTS5) as built-in product, not external tool dependency
+- Mapper self-assessment — coverage report shows what was captured vs what exists
+
+### Changed
+
+- Parameterized 4 more skills: writing-plans, executing-plans, architecture, requirements
+- XML skill catalog updated to 27 (added comprehensive-pr-review, using-kinderpowers)
+- README rewritten — lead with value, not architecture
+- Removed ck as dependency — purpose-built haiku agent with scripts is better
+- Troll-test findings fixed (README counts, setup.sh description, 2>/dev/null removal)
+
+### Fixed
+
+- kp-sequential-thinking: serde(default) on all Option fields — fixes MCP validation errors
+- kp-github-mcp: same serde(default) fix for 85 Option fields
+- Duplicate GSD directory tree cleaned up (failed upstream update artifact)
+
 ## [6.2.0] — 2026-03-20
 
 ### Philosophy: Caller Controls Everything
