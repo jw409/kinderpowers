@@ -5,6 +5,15 @@ description: Use when you have a written implementation plan to execute in a sep
 
 # Executing Plans
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `checkpoint_frequency` | per_task | never, per_task, per_phase | When to pause for review |
+| `commit_style` | per_task | per_task, per_phase, squash | Git commit granularity |
+| `deviation_handling` | auto | auto, pause, skip | What to do when plan doesn't match reality |
+| `verify_after` | true | true/false | Run verification after each task |
+
 ## Overview
 
 Load plan, review critically, execute tasks in batches, report for review between batches.
