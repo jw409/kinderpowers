@@ -384,6 +384,29 @@
     <integration>GSD agents can discover business capabilities via UCP during research phases.
       The comprehensive-pr-review skill can check UCP compliance in commerce-related PRs.</integration>
   </tool>
+
+  <tool name="kp-sign" url="https://github.com/jw409/kp-sign">
+    <description>Ed25519 signing for Claude Code plugins. Signs files/directories and produces
+      verifiable JSON manifests. Proves a skill package hasn't been tampered with.</description>
+    <why>Kinderpowers ships skills and agents as markdown files. kp-sign lets users verify
+      they're running the real thing, not a modified copy. Complement to the veil scanner —
+      veil catches secrets going out, kp-sign catches tampering coming in.</why>
+  </tool>
+
+  <tool name="whiteout" url="https://github.com/jw409/whiteout">
+    <description>PII scrubbing for LLM sessions. Tokenizes sensitive data before it reaches
+      upstream providers, de-tokenizes on return. CLI for scrubbing local session logs.</description>
+    <why>Agents working with personal data (legal, medical, financial) need PII protection.
+      whiteout scan wraps cleanly as a pre-session check. Complements veil scanner (secrets)
+      with PII-layer coverage.</why>
+  </tool>
+
+  <tool name="headless-pm" url="https://github.com/jw409/headless-pm">
+    <description>REST API + MCP server for coordinating multiple LLM agents across a shared
+      task hierarchy (epic to feature to task) with Git workflow integration.</description>
+    <why>Alternative to beads for L3 team coordination. Persistent task store with API access.
+      Agents working in separate directories can share a task board without git-based beads.</why>
+  </tool>
 </recommended>
 
 <!-- ═══════════════════════════════════════════════════════════════
