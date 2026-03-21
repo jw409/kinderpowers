@@ -13,6 +13,15 @@ Architecture work captures the *why* behind technical choices before implementat
 
 **Announce at start:** "I'm using the architecture skill to document technical decisions before implementation."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `formality` | standard | lightweight, standard, formal | ADR depth. Lightweight = 1 paragraph. Formal = full template with alternatives. |
+| `scope` | decision | decision, module, system | What the ADR covers |
+| `include_alternatives` | true | true/false | Document rejected options with rationale |
+| `review_mode` | none | none, council, adversarial | Run multi-perspective review on the ADR before finalizing |
+
 ## When to Write ADRs
 
 **Strongly recommended when:**
