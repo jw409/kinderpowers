@@ -13,6 +13,15 @@ Requirements work separates *what we're building* from *how we're building it*. 
 
 **Announce at start:** "I'm using the requirements skill to clarify what we're building before diving into implementation."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `depth` | standard | quick, standard, deep | How thoroughly to elicit. Quick = extract from description. Deep = multi-round questioning. |
+| `format` | checklist | checklist, user-stories, gherkin, jobs-to-be-done | Output format for requirements |
+| `scope` | feature | feature, epic, product | How broad the requirements gathering is |
+| `include_out_of_scope` | true | true/false | Explicitly document what's NOT being built |
+
 ## When to Use
 
 **Strongly recommended for:**
