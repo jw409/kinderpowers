@@ -374,6 +374,16 @@
       ultimate-bug-scanner finds the bugs they'd miss — different detection strategies are
       complementary, not redundant.</why>
   </tool>
+
+  <tool name="ucp" url="https://github.com/universal-commerce-protocol/ucp">
+    <description>Open standard for commerce interoperability between AI agents, apps, businesses,
+      and payment providers. Capability discovery, checkout sessions, personalized commerce.</description>
+    <why>Agents doing research, planning, or execution may need to discover and interact with
+      commerce services. UCP provides the standard protocol — agents don't need custom integrations
+      per vendor.</why>
+    <integration>GSD agents can discover business capabilities via UCP during research phases.
+      The comprehensive-pr-review skill can check UCP compliance in commerce-related PRs.</integration>
+  </tool>
 </recommended>
 
 <!-- ═══════════════════════════════════════════════════════════════
