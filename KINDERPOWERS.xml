@@ -16,7 +16,7 @@
 <index>
   <section name="emergency-start" what="Install and use in 60 seconds"/>
   <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
-  <section name="skill-catalog" what="All 26 skills with levels, triggers, and costs"/>
+  <section name="skill-catalog" what="All 27 skills with levels, triggers, and costs"/>
   <section name="agent-catalog" what="All 14 agents with capabilities, tools, and model requirements"/>
   <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Sequential Thinking)"/>
   <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
@@ -69,7 +69,7 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SKILL CATALOG: 26 skills across 4 levels
      ═══════════════════════════════════════════════════════════════ -->
-<skill-catalog count="26">
+<skill-catalog count="27">
   <!-- Level 1: Coding Assistant -->
   <skill name="using-kinderpowers" level="1" trigger="orientation, first use of kinderpowers"
     description="Establishes how skills work as invitations with documented costs, not commands without escape"/>
@@ -123,6 +123,8 @@
   <!-- Level 3: Team Orchestrator -->
   <skill name="team-orchestration" level="3" trigger="coordinating multiple agents"
     description="Team creation, task assignment, worker sizing, INJECT patterns"/>
+  <skill name="comprehensive-pr-review" level="3" trigger="reviewing PRs, team-based code review, PR quality gates"
+    description="7-persona team review with tiered depth, pedanticness slider, debate, and self-improvement loop"/>
   <skill name="dispatching-parallel-agents" level="3" trigger="2+ independent tasks"
     description="Parallel dispatch without shared state"/>
   <skill name="dispatching-to-runtimes" level="3" trigger="writing prompts for non-Claude runtimes"
