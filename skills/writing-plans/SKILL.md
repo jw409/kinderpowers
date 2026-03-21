@@ -5,6 +5,15 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 # Writing Plans
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `granularity` | medium | coarse, medium, fine | Task decomposition level. Coarse = 3-5 big tasks. Fine = 10-20 small tasks. |
+| `include_risks` | true | true/false | Add risk assessment section per task |
+| `include_alternatives` | true | true/false | Document rejected approaches and why |
+| `output_format` | markdown | markdown, jsonl, both | Plan output format |
+
 ## Overview
 
 Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
@@ -15,16 +24,22 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Context:** This should be run in a dedicated worktree (created by brainstorming skill).
 
-**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
+**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md` (markdown) or `docs/plans/YYYY-MM-DD-<feature-name>.jsonl` (jsonl), or both when `output_format=both`.
 
 ## Bite-Sized Task Granularity
 
-**Each step is one action (2-5 minutes):**
-- "Write the failing test" - step
-- "Run it to make sure it fails" - step
-- "Implement the minimal code to make the test pass" - step
-- "Run the tests and make sure they pass" - step
-- "Commit" - step
+Decomposition depth is controlled by the `granularity` parameter:
+
+- **coarse** — 3-5 tasks covering major components. Each task may span multiple files and take 30-60 minutes. Suitable for experienced teams or well-understood domains.
+- **medium** *(default)* — 6-9 tasks at component boundaries. Each task is a coherent unit of work (15-30 minutes).
+- **fine** — 10-20 tasks at the individual function/test level. Each step is one action (2-5 minutes):
+  - "Write the failing test" - step
+  - "Run it to make sure it fails" - step
+  - "Implement the minimal code to make the test pass" - step
+  - "Run the tests and make sure they pass" - step
+  - "Commit" - step
+
+When `granularity=medium` or `granularity=coarse`, collapse the TDD micro-steps into a single "Test + Implement + Commit" step per task rather than listing each individually.
 
 ## Plan Document Header
 
@@ -85,6 +100,14 @@ Expected: PASS
 git add tests/path/test.py src/path/file.py
 git commit -m "feat: add specific feature"
 ```
+
+**Risks** *(include when `include_risks=true`)*
+
+- [Risk: what could go wrong] → [Mitigation: how to handle it]
+
+**Rejected Alternatives** *(include when `include_alternatives=true`)*
+
+- [Approach considered] — rejected because [reason]
 ````
 
 ## Discovery Before Creation
