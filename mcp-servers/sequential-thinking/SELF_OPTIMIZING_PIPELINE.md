@@ -9,16 +9,20 @@ Epic `game1-cght` (closed) implemented three components:
 
 All three were Python, operating on the TypeScript server's JSONL output. The Rust port preserves the same JSONL format.
 
-## Current State (v0.1 — faithful TS port)
+## Current State (v0.2)
 
 ```
 Thought In → Validate → Track Compliance → Log JSONL → Response Out
-                                              ↓
-                              var/sequential_thinking_logs/{session}.jsonl
-                              (fire-and-forget, scavenger harvests later)
+                                              ↓                ↓
+                              var/sequential_thinking_logs/   DECIDE() decision tree
+                              {session}.jsonl                 (compressed, profile-adaptive)
 ```
 
-Linear + branching thought structure. Static per-model profiles. No feedback loop.
+Branching + merge thought structure. 7 model profiles (Gemini Flash/Pro/catch-all,
+DeepSeek, Grok, Claude, Llama/Nemotron). Compressed decision-tree guidance (~120 tokens).
+JSONL logging unchanged. No feedback loop yet.
+
+See CONTRIBUTING.txt for the adaptive guidance loading roadmap (Phase 2-4).
 
 ## Proposed Upgrades
 
