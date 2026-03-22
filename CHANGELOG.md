@@ -1,5 +1,17 @@
 # Changelog
 
+## [6.2.3] — 2026-03-21
+
+### Changed
+
+- kp-sequential-thinking v0.2.0: slim output — 70-line guidance wall → 2-line `-- thinking --` separator
+  - `firstCallGuidance`: params inline, no banners
+  - `format_thought` stderr: ASCII box art → compact one-liner with 120-char preview
+  - `tool_description`: 80-line duplicate → 2-line summary
+  - JSONL logging: unchanged
+  - Net: -211 lines, 120/120 tests pass
+- Plugin env: `SEQUENTIAL_THINKING_MODEL` + `KP_SEQTHINK_LOG_LEVEL` now ship in plugin.json
+
 ## [6.2.2] — 2026-03-20
 
 ### Added

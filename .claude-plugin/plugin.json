@@ -1,7 +1,7 @@
 {
   "name": "kinderpowers",
   "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
-  "version": "6.2.2",
+  "version": "6.2.3",
   "author": {
     "name": "jw409"
   },
@@ -45,7 +45,10 @@
     "kp-sequential-thinking": {
       "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-sequential-thinking",
       "args": [],
-      "env": {}
+      "env": {
+        "SEQUENTIAL_THINKING_MODEL": "claude-opus-4-6",
+        "KP_SEQTHINK_LOG_LEVEL": "warn"
+      }
     }
   }
 }
