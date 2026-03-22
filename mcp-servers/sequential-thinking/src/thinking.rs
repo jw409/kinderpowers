@@ -641,21 +641,30 @@ impl ThinkingEngine {
     }
 }
 
-/// Generate compact guidance returned on the first thought.
+/// Generate compact decision-tree guidance returned on the first thought.
+/// Uses compressed tokens — every token earns its place.
 fn first_call_guidance(profile: &TuningProfile) -> String {
     let bt = (profile.branching_threshold * 100.0).round() as u32;
     let ct = (profile.confidence_threshold * 100.0).round() as u32;
 
     format!(
-        "-- thinking --\n\
-         Branch <{bt}% confidence | exit >{ct}% | modes: explore/branch/merge/continue/done | \
-         {dn} explore:{de}-{me} budget:{tbm}x",
+        "-- thinking [{dn}] --\n\
+         \n\
+         DECIDE(confidence):\n\
+           <{bt}% → branch(branchFromThought+branchId) or explore(count:{de}-{me},proposals:[...])\n\
+           {bt}-{ct}% → continue(layer++) or revise(revisesThought:N)\n\
+           >{ct}% → done(reason:complete|sufficient)\n\
+         \n\
+         DECIDE(branches≥2):\n\
+           converging → merge(mergeBranches:[ids])\n\
+           diverging → branch deeper or delegate(delegateToNextLayer)\n\
+         \n\
+         ALWAYS: set confidence. Third option exists. Verify before assuming.",
         bt = bt,
         ct = ct,
         dn = profile.display_name,
         de = profile.default_explore_count,
         me = profile.max_explore_count,
-        tbm = profile.token_budget_multiplier,
     )
 }
 
@@ -877,7 +886,7 @@ mod tests {
         let result = engine.process(t).unwrap();
         assert!(result.get("firstCallGuidance").is_some());
         let guidance = result["firstCallGuidance"].as_str().unwrap();
-        assert!(guidance.contains("-- thinking --"));
+        assert!(guidance.contains("-- thinking ["));
     }
 
     #[test]
@@ -1111,13 +1120,17 @@ mod tests {
     // ---- first_call_guidance test ----
 
     #[test]
-    fn first_call_guidance_compact() {
+    fn first_call_guidance_decision_tree() {
         let profile = fallback_profile();
         let guidance = first_call_guidance(&profile);
-        assert!(guidance.contains("-- thinking --"));
-        assert!(guidance.contains("Branch"));
-        // Should be compact — no massive guidance blocks
-        assert!(guidance.lines().count() <= 5);
+        assert!(guidance.contains("-- thinking"));
+        assert!(guidance.contains("DECIDE(confidence)"));
+        assert!(guidance.contains("DECIDE(branches"));
+        assert!(guidance.contains("done(reason:"));
+        assert!(guidance.contains("branch(branchFromThought"));
+        assert!(guidance.contains("merge(mergeBranches"));
+        // Compact: decision tree, not essay
+        assert!(guidance.lines().count() <= 12);
     }
 
     // ---- engine with specific profile ----

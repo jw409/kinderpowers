@@ -319,8 +319,8 @@ async fn test_first_call_guidance() {
     );
     let guidance = parsed["firstCallGuidance"].as_str().unwrap();
     assert!(
-        guidance.contains("-- thinking --"),
-        "First call guidance should contain separator"
+        guidance.contains("DECIDE(confidence)"),
+        "First call guidance should contain decision tree"
     );
 
     // Second thought should NOT have firstCallGuidance
