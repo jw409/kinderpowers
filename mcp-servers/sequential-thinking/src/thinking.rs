@@ -244,110 +244,49 @@ impl ThinkingEngine {
         Ok(data)
     }
 
-    /// Format a thought for stderr display (plain text, Unicode box drawing).
+    /// Format a thought for stderr display (compact single-line).
     fn format_thought(&self, data: &ThoughtData) -> String {
-        let mut lines = Vec::new();
+        let mut parts = Vec::new();
 
-        // Header
-        let prefix;
-        let context;
+        // Prefix
         if data.is_revision.unwrap_or(false) {
-            prefix = ">> Revision";
-            context = format!(
-                " (revising thought {})",
-                data.revises_thought.unwrap_or(0)
-            );
+            parts.push(format!(
+                ">> Revision {}/{}",
+                data.thought_number, data.total_thoughts
+            ));
         } else if data.branch_from_thought.is_some() {
-            prefix = "~> Branch";
-            context = format!(
-                " (from thought {}, ID: {})",
+            parts.push(format!(
+                "~> Branch {}/{} (from {}, {})",
+                data.thought_number,
+                data.total_thoughts,
                 data.branch_from_thought.unwrap_or(0),
                 data.branch_id.as_deref().unwrap_or("?")
-            );
+            ));
         } else {
-            prefix = ".. Thought";
-            context = String::new();
-        }
-
-        let header = format!(
-            "{} {}/{}{}",
-            prefix, data.thought_number, data.total_thoughts, context
-        );
-
-        // Extras line
-        let mut extras = Vec::new();
-        if let Some(layer) = data.layer {
-            extras.push(format!("Layer {}", layer));
-        }
-        if data.continuation_mode.as_deref() == Some("explore") {
-            if let Some(ec) = data.explore_count {
-                extras.push(format!("Exploring {} alternatives", ec));
-            }
-        }
-        if let Some(conf) = data.confidence {
-            extras.push(format!("{}% confident", (conf * 100.0).round() as u32));
-        }
-        if data.delegate_to_next_layer.unwrap_or(false) {
-            extras.push("Delegating to next layer".into());
-        }
-        if let Some(ref sq) = data.search_query {
-            extras.push(format!("Search: \"{}\"", sq));
-        }
-
-        let width = 64;
-        let border: String = std::iter::repeat('-').take(width + 4).collect();
-
-        lines.push(format!("+{}+", border));
-        lines.push(format!("| {:<width$} |", header, width = width + 2));
-        if !extras.is_empty() {
-            lines.push(format!("| {:<width$} |", extras.join(" | "), width = width + 2));
-        }
-        lines.push(format!("+{}+", border));
-
-        // Wrap thought text
-        for wrapped in wrap_text(&data.thought, width) {
-            lines.push(format!("| {:<width$} |", wrapped, width = width + 2));
-        }
-
-        // Proposals
-        if let Some(ref proposals) = data.proposals {
-            if !proposals.is_empty() {
-                lines.push(format!("+{}+", border));
-                for (i, p) in proposals.iter().enumerate() {
-                    lines.push(format!(
-                        "| Option {}: {:<width$} |",
-                        i + 1,
-                        p,
-                        width = width - 8 - i.to_string().len()
-                    ));
-                }
-            }
-        }
-
-        lines.push(format!("+{}+", border));
-
-        // Confidence bar
-        if let Some(conf) = data.confidence {
-            let filled = (conf * 20.0).floor() as usize;
-            let empty = 20 - filled;
-            let bar: String = "#".repeat(filled) + &".".repeat(empty);
-            let pct = (conf * 100.0).round() as u32;
-            if conf < 0.5 {
-                lines.push(format!(
-                    "  CONFIDENCE [{}] {}%  LOW - CONSIDER BRANCHING",
-                    bar, pct
-                ));
-            } else {
-                lines.push(format!("  CONFIDENCE [{}] {}%", bar, pct));
-            }
-        } else {
-            lines.push(format!(
-                "  CONFIDENCE: NOT PROVIDED (thought {})",
-                data.thought_number
+            parts.push(format!(
+                ".. Thought {}/{}",
+                data.thought_number, data.total_thoughts
             ));
         }
 
-        lines.join("\n")
+        // Extras inline
+        if let Some(layer) = data.layer {
+            parts.push(format!("L{}", layer));
+        }
+        if let Some(conf) = data.confidence {
+            parts.push(format!("{}%", (conf * 100.0).round() as u32));
+        }
+        if let Some(ref mode) = data.continuation_mode {
+            if mode != "continue" {
+                parts.push(mode.clone());
+            }
+        }
+
+        // Truncated thought preview
+        let preview: String = data.thought.chars().take(120).collect();
+        let ellipsis = if data.thought.len() > 120 { "..." } else { "" };
+
+        format!("-- {} | {}{}", parts.join(" | "), preview, ellipsis)
     }
 
     /// Process a thought and return the JSON response.
@@ -702,80 +641,21 @@ impl ThinkingEngine {
     }
 }
 
-/// Generate full guidance text returned on the first thought.
+/// Generate compact guidance returned on the first thought.
 fn first_call_guidance(profile: &TuningProfile) -> String {
     let bt = (profile.branching_threshold * 100.0).round() as u32;
     let ct = (profile.confidence_threshold * 100.0).round() as u32;
 
     format!(
-        r#"
-====================================================================
-SEQUENTIAL THINKING - FULL GUIDANCE (KinderPowers v1.0)
-====================================================================
-
-CORE WORKFLOW:
-1. Estimate total_thoughts (adjustable as understanding evolves)
-2. Each step: analyze -> filter irrelevant -> focus on what matters
-3. Generate hypotheses, verify against reasoning chain
-4. Merge insights from explored paths
-5. Set next_thought_needed=false ONLY when complete
-
-BRANCHING IS PRIMARY (not "rarely used"):
-- Multiple valid approaches -> BRANCH to explore each
-- Confidence below {}% -> BRANCH to validate
-- Uncertainty about direction -> BRANCH with descriptive branch_id
-
-THIRD ALTERNATIVE (Brenner Pattern):
-- When facing A vs B, ALWAYS enumerate a third option: "both could be wrong"
-- Ask: What assumption makes A vs B the only choices?
-- Ask: What if that assumption is wrong?
-- Ask: What would a completely different framing look like?
-
-FOUR SELF-CHECKS (before confidence > 0.6):
-1. VERIFY BEFORE ASSUMING: Have I actually tested it, not just claimed "this should work"?
-2. DISCOVERY BEFORE CREATION: Have I searched for existing solutions before proposing new?
-3. DEEP INSPECTION REQUIRED: Did I see the full picture or just the first 20 lines?
-4. EXTEND OVER DUPLICATE: Have I considered extending what exists before designing new?
-
-CONTINUATION MODES:
-- "explore": Generate {}-{} alternatives (use explore_count, proposals)
-- "branch": Create alternative path from previous thought
-- "merge": Combine insights from multiple branches
-- "continue": Standard linear progression (default)
-- "done": Answer sufficient, stop thinking
-
-CONFIDENCE THRESHOLDS:
-- Below {}%: Consider branching
-- Above {}%: Consider early exit with done_reason
-
-LAYER ABSTRACTION:
-- layer=1: Problem understanding
-- layer=2: Approach selection
-- layer=3: Implementation details
-
-SEARCH INTEGRATION:
-- search_query: What to search before next thought
-- search_context: Previous search results
-- incorporate_search: Enable search+think interleaving
-
-MODEL: {} | Explore: {}-{} | Budget: {}x
-{}
-
-EXAMPLE - Wide Exploration:
-  Thought 1: continuation_mode="explore", explore_count=3, proposals=[...], confidence=0.4
-  Thought 2: layer=2, continuation_mode="continue", confidence=0.75
-  Thought 3: continuation_mode="done", done_reason="sufficient", confidence=0.85
-"#,
-        bt,
-        profile.default_explore_count,
-        profile.max_explore_count,
-        bt,
-        ct,
-        profile.display_name,
-        profile.default_explore_count,
-        profile.max_explore_count,
-        profile.token_budget_multiplier,
-        profile.guidance,
+        "-- thinking --\n\
+         Branch <{bt}% confidence | exit >{ct}% | modes: explore/branch/merge/continue/done | \
+         {dn} explore:{de}-{me} budget:{tbm}x",
+        bt = bt,
+        ct = ct,
+        dn = profile.display_name,
+        de = profile.default_explore_count,
+        me = profile.max_explore_count,
+        tbm = profile.token_budget_multiplier,
     )
 }
 
@@ -786,83 +666,19 @@ pub fn tool_description(profile: &TuningProfile) -> String {
     let ct = (profile.confidence_threshold * 100.0).round() as u32;
 
     format!(
-        r#"Sequential thinking for multi-step problem-solving with branching and exploration.
-
-REQUIRED: thought, thoughtNumber, totalThoughts
-OPTIONAL: confidence (0-1), branchFromThought, branchId, continuationMode, proposals, layer
-
-KEY PATTERNS:
-- Estimate totalThoughts, adjust freely as understanding evolves
-- Use confidence to track certainty (branch if <{bt}, exit if >{ct})
-- Use branchFromThought+branchId to explore alternatives
-- continuationMode: explore|branch|merge|continue|done
-
-FIRST RESPONSE includes full exploration guidance. Supporting skills: jw-planning, jw-metathinking
-
-===============================================================================
-EXPLORATION GUIDANCE
-===============================================================================
-
-CORE WORKFLOW:
-1. Estimate total_thoughts (adjustable as understanding evolves)
-2. Each step: analyze -> filter irrelevant -> focus on what matters
-3. Generate hypotheses, verify against reasoning chain
-4. Merge insights from explored paths
-5. Set next_thought_needed=false ONLY when complete
-
-BRANCHING IS PRIMARY (not "rarely used"):
-- Multiple valid approaches -> BRANCH to explore each
-- Confidence below {bt}% -> BRANCH to validate
-- Uncertainty about direction -> BRANCH with descriptive branch_id
-
-THIRD ALTERNATIVE (Brenner Pattern):
-- When facing A vs B, ALWAYS enumerate "both could be wrong"
-- What assumption makes A vs B the only choices? What if it's wrong?
-
-FOUR SELF-CHECKS (before confidence > 0.6):
-1. VERIFY BEFORE ASSUMING: tested, not just claimed?
-2. DISCOVERY BEFORE CREATION: searched existing before proposing new?
-3. DEEP INSPECTION: full picture or partial?
-4. EXTEND OVER DUPLICATE: considered extending existing?
-
-CONTINUATION MODES:
-- "explore": Generate {de}-{me} alternatives (use explore_count, proposals)
-- "branch": Create alternative path from previous thought
-- "merge": Combine insights from multiple branches
-- "continue": Standard linear progression (default)
-- "done": Answer sufficient, stop thinking
-
-CONFIDENCE THRESHOLDS:
-- Below {bt}%: Consider branching
-- Above {ct}%: Consider early exit with done_reason
-
-LAYER ABSTRACTION:
-- layer=1: Problem understanding
-- layer=2: Approach selection
-- layer=3: Implementation details
-
-SEARCH INTEGRATION:
-- search_query: What to search before next thought
-- search_context: Previous search results
-- incorporate_search: Enable search+think interleaving
-
-MODEL: {dn} | Explore: {de}-{me} | Budget: {tbm}x
-{guide}
-
-EXAMPLE - Wide Exploration:
-  Thought 1: continuation_mode="explore", explore_count=3, proposals=[...], confidence=0.4
-  Thought 2: layer=2, continuation_mode="continue", confidence=0.75
-  Thought 3: continuation_mode="done", done_reason="sufficient", confidence=0.85"#,
+        "Sequential thinking for multi-step problem-solving with branching and exploration.\n\
+         Branch <{bt}% | exit >{ct}% | modes: explore/branch/merge/continue/done | \
+         {dn} explore:{de}-{me} budget:{tbm}x",
         bt = bt,
         ct = ct,
         de = profile.default_explore_count,
         me = profile.max_explore_count,
         dn = profile.display_name,
         tbm = profile.token_budget_multiplier,
-        guide = profile.guidance,
     )
 }
 
+#[allow(dead_code)] // Kept for potential future formatting needs
 pub(crate) fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
     let mut lines = Vec::new();
     let mut current = String::new();
@@ -1061,7 +877,7 @@ mod tests {
         let result = engine.process(t).unwrap();
         assert!(result.get("firstCallGuidance").is_some());
         let guidance = result["firstCallGuidance"].as_str().unwrap();
-        assert!(guidance.contains("SEQUENTIAL THINKING"));
+        assert!(guidance.contains("-- thinking --"));
     }
 
     #[test]
@@ -1239,17 +1055,16 @@ mod tests {
         let mut t = make_thought(1, 5);
         t.confidence = Some(0.85);
         let output = engine.format_thought(&t);
-        assert!(output.contains("CONFIDENCE"));
         assert!(output.contains("85%"));
     }
 
     #[test]
-    fn format_thought_low_confidence_warning() {
+    fn format_thought_low_confidence() {
         let engine = make_engine();
         let mut t = make_thought(1, 5);
         t.confidence = Some(0.3);
         let output = engine.format_thought(&t);
-        assert!(output.contains("CONSIDER BRANCHING"));
+        assert!(output.contains("30%"));
     }
 
     #[test]
@@ -1257,17 +1072,9 @@ mod tests {
         let engine = make_engine();
         let t = make_thought(1, 5);
         let output = engine.format_thought(&t);
-        assert!(output.contains("NOT PROVIDED"));
-    }
-
-    #[test]
-    fn format_thought_with_proposals() {
-        let engine = make_engine();
-        let mut t = make_thought(1, 5);
-        t.proposals = Some(vec!["Option A".into(), "Option B".into()]);
-        let output = engine.format_thought(&t);
-        assert!(output.contains("Option 1"));
-        assert!(output.contains("Option 2"));
+        // Compact format: no confidence = no confidence field
+        assert!(output.contains("Thought 1/5"));
+        assert!(!output.contains("%"));
     }
 
     #[test]
@@ -1277,7 +1084,7 @@ mod tests {
         t.continuation_mode = Some("explore".into());
         t.explore_count = Some(4);
         let output = engine.format_thought(&t);
-        assert!(output.contains("Exploring 4 alternatives"));
+        assert!(output.contains("explore"));
     }
 
     #[test]
@@ -1286,49 +1093,31 @@ mod tests {
         let mut t = make_thought(1, 5);
         t.layer = Some(2);
         let output = engine.format_thought(&t);
-        assert!(output.contains("Layer 2"));
-    }
-
-    #[test]
-    fn format_thought_with_search() {
-        let engine = make_engine();
-        let mut t = make_thought(1, 5);
-        t.search_query = Some("test query".into());
-        let output = engine.format_thought(&t);
-        assert!(output.contains("Search: \"test query\""));
-    }
-
-    #[test]
-    fn format_thought_delegate() {
-        let engine = make_engine();
-        let mut t = make_thought(1, 5);
-        t.delegate_to_next_layer = Some(true);
-        let output = engine.format_thought(&t);
-        assert!(output.contains("Delegating"));
+        assert!(output.contains("L2"));
     }
 
     // ---- tool_description test ----
 
     #[test]
-    fn tool_description_contains_key_sections() {
+    fn tool_description_compact() {
         let profile = fallback_profile();
         let desc = tool_description(&profile);
-        assert!(desc.contains("REQUIRED"));
-        assert!(desc.contains("BRANCHING"));
-        assert!(desc.contains("CONFIDENCE"));
-        assert!(desc.contains("CONTINUATION MODES"));
+        assert!(desc.contains("Sequential thinking"));
+        assert!(desc.contains("Branch"));
+        // Should be compact — no massive guidance blocks
+        assert!(desc.lines().count() <= 5);
     }
 
     // ---- first_call_guidance test ----
 
     #[test]
-    fn first_call_guidance_contains_key_sections() {
+    fn first_call_guidance_compact() {
         let profile = fallback_profile();
         let guidance = first_call_guidance(&profile);
-        assert!(guidance.contains("CORE WORKFLOW"));
-        assert!(guidance.contains("BRANCHING IS PRIMARY"));
-        assert!(guidance.contains("THIRD ALTERNATIVE"));
-        assert!(guidance.contains("FOUR SELF-CHECKS"));
+        assert!(guidance.contains("-- thinking --"));
+        assert!(guidance.contains("Branch"));
+        // Should be compact — no massive guidance blocks
+        assert!(guidance.lines().count() <= 5);
     }
 
     // ---- engine with specific profile ----
