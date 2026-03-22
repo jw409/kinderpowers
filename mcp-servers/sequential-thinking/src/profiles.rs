@@ -21,6 +21,7 @@ pub struct TuningProfile {
 /// Built-in profiles for common model families.
 pub fn default_profiles() -> Vec<TuningProfile> {
     vec![
+        // Gemini Flash: wide/fast, many alternatives, quick convergence
         TuningProfile {
             model_pattern: "gemini.*flash".into(),
             display_name: "Gemini Flash".into(),
@@ -32,6 +33,32 @@ pub fn default_profiles() -> Vec<TuningProfile> {
             context_window: "normal".into(),
             token_budget_multiplier: 1.3,
             guidance: "Wide exploration optimal. Generate 5-7 alternatives at each layer. Branch liberally. Quick parallel evaluation, then converge.".into(),
+        },
+        // Gemini Pro/Ultra: has native extended thinking — lean on depth, fewer branches
+        TuningProfile {
+            model_pattern: "gemini.*(pro|ultra|exp|thinking)".into(),
+            display_name: "Gemini Pro".into(),
+            default_explore_count: 3,
+            max_explore_count: 4,
+            default_layer_depth: 3,
+            branching_threshold: 0.5,
+            confidence_threshold: 0.85,
+            context_window: "expanded".into(),
+            token_budget_multiplier: 1.5,
+            guidance: "Deep thinking model. Fewer branches, deeper analysis per branch. Use layer=3 for implementation detail. High confidence threshold — this model's reasoning is strong, trust it. Prefer depth over breadth.".into(),
+        },
+        // Gemini catch-all (new models, nano, etc.)
+        TuningProfile {
+            model_pattern: "gemini".into(),
+            display_name: "Gemini".into(),
+            default_explore_count: 4,
+            max_explore_count: 5,
+            default_layer_depth: 2,
+            branching_threshold: 0.55,
+            confidence_threshold: 0.8,
+            context_window: "normal".into(),
+            token_budget_multiplier: 1.3,
+            guidance: "Balanced Gemini model. 4-5 alternatives, moderate depth. Branch when uncertain.".into(),
         },
         TuningProfile {
             model_pattern: "deepseek".into(),
@@ -163,9 +190,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_profiles_has_at_least_five() {
+    fn default_profiles_has_at_least_seven() {
         let profiles = default_profiles();
-        assert!(profiles.len() >= 5, "expected at least 5 profiles, got {}", profiles.len());
+        assert!(profiles.len() >= 7, "expected at least 7 profiles, got {}", profiles.len());
     }
 
     #[test]
@@ -194,6 +221,34 @@ mod tests {
         let profiles = default_profiles();
         let p = get_profile_for_model("gemini-2.0-flash-exp", &profiles);
         assert_eq!(p.display_name, "Gemini Flash");
+    }
+
+    #[test]
+    fn gemini_pro_matches() {
+        let profiles = default_profiles();
+        let p = get_profile_for_model("gemini-2.5-pro", &profiles);
+        assert_eq!(p.display_name, "Gemini Pro");
+    }
+
+    #[test]
+    fn gemini_pro_thinking_matches() {
+        let profiles = default_profiles();
+        let p = get_profile_for_model("gemini-2.5-pro-thinking", &profiles);
+        assert_eq!(p.display_name, "Gemini Pro");
+    }
+
+    #[test]
+    fn gemini_ultra_matches() {
+        let profiles = default_profiles();
+        let p = get_profile_for_model("gemini-ultra", &profiles);
+        assert_eq!(p.display_name, "Gemini Pro");
+    }
+
+    #[test]
+    fn gemini_nano_falls_to_catchall() {
+        let profiles = default_profiles();
+        let p = get_profile_for_model("gemini-nano", &profiles);
+        assert_eq!(p.display_name, "Gemini");
     }
 
     #[test]
