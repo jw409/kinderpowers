@@ -47,7 +47,7 @@ Wrote code before the test? Options: delete and restart with TDD (recommended), 
 **Adapts to `strictness` parameter:**
 - `strictness=minimal`: Production code first is acceptable. Write tests after to verify behavior. The tradeoff: tests may verify implementation, not requirements.
 - `strictness=standard`: Current text above applies — test first is the expected path.
-- `strictness=strict`: NO EXCEPTIONS. Every production line requires a pre-existing failing test. Prototypes, generated code, config files -- all get tests first.
+- `strictness=strict`: Every production line requires a pre-existing failing test. Prototypes, generated code, config files -- all get tests first. The cost of skipping: untested code breeds untested assumptions.
 
 ## Red-Green-Refactor
 

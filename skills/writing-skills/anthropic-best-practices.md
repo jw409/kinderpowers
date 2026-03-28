@@ -795,7 +795,7 @@ The same hierarchical pattern continues when improving Skills. You alternate bet
 
 3. **Return to Claude A for improvements**: Share the current SKILL.md and describe what you observed. Ask: "I noticed Claude B forgot to filter test accounts when I asked for a regional report. The Skill mentions filtering, but maybe it's not prominent enough?"
 
-4. **Review Claude A's suggestions**: Claude A might suggest reorganizing to make rules more prominent, using stronger language like "MUST filter" instead of "always filter", or restructuring the workflow section.
+4. **Review Claude A's suggestions**: Claude A might suggest reorganizing to make rules more prominent, using stronger language with clear rationale instead of vague "always" directives, or restructuring the workflow section.
 
 5. **Apply and test changes**: Update the Skill with Claude A's refinements, then test again with Claude B on similar requests
 

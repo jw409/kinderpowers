@@ -82,7 +82,7 @@ Pen Holder → Team Lead (final synthesized review)
    - `Nit:` — style, take-it-or-leave-it
    - `Note:` — educational, not a request for change
 4. **"Clean it up later" is a lie.** No issue number = it won't happen.
-5. **Celebrate good work.** Every review MUST include positive observations.
+5. **Celebrate good work.** Every review should include positive observations — good work deserves recognition.
 
 ## Review Checklist (coverage guarantee)
 

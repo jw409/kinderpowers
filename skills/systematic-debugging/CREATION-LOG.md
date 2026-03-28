@@ -6,14 +6,14 @@ Reference example of extracting, structuring, and bulletproofing a critical skil
 
 Extracted debugging framework from `/Users/jesse/.claude/CLAUDE.md`:
 - 4-phase systematic process (Investigation → Pattern Analysis → Hypothesis → Implementation)
-- Core mandate: ALWAYS find root cause, NEVER fix symptoms
+- Core mandate: find root cause, avoid fixing symptoms
 - Rules designed to resist time pressure and rationalization
 
 ## Extraction Decisions
 
 **What to include:**
 - Complete 4-phase framework with all rules
-- Anti-shortcuts ("NEVER fix symptom", "STOP and re-analyze")
+- Anti-shortcuts ("avoid fixing symptoms", "STOP and re-analyze")
 - Pressure-resistant language ("even if faster", "even if I seem in a hurry")
 - Concrete steps for each phase
 
@@ -36,7 +36,7 @@ Extracted debugging framework from `/Users/jesse/.claude/CLAUDE.md`:
 Framework designed to resist rationalization under pressure:
 
 ### Language Choices
-- "ALWAYS" / "NEVER" (not "should" / "try to")
+- Strong directives with escape clauses (not bare "should" / "try to")
 - "even if faster" / "even if I seem in a hurry"
 - "STOP and re-analyze" (explicit pause)
 - "Don't skip past" (catches the actual behavior)
@@ -49,7 +49,7 @@ Framework designed to resist rationalization under pressure:
 
 ### Redundancy
 - Root cause mandate in overview + when_to_use + Phase 1 + implementation rules
-- "NEVER fix symptom" appears 4 times in different contexts
+- "Avoid fixing symptoms" appears 4 times in different contexts — redundancy is intentional for pressure resistance
 - Each phase has explicit "don't skip" guidance
 
 ## Testing Approach

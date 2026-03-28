@@ -9,7 +9,7 @@ description: Use when user asks 'how should I...' or 'what's the best approach..
 
 ## Mandatory: Use the Search Agent
 
-**YOU MUST dispatch the search-conversations agent for any historical search.**
+**Dispatch the search-conversations agent for any historical search — searching costs nothing, reinventing costs everything.**
 
 Announce: "Dispatching search agent to find [topic]."
 
