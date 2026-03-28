@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+set -e
+
+# kp-post-office
+# A POSIX Maildir-compliant dispatcher for kinder·powers.
+# Usage:
+#   kp-post-office init <role>
+#   kp-post-office drop <role> "Task Description"
+#   kp-post-office watch <role> <target_repo>
+
+COMMAND=$1
+ROLE=$2
+MAIL_ROOT="${MAILDIR:-$HOME/.beads/mail}"
+ROLE_DIR="$MAIL_ROOT/$ROLE"
+
+show_help() {
+    echo "kp-post-office: POSIX Maildir agent dispatcher"
+    echo "Usage:"
+    echo "  kp-post-office init <role>"
+    echo "  kp-post-office drop <role> \"Task context or instructions\""
+    echo "  kp-post-office watch <role> <target_repo>"
+    exit 1
+}
+
+if [ -z "$COMMAND" ] || [ -z "$ROLE" ]; then
+    show_help
+fi
+
+case "$COMMAND" in
+    init)
+        mkdir -p "$ROLE_DIR"/{new,cur,tmp,done}
+        chmod 1777 "$MAIL_ROOT" 2>/dev/null || true # Best effort sticky bit
+        echo "✓ Maildir initialized at $ROLE_DIR"
+        ;;
+        
+    drop)
+        PAYLOAD=$3
+        if [ -z "$PAYLOAD" ]; then
+            echo "Error: Must provide a task payload to drop."
+            exit 1
+        fi
+        mkdir -p "$ROLE_DIR"/{new,cur,tmp,done}
+        
+        # Maildir delivery protocol: write to tmp, then link/rename to new
+        MSG_ID="$(date +%s).$$"
+        TMP_FILE="$ROLE_DIR/tmp/$MSG_ID"
+        NEW_FILE="$ROLE_DIR/new/$MSG_ID"
+        
+        echo "$PAYLOAD" > "$TMP_FILE"
+        mv "$TMP_FILE" "$NEW_FILE"
+        echo "✓ Mail dropped for $ROLE: $MSG_ID"
+        ;;
+        
+    watch)
+        REPO=$3
+        if [ -z "$REPO" ] || [ ! -d "$REPO" ]; then
+            echo "Error: Must provide a valid <target_repo> for the worker to execute in."
+            exit 1
+        fi
+        
+        mkdir -p "$ROLE_DIR"/{new,cur,tmp,done}
+        echo "ℹ Watching $ROLE_DIR/new for role: $ROLE..."
+        echo "ℹ Workers will be forked into: $REPO"
+        
+        while true; do
+            # Use find to cleanly iterate over files
+            for msg in "$ROLE_DIR"/new/*; do
+                if [ -f "$msg" ]; then
+                    base=$(basename "$msg")
+                    CUR_FILE="$ROLE_DIR/cur/$base"
+                    
+                    # Atomic Claim: mv from new to cur
+                    if mv "$msg" "$CUR_FILE" 2>/dev/null; then
+                        echo "✓ Claimed mail $base. Forking Claude worker..."
+                        
+                        # FORK WORKER (runs in subshell)
+                        (
+                            # 1. Switch to working repo
+                            cd "$REPO" || exit 1
+                            
+                            # 2. Read mail
+                            TASK_CONTENT=$(cat "$CUR_FILE")
+                            
+                            echo "[Worker $base] Starting in $REPO..."
+                            
+                            # 3. Execute Claude (The Agent)
+                            # Using the standard claude CLI, injecting the task
+                            # We pipe yes to avoid it blocking forever if it expects stdin, 
+                            # or just run it as a command.
+                            if command -v claude &> /dev/null; then
+                                claude -p "You are the '$ROLE' agent. Execute the following task. When finished, summarize your work. Task: $TASK_CONTENT"
+                            else
+                                echo "[Worker $base] 'claude' command not found. Mocking execution..."
+                                sleep 2
+                            fi
+                            
+                            # 4. Mark Done
+                            mv "$CUR_FILE" "$ROLE_DIR/done/$base"
+                            echo "[Worker $base] Finished and archived."
+                        ) &
+                        
+                        # We don't wait for the background worker; we go back to polling mail.
+                    fi
+                fi
+            done
+            sleep 2
+        done
+        ;;
+        
+    *)
+        show_help
+        ;;
+esac
