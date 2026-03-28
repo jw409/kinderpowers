@@ -14,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Simple frontmatter extraction (avoid dependency on skills-core for bootstrap)
 const extractAndStripFrontmatter = (content) => {
-  const match = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/);
   if (!match) return { frontmatter: {}, content };
 
   const frontmatterStr = match[1];
@@ -33,6 +33,13 @@ const extractAndStripFrontmatter = (content) => {
   return { frontmatter, content: body };
 };
 
+// Validate that a resolved path doesn't contain prompt-injection vectors
+const sanitizePath = (p) => {
+  if (!p || typeof p !== 'string') return null;
+  if (/[`${}<>\n\r]/.test(p)) return null;
+  return p;
+};
+
 // Normalize a path: trim whitespace, expand ~, resolve to absolute
 const normalizePath = (p, homeDir) => {
   if (!p || typeof p !== 'string') return null;
@@ -49,7 +56,7 @@ const normalizePath = (p, homeDir) => {
 export const SuperpowersPlugin = async ({ client, directory }) => {
   const homeDir = os.homedir();
   const superpowersSkillsDir = path.resolve(__dirname, '../../skills');
-  const envConfigDir = normalizePath(process.env.OPENCODE_CONFIG_DIR, homeDir);
+  const envConfigDir = sanitizePath(normalizePath(process.env.OPENCODE_CONFIG_DIR, homeDir));
   const configDir = envConfigDir || path.join(homeDir, '.config/opencode');
 
   // Helper to generate bootstrap content
@@ -58,7 +65,12 @@ export const SuperpowersPlugin = async ({ client, directory }) => {
     const skillPath = path.join(superpowersSkillsDir, 'using-superpowers', 'SKILL.md');
     if (!fs.existsSync(skillPath)) return null;
 
-    const fullContent = fs.readFileSync(skillPath, 'utf8');
+    let fullContent;
+    try {
+      fullContent = fs.readFileSync(skillPath, 'utf8');
+    } catch {
+      return null;
+    }
     const { content } = extractAndStripFrontmatter(fullContent);
 
     const toolMapping = `**Tool Mapping for OpenCode:**

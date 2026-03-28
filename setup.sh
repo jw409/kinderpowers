@@ -58,7 +58,11 @@ link_file() {
 # GSD workflows reference ~/.claude/get-shit-done at runtime
 echo "[1/3] GSD runtime"
 mkdir -p "${CLAUDE_DIR}"
-link_dir "${PLUGIN_ROOT}/gsd" "${CLAUDE_DIR}/get-shit-done"
+if [ -d "${PLUGIN_ROOT}/gsd" ]; then
+  link_dir "${PLUGIN_ROOT}/gsd" "${CLAUDE_DIR}/get-shit-done"
+else
+  echo "  WARN: ${PLUGIN_ROOT}/gsd not found — skipping GSD symlink"
+fi
 
 # NOTE: GSD commands and agents are NOT symlinked here.
 # The plugin system registers them under the kinderpowers: namespace
@@ -114,20 +118,44 @@ fi
 
 # Register in settings.json (idempotent)
 SETTINGS_FILE="${CLAUDE_DIR}/settings.json"
-if [ -f "$SETTINGS_FILE" ]; then
-  # Check if hook is already registered
-  if grep -q "agent-outcome-logger" "$SETTINGS_FILE" 2>/dev/null; then
-    echo "  OK: hook already registered in settings.json"
+HOOK_ENTRY="{\"matcher\":\"Agent\",\"command\":\"python3 ${HOOK_DST}\"}"
+
+if grep -q "agent-outcome-logger" "$SETTINGS_FILE" 2>/dev/null; then
+  echo "  OK: hook already registered in settings.json"
+elif command -v jq >/dev/null 2>&1; then
+  # jq available — auto-register
+  if [ ! -f "$SETTINGS_FILE" ]; then
+    # Create settings.json with just the hooks section
+    jq -n --argjson entry "$HOOK_ENTRY" \
+      '{"hooks":{"PostToolUse":[$entry]}}' > "$SETTINGS_FILE"
+    echo "  OK: created ${SETTINGS_FILE} with PostToolUse hook"
+  elif ! jq -e '.hooks' "$SETTINGS_FILE" >/dev/null 2>&1; then
+    # File exists but no hooks key — add it
+    jq --argjson entry "$HOOK_ENTRY" \
+      '.hooks = {"PostToolUse":[$entry]}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" \
+      && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+    echo "  OK: added hooks.PostToolUse to settings.json"
+  elif ! jq -e '.hooks.PostToolUse' "$SETTINGS_FILE" >/dev/null 2>&1; then
+    # hooks exists but no PostToolUse array — add it
+    jq --argjson entry "$HOOK_ENTRY" \
+      '.hooks.PostToolUse = [$entry]' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" \
+      && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+    echo "  OK: added PostToolUse array to settings.json"
   else
-    echo "  NOTE: Add this to your settings.json hooks.PostToolUse array:"
-    echo '    {'
-    echo '      "matcher": "Agent",'
-    echo "      \"command\": \"python3 ${HOOK_DST}\""
-    echo '    }'
-    echo "  (Manual step — setup.sh does not modify settings.json directly)"
+    # PostToolUse array exists — append our entry
+    jq --argjson entry "$HOOK_ENTRY" \
+      '.hooks.PostToolUse += [$entry]' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" \
+      && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+    echo "  OK: appended agent-outcome-logger to PostToolUse hooks"
   fi
 else
-  echo "  NOTE: ${SETTINGS_FILE} not found — create it and add the PostToolUse hook"
+  # No jq — fall back to manual instructions
+  echo "  NOTE: jq not found — cannot auto-register hook."
+  echo "  Add this to your ${SETTINGS_FILE} hooks.PostToolUse array:"
+  echo '    {'
+  echo '      "matcher": "Agent",'
+  echo "      \"command\": \"python3 ${HOOK_DST}\""
+  echo '    }'
 fi
 
 echo ""

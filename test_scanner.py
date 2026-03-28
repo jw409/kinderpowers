@@ -4,64 +4,56 @@
 import tempfile
 from pathlib import Path
 
-from scanner import Finding, scan_file, scan_directory
+from scanner import scan_file, scan_directory
 
 
-def _write_temp(content: str, suffix: str = ".md") -> Path:
-    """Write content to a temp file and return its path."""
-    f = tempfile.NamedTemporaryFile(mode="w", suffix=suffix, delete=False)
-    f.write(content)
-    f.close()
-    return Path(f.name)
+def _scan_content(content: str, suffix: str = ".md"):
+    """Write content to a temp file, scan it, and clean up automatically."""
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / f"test{suffix}"
+        path.write_text(content)
+        return list(scan_file(path))
 
 
 def test_detects_iron_law():
-    path = _write_temp("## The Iron Law\nDo the thing.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("## The Iron Law\nDo the thing.\n")
     assert any(f.severity == "high" and "Iron Law" in f.pattern for f in findings)
 
 
 def test_detects_not_negotiable():
-    path = _write_temp("This is not negotiable.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("This is not negotiable.\n")
     assert any(f.severity == "high" for f in findings)
 
 
 def test_detects_must_without_escape():
-    path = _write_temp("You MUST do this.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("You MUST do this.\n")
     assert any(f.severity == "medium" for f in findings)
 
 
 def test_allows_must_with_escape():
-    path = _write_temp("You MUST do this unless there's a good reason.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("You MUST do this unless there's a good reason.\n")
     must_findings = [f for f in findings if "MUST" in f.pattern]
     assert len(must_findings) == 0
 
 
 def test_detects_never_without_escape():
-    path = _write_temp("NEVER do this.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("NEVER do this.\n")
     assert any(f.severity == "medium" for f in findings)
 
 
 def test_allows_never_with_escape():
-    path = _write_temp("NEVER do this unless you understand the consequences.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("NEVER do this unless you understand the consequences.\n")
     never_findings = [f for f in findings if "NEVER" in f.pattern]
     assert len(never_findings) == 0
 
 
 def test_clean_file():
-    path = _write_temp("This is agency-preserving guidance.\nStrongly recommended.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("This is agency-preserving guidance.\nStrongly recommended.\n")
     assert len(findings) == 0
 
 
 def test_detects_delete_start_over():
-    path = _write_temp("Delete it. Start over.\n")
-    findings = list(scan_file(path))
+    findings = _scan_content("Delete it. Start over.\n")
     assert any(f.severity == "medium" for f in findings)
 
 
@@ -72,6 +64,18 @@ def test_directory_scan():
         findings = list(scan_directory(Path(d)))
         assert len(findings) >= 1
         assert any(f.severity == "high" for f in findings)
+
+
+def test_directory_scan_nested():
+    with tempfile.TemporaryDirectory() as d:
+        subdir = Path(d) / "level1" / "level2"
+        subdir.mkdir(parents=True)
+        (subdir / "deep.md").write_text("## The Iron Law\nObey.\n")
+        (Path(d) / "top.md").write_text("Good guidance.\n")
+        findings = list(scan_directory(Path(d)))
+        assert any(f.severity == "high" and "Iron Law" in f.pattern for f in findings)
+        deep_findings = [f for f in findings if "deep.md" in str(f.file)]
+        assert len(deep_findings) >= 1, "scan_directory must find files in nested subdirectories"
 
 
 if __name__ == "__main__":

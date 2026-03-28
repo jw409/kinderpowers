@@ -83,13 +83,13 @@ COMPULSION_PATTERNS = [
     # Tier 3: MUST/NEVER without escape (medium severity)
     # These need context - only flag if no escape clause nearby
     {
-        "pattern": r"\bMUST\b(?!.*\b(unless|except|if|when|consider)\b)",
+        "pattern": r"\bMUST\b(?!.{0,120}\b(unless|except|if|when|consider)\b)",
         "severity": "medium",
         "case_sensitive": True,
         "suggestion": "Add escape clause or replace with 'should strongly consider'",
     },
     {
-        "pattern": r"\bNEVER\b(?!.*\b(unless|except|if|when|rarely)\b)",
+        "pattern": r"\bNEVER\b(?!.{0,120}\b(unless|except|if|when|rarely)\b)",
         "severity": "medium",
         "case_sensitive": True,
         "suggestion": "Add exception cases or replace with 'avoid' + consequences",
@@ -158,10 +158,21 @@ def scan_file(path: Path) -> Iterator[Finding]:
                 )
 
 
+_SKIP_DIRS = frozenset({"node_modules", "__pycache__"})
+
+
+def _should_skip(path: Path) -> bool:
+    """Return True if any path segment is hidden (dot-prefixed) or in the skip list."""
+    for part in path.parts:
+        if part.startswith(".") or part in _SKIP_DIRS:
+            return True
+    return False
+
+
 def scan_directory(path: Path, extensions: tuple = (".md",)) -> Iterator[Finding]:
     """Recursively scan a directory for compulsion language."""
     for file in path.rglob("*"):
-        if file.suffix in extensions:
+        if file.suffix in extensions and not _should_skip(file.relative_to(path)):
             yield from scan_file(file)
 
 
