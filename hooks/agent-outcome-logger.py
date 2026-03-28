@@ -11,6 +11,18 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+
+
+def _rotate_if_needed(out_file: Path) -> None:
+    """Rotate log file if it exceeds MAX_FILE_BYTES. Never raises."""
+    try:
+        if out_file.exists() and out_file.stat().st_size > MAX_FILE_BYTES:
+            rotated = out_file.with_suffix(".jsonl.1")
+            out_file.replace(rotated)
+    except Exception as exc:
+        print(f"agent-outcome-logger: rotation failed: {exc}", file=sys.stderr)
+
 
 def main():
     try:
@@ -59,9 +71,15 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "agent_outcomes.jsonl"
 
+    _rotate_if_needed(out_file)
+
     with open(out_file, "a") as f:
         f.write(json.dumps(record, separators=(",", ":")) + "\n")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        print(f"agent-outcome-logger: unexpected error: {exc}", file=sys.stderr)
+        sys.exit(0)
