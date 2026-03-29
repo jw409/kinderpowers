@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""CLI entry point for the kinderpowers learning pipeline.
+
+Usage:
+    kp-learn status          # Show current level + stats
+    kp-learn assess          # Run level assessment from outcomes
+    kp-learn curate          # Generate/update playbook from outcomes
+    kp-learn run             # Full pipeline: assess + curate
+"""
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+# Add parent lib to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "lib"))
+
+from learning.outcome_parser import parse_outcomes, summarize_outcomes, effectiveness_by_agent
+from learning.level_assessor import assess_level, write_level, read_level
+from learning.curator import generate_deltas, load_playbook, apply_delta, write_playbook, append_audit
+
+
+LABELS = {1: "Coding Assistant", 2: "Agentic Worker", 3: "Team Orchestrator", 4: "Dark Factory"}
+
+
+def cmd_status(_args: argparse.Namespace) -> int:
+    """Show current level and outcome stats."""
+    assessment = read_level()
+    if not assessment:
+        print("No level assessment yet. Run: kp-learn assess")
+        return 1
+
+    print(f"Level: L{assessment.level} — {assessment.label}")
+    print(f"Assessed: {assessment.assessed_at}")
+    print(f"Sessions: {assessment.session_count} | Outcomes: {assessment.outcome_count}")
+    print()
+    print("Evidence:")
+    for k, v in assessment.evidence.items():
+        print(f"  {k}: {v}")
+    if assessment.suggestions:
+        print()
+        print("Next level:")
+        for s in assessment.suggestions:
+            print(f"  - {s}")
+
+    # Quick outcome stats
+    outcomes = parse_outcomes()
+    if outcomes:
+        eff = effectiveness_by_agent(outcomes)
+        if eff:
+            print()
+            print("Agent effectiveness (success rate):")
+            for agent, rate in sorted(eff.items(), key=lambda x: -x[1]):
+                bar = "#" * int(rate * 20)
+                print(f"  {agent:<25} {rate:.0%} {bar}")
+
+    return 0
+
+
+def cmd_assess(_args: argparse.Namespace) -> int:
+    """Run level assessment."""
+    outcomes = parse_outcomes()
+    if not outcomes:
+        print("No outcomes found. Use kinderpowers agents to generate data.")
+        return 1
+
+    assessment = assess_level(outcomes)
+    write_level(assessment)
+    print(f"Level: L{assessment.level} — {assessment.label}")
+    print(f"Analyzed {assessment.outcome_count} outcomes across {assessment.session_count} sessions")
+    return 0
+
+
+def cmd_curate(_args: argparse.Namespace) -> int:
+    """Generate/update playbook from outcomes."""
+    outcomes = parse_outcomes()
+    if not outcomes:
+        print("No outcomes found.")
+        return 1
+
+    deltas = generate_deltas(outcomes)
+    if not deltas:
+        print("No patterns strong enough to curate yet (need 3+ samples per agent).")
+        return 0
+
+    playbook = load_playbook()
+    for d in deltas:
+        playbook = apply_delta(playbook, d)
+        append_audit(d)
+
+    write_playbook(playbook)
+    print(f"Playbook updated: {len(deltas)} delta(s) applied")
+    pb_path = Path.home() / ".kinderpowers" / "playbook.md"
+    print(f"  {pb_path}")
+    return 0
+
+
+def cmd_run(_args: argparse.Namespace) -> int:
+    """Full pipeline: assess + curate."""
+    outcomes = parse_outcomes()
+    if not outcomes:
+        print("No outcomes found. Use kinderpowers agents to generate data.")
+        return 1
+
+    # Assess
+    assessment = assess_level(outcomes)
+    write_level(assessment)
+    print(f"Level: L{assessment.level} — {assessment.label}")
+
+    # Curate
+    deltas = generate_deltas(outcomes)
+    if deltas:
+        playbook = load_playbook()
+        for d in deltas:
+            playbook = apply_delta(playbook, d)
+            append_audit(d)
+        write_playbook(playbook)
+        print(f"Playbook: {len(deltas)} delta(s) applied")
+    else:
+        print("Playbook: no new patterns (need more data)")
+
+    # Summary
+    eff = effectiveness_by_agent(outcomes)
+    if eff:
+        top = max(eff.items(), key=lambda x: x[1])
+        print(f"Best agent: {top[0]} ({top[1]:.0%} success)")
+
+    return 0
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Kinderpowers learning pipeline")
+    sub = parser.add_subparsers(dest="command")
+
+    sub.add_parser("status", help="Show current level + stats")
+    sub.add_parser("assess", help="Run level assessment")
+    sub.add_parser("curate", help="Generate/update playbook")
+    sub.add_parser("run", help="Full pipeline: assess + curate")
+
+    args = parser.parse_args()
+    if not args.command:
+        parser.print_help()
+        return 1
+
+    commands = {"status": cmd_status, "assess": cmd_assess, "curate": cmd_curate, "run": cmd_run}
+    return commands[args.command](args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
