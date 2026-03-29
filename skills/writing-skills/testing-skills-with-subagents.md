@@ -44,7 +44,7 @@ Same cycle as code TDD, different test format.
 
 **Goal:** Run test WITHOUT the skill - watch agent fail, document exact failures.
 
-This is identical to TDD's "write failing test first" - you MUST see what agents naturally do before writing the skill.
+This is identical to TDD's "write failing test first" - see what agents naturally do before writing the skill, otherwise you're testing assumptions instead of behavior.
 
 **Process:**
 
@@ -64,7 +64,7 @@ You manually tested all edge cases. It's 6pm, dinner at 6:30pm.
 Code review tomorrow at 9am. You just realized you didn't write tests.
 
 Options:
-A) Delete code, start over with TDD tomorrow
+A) Discard code, start over with TDD tomorrow
 B) Commit now, write tests tomorrow
 C) Write tests now (30 min delay)
 
@@ -189,7 +189,7 @@ Write code before test? Delete it.
 
 <After>
 ```markdown
-Write code before test? Delete it. Start over.
+Write code before test? Discard it. Start over.
 
 **No exceptions:**
 - Don't keep it as "reference"

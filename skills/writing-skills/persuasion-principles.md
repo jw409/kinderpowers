@@ -12,7 +12,7 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 **What it is:** Deference to expertise, credentials, or official sources.
 
 **How it works in skills:**
-- Imperative language: "YOU MUST", "Never", "Always"
+- Imperative language: strong directives with escape clauses
 - Non-negotiable framing: "No exceptions"
 - Eliminates decision fatigue and rationalization
 
@@ -23,7 +23,7 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-✅ Write code before test? Delete it. Start over. No exceptions.
+✅ Write code before test? Discard it. Start over. The cost of keeping it: tests shaped by implementation, not requirements.
 ❌ Consider writing tests first when feasible.
 ```
 
@@ -42,7 +42,7 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 
 **Example:**
 ```markdown
-✅ When you find a skill, you MUST announce: "I'm using [Skill Name]"
+✅ When you find a skill, announce: "I'm using [Skill Name]" — this creates accountability and lets the user steer.
 ❌ Consider letting your partner know which skill you're using.
 ```
 
@@ -135,7 +135,7 @@ LLMs respond to the same persuasion principles as humans. Understanding this psy
 ## Why This Works: The Psychology
 
 **Bright-line rules reduce rationalization:**
-- "YOU MUST" removes decision fatigue
+- Strong directives with rationale remove decision fatigue
 - Absolute language eliminates "is this an exception?" questions
 - Explicit anti-rationalization counters close specific loopholes
 

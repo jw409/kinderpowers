@@ -48,7 +48,7 @@ When `granularity=medium` or `granularity=coarse`, collapse the TDD micro-steps 
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use kinderpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** Recommended next skill: Use kinderpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -160,10 +160,10 @@ After saving the plan, offer execution choice:
 **Which approach?"**
 
 **If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use kinderpowers:subagent-driven-development
+- **Recommended next skill:** Use kinderpowers:subagent-driven-development
 - Stay in this session
 - Fresh subagent per task + code review
 
 **If Parallel Session chosen:**
 - Guide them to open new session in worktree
-- **REQUIRED SUB-SKILL:** New session uses kinderpowers:executing-plans
+- **Recommended next skill:** New session uses kinderpowers:executing-plans

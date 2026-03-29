@@ -224,7 +224,7 @@ Done!
 - Use a branch, not main — accidental commits to main are hard to untangle
 - Don't skip reviews — spec compliance first, then code quality
 - One implementation subagent at a time (parallelism=sequential) — parallel dispatch causes file conflicts
-- When parallelism != sequential, file domain analysis is critical. Overlapping file domains MUST be serialized regardless of parallelism setting.
+- When parallelism != sequential, file domain analysis is critical. Overlapping file domains should be serialized regardless of parallelism setting, as concurrent writes to the same files cause merge conflicts.
 - Provide full task text, don't make subagent read the plan file
 - Answer subagent questions fully before they start implementation
 - If reviewer finds issues → implementer fixes → reviewer reviews again → repeat until approved
