@@ -119,7 +119,34 @@ When creating beads from a plan, the agent should:
 - [ ] Apply labels based on domain keywords in title/description
 - [ ] Run `bv --robot-suggest` and auto-apply high-confidence (>0.9) dep suggestions
 - [ ] Run `bd lint` to flag beads missing acceptance criteria
-- [ ] Report a summary: N created, N deps added, N labels applied, N missing AC
+- [ ] Recommend agent type for each bead (see Agent-Type Selection below)
+- [ ] Report a summary: N created, N deps added, N labels applied, N missing AC, agent types recommended
+
+### Agent-Type Selection
+
+When creating or dispatching beads, recommend a kinderpowers agent type based on the bead's characteristics. Agent types define **approaches** (how to work), not domains (what to work on). Domain context comes from the bead description.
+
+**Classification rules (check title first, in priority order):**
+
+| Title pattern | Agent type | Model | Why |
+|--------------|-----------|-------|-----|
+| bug, fix, broken, crash, fail | `gsd-debugger` | opus | Investigate before coding |
+| investigate, research, analyze, evaluate | `gsd-researcher` | sonnet | Explore before committing |
+| review, audit | `code-reviewer` | opus | Critical assessment |
+| verify, validate, test coverage | `gsd-verifier` | sonnet | Evidence-based checking |
+| plan, design, architect | `gsd-planner` | opus | Think before coding |
+| [epic] or epic mention | `strategic-planner` | opus | Needs decomposition |
+| Has AC + implement/build/create/wire/connect | `gsd-executor` | opus | Structured execution |
+| write test, add test, type=test | `gsd-executor` | sonnet | Test writing |
+| Has AC (any, no other match) | `gsd-executor` | opus | We know what done looks like |
+| feature without AC | `gsd-researcher` | sonnet | Figure out what to build first |
+| fallback | `general-purpose` | sonnet | No specific pattern matched |
+
+**Key principles:**
+- Match on **title**, not description — avoids false positives ("needs review later" ≠ review task)
+- **Approaches, not domains** — `gsd-debugger` debugs GPU bugs AND dashboard bugs
+- **No AC → research first** — if we don't know what "done" looks like, don't start coding
+- Agent type goes in dispatch prompt as `subagent_type` parameter on the Agent tool
 
 ### Keywords → Labels Mapping
 
