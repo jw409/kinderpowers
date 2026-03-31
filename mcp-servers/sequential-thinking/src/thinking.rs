@@ -495,6 +495,7 @@ impl ThinkingEngine {
                         branch_name, proposal_count, branch_name
                     ),
                     severity: "suggestion".into(),
+                    spawn_meta: None,
                 });
             }
         }
@@ -515,6 +516,7 @@ impl ThinkingEngine {
                     branch_names.join(", ")
                 ),
                 severity: "suggestion".into(),
+                spawn_meta: None,
             });
         }
 

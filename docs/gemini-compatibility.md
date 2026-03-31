@@ -13,7 +13,7 @@ Kinderpowers agents declare tools using Claude Code names. Gemini CLI uses diffe
 | `Edit` | `replace` | Gemini uses search/replace within file |
 | `Bash` | `run_shell_command` | Same semantics |
 | `Grep` | `search_file_content` | Gemini has a dedicated search tool |
-| `Glob` | `list_directory` | Gemini lists dirs; for glob patterns use `run_shell_command` + find |
+| `Glob` | `FindFiles` / `list_directory` | `FindFiles` for glob patterns; `list_directory` for dir listings |
 | `WebSearch` | `google_web_search` | Note the `_web_` in the name |
 | `WebFetch` | `web_fetch` | Gemini has a dedicated fetch tool |
 | `LSP` | Not available | Use shell-based LSP clients |
