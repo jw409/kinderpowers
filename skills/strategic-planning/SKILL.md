@@ -1,13 +1,13 @@
 ---
 name: strategic-planning
-description: Use when work needs design, planning, or discovery before execution — creates strategic plans that subagents can execute intelligently
+description: Use when work needs design, planning, or discovery before execution — creates investigative briefs that subagents can execute intelligently
 ---
 
 # Strategic Planning
 
 ## Overview
 
-Plans for intelligent subagents are strategic briefs, not sed-scripts. Give direction, context, and WHY. Trust the executor to figure out HOW.
+Plans for subagents are **investigative briefs**, not sed-scripts. You're briefing an investigator, not programming a robot. Give them the problem, what you've learned, what's unknown, and the mission. Trust the executor to figure out HOW.
 
 **Announce at start:** "I'm using the strategic-planning skill to design the approach."
 
@@ -25,38 +25,107 @@ Plans for intelligent subagents are strategic briefs, not sed-scripts. Give dire
 - Simple one-line fixes
 - User has already provided a detailed plan
 
-## Context-Aware Gates
+## The Core Principle
 
-**First prompt of session** (no established context):
-- Search for existing implementations before proposing new
-- Check issue trackers for existing work on this topic
-
-**Mid-conversation** (context established):
-- Skip gates — you already know the landscape
-- Plan based on what you've learned
+The single most important thing in a plan is capturing **what you discovered in this session** so the executor doesn't repeat your investigation. Every plan should transfer context, not prescribe commands.
 
 ## Planning Workflow
 
 ### 1. Clarity Check
+
 Would a colleague understand this request? If not, ask ONE targeted question.
 
 ### 2. Detect Mode
 
 | Mode | Use When | Focus |
 |------|----------|-------|
-| **Investigative** | Debugging, unclear root cause | Hypotheses, instrumentation, discovery |
-| **Implementation** | Features, refactoring, greenfield | Phases, success criteria, approach |
+| **Investigative** | Debugging, unclear root cause, infrastructure broken | Hypotheses, what was tried, what works vs broken |
+| **Implementation** | Features, refactoring, greenfield | Phases, approach, success criteria |
 
-### 3. Create the Plan
+### 3. Investigate Before Planning
 
-Structure your plan around these elements:
+**Before writing any plan**, gather evidence:
+
+1. Search for existing implementations (prevent duplication)
+2. Check issue trackers for prior work
+3. Run commands to understand current system state
+4. Document what works and what's broken — with evidence
+
+Include discovery results in the plan. "Found existing X, will extend" or "No existing solution found, creating new."
+
+### 4. Write the Plan
+
+#### Investigative Mode Template
 
 ```markdown
+# [End Goal, Not Just Fix Name]
+
+> For Claude: This is a debug-first situation. Orient yourself to the
+> problem, understand system state, fix what's broken, then build.
+
+## The Goal
+[What we're actually building, with vision — not "fix the logs"]
+
+## Current System State ([date] Session Discovery)
+
+### What We Tried
+[Exact commands from THIS session, with outputs]
+
+### The Problem
+[What failed, with evidence — logs, outputs, error messages]
+
+### What We Checked
+[Everything investigated, numbered, with results]
+
+### What Works vs What's Broken
+✅ WORKS: [List with evidence]
+❌ BROKEN: [List with evidence]
+❓ UNKNOWN: [Hypotheses to test]
+
+## Related Context
+[Issues, prior work, architectural decisions that inform this]
+
+## Your Mission
+
+**Phase 1: [Fix Foundation]**
+[High-level goals — what they should understand, not what lines to type]
+
+**Phase 2: [Build on Working Foundation]**
+[Next layer, only reachable after Phase 1]
+
+## How to Approach This
+
+**DON'T:**
+- Just run the commands listed above and add lines suggested
+- Assume the fix is known (it isn't — that's why this is investigative)
+- Fix symptoms without understanding root cause
+
+**DO:**
+- Read the code to understand what SHOULD happen
+- Add instrumentation to see what ACTUALLY happens
+- Test with minimal examples first
+- Verify each fix before moving to next phase
+
+**Key Files:**
+- `path/to/main.ts:123-456` — [WHY this file matters, not just its name]
+- `path/to/service.ts:789` — [What to look for here]
+
+## Success Criteria
+- [ ] [Outcome 1 — observable, testable]
+- [ ] [Outcome 2]
+- [ ] Root cause documented
+```
+
+#### Implementation Mode Template
+
+```markdown
+# [Feature Name]
+
 ## Objective
-What we're building + Why it matters
+[What we're building + Why it matters]
 
 ## Context
-Current state, constraints, and WHY those constraints exist
+[Current state, constraints, and WHY those constraints exist]
 
 ## Discovery
 - Searched: [what you searched for]
@@ -64,40 +133,58 @@ Current state, constraints, and WHY those constraints exist
 - Decision: [extend X / no existing solution, creating new]
 
 ## Approach
-Strategic direction — phases if complex, single action if simple
+
+**Phase 1: [Component/Concern]**
+Goal: [outcome, not steps]
+Key files: [with context on why]
+Depends on: nothing / Phase N
+
+**Phase 2: [Component/Concern]**
+Goal: [outcome]
+Key files: [with context]
+Depends on: Phase 1
+
+## Rejected Alternatives
+- [Approach A] — rejected because [concrete reason]
 
 ## Success Criteria
-How to verify the work is complete
+- [ ] [Outcome — observable, testable]
 ```
 
-**Investigative mode** adds: ranked hypotheses, instrumentation approach.
-**Implementation mode** adds: high-level phases, executor can break into tasks.
+### 5. Anti-Patterns — Bad vs Good
 
-### 4. After Planning: Execute or Hand Back
+**Bad: "Fix the logs" as the goal**
+- Bad: "Add logging to LanceDBService"
+- Good: "Make GitHub issue indexing actually work (logs are just instrumentation to debug it)"
+
+**Bad: Assuming you know the fix**
+- Bad: "The problem is line 387 doesn't log"
+- Good: "Embeddings aren't generated OR aren't written OR wrong format (unknown — investigate)"
+
+**Bad: Listing files without context**
+- Bad: "Files: LanceDBService.ts, EmbeddingFunction.ts"
+- Good: "LanceDBService.ts:372-423 — addDocuments() claims success, check if embeddings are actually generated"
+
+**Bad: Prescriptive steps when root cause unknown**
+- Bad: "Step 1: Add this line. Step 2: Add that line."
+- Good: "Add instrumentation to determine if embeddings are being generated at all"
+
+**Bad: Missing the forest for the trees**
+- Bad: "Fix silent failure in batch indexing"
+- Good: "Enable knowledge graph search over GitHub issues for 3D code evolution visualization"
+
+### 6. After Planning: Execute or Hand Back
 
 **Single task** → Execute immediately.
 
 **Multiple tasks** → Show summary with dependencies, ask which to start.
-
-**The execution loop**: claim task → execute → close → find next → repeat
 
 **Parallel work**: If tasks have no blocking dependencies, dispatch multiple subagents.
 
 **Don't**: Create a plan and stop. That's casting into the ether.
 **Do**: Create a plan, then drive toward completion (or get explicit "pause" from user).
 
-## Discovery Before Creation (Strongly Recommended)
-
-Before proposing ANY new file, tool, or system:
-
-1. Search for similar function names or patterns
-2. Search for similar file names
-3. Check existing documentation indexes
-4. Include discovery results in your plan
-
-**Skip cost**: You risk duplicating existing work. Every parallel system is maintenance burden. If you skip discovery and create something that already exists, expect to redo the work.
-
-## Extend Over Duplicate (Strongly Recommended)
+## Extend Over Duplicate
 
 After discovery, if a similar system exists:
 
@@ -105,24 +192,10 @@ After discovery, if a similar system exists:
 2. Identify the gap between current and needed capability
 3. **Propose extension first**: "Add method X to existing Y" not "Create new Z"
 
-**Skip cost**: Duplication creates drift. Two systems doing similar things will diverge, and maintaining both costs more than extending one.
-
-## Anti-Patterns
-
-| Don't | Do |
-|-------|-----|
-| Line-by-line sed scripts | Strategic direction |
-| "Add this line at line 387" | "Add logging to the auth flow" |
-| WHAT without WHY | Always include WHY |
-| Create without searching | Discovery before creation |
-| New file when extension works | Extend existing systems |
-
-## Writing Style
-
-Complete thoughts, not fragments. Clear but telegraphic. Include enough context for someone with zero codebase knowledge to understand the goal.
+**Why**: Duplication creates drift. Two systems doing similar things will diverge, and maintaining both costs more than extending one.
 
 ## Integration
 
-- **Precedes:** executing-plans, subagent-driven-development
+- **Precedes:** executing-plans, subagent-driven-development, writing-plans
 - **Follows:** brainstorming (when design work was needed first)
 - **Complements:** metathinking (for deep analysis during planning)

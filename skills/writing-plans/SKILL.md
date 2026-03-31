@@ -5,165 +5,197 @@ description: Use when you have a spec or requirements for a multi-step task, bef
 
 # Writing Plans
 
-## Parameters (caller controls)
-
-| Parameter | Default | Range | Description |
-|-----------|---------|-------|-------------|
-| `granularity` | medium | coarse, medium, fine | Task decomposition level. Coarse = 3-5 big tasks. Fine = 10-20 small tasks. |
-| `include_risks` | true | true/false | Add risk assessment section per task |
-| `include_alternatives` | true | true/false | Document rejected approaches and why |
-| `output_format` | markdown | markdown, jsonl, both | Plan output format |
-
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
-
-Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
+Translate requirements into plans that empower subagents to solve problems, not follow scripts. A plan should make the executor smarter about the problem — not dumber by reducing them to a text editor.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md`
 
-**Save plans to:** `docs/plans/YYYY-MM-DD-<feature-name>.md` (markdown) or `docs/plans/YYYY-MM-DD-<feature-name>.jsonl` (jsonl), or both when `output_format=both`.
+## The Anti-Pattern This Skill Exists to Prevent
 
-## Bite-Sized Task Granularity
-
-Decomposition depth is controlled by the `granularity` parameter:
-
-- **coarse** — 3-5 tasks covering major components. Each task may span multiple files and take 30-60 minutes. Suitable for experienced teams or well-understood domains.
-- **medium** *(default)* — 6-9 tasks at component boundaries. Each task is a coherent unit of work (15-30 minutes).
-- **fine** — 10-20 tasks at the individual function/test level. Each step is one action (2-5 minutes):
-  - "Write the failing test" - step
-  - "Run it to make sure it fails" - step
-  - "Implement the minimal code to make the test pass" - step
-  - "Run the tests and make sure they pass" - step
-  - "Commit" - step
-
-When `granularity=medium` or `granularity=coarse`, collapse the TDD micro-steps into a single "Test + Implement + Commit" step per task rather than listing each individually.
-
-## Plan Document Header
-
-**Every plan should start with this header:**
+**The sed-script plan:**
 
 ```markdown
-# [Feature Name] Implementation Plan
+### Task 1.1: Add Logging Line
+Step 1: Open file
+Step 2: Add this exact line at line 387:
+    this.logger.info('Generating embeddings...');
+Step 3: Save file
+Step 4: Commit
+```
 
-> **For Claude:** Recommended next skill: Use kinderpowers:executing-plans to implement this plan task-by-task.
+**Why it's worse than useless:**
+- Assumes you know the exact fix (you often don't)
+- No context for WHY that line matters
+- Subagent becomes a text editor, not a problem solver
+- When reality differs from plan (it will), subagent is stuck
+- Doesn't transfer what YOU discovered in the session
+- Wastes tokens pretending to think while doing mechanical work
 
-**Goal:** [One sentence describing what this builds]
+If your plan could be replaced by `sed -i '387i\    this.logger.info(...);' file.ts`, you wrote a sed script, not a plan.
 
+## What a Good Plan Contains
+
+### 1. Session Context Transfer (~30% of plan)
+
+The most valuable part. Capture what you learned so the executor doesn't repeat your investigation:
+
+```markdown
+## Current System State ([date] Discovery)
+
+### What We Tried
+[Exact commands, what happened, what surprised you]
+
+### What Works vs What's Broken
+✅ Service X healthy (evidence: curl output)
+❌ Operation claims success but results empty
+❓ Unknown: is function Y() even being called?
+
+### What We Checked
+1. Logs during operation → EMPTY (suspicious)
+2. Service health → OK
+3. Data format → matches schema
+4. Error handling → try/catch swallowing failures (probable root cause)
+```
+
+### 2. Mission, Not Steps (~30% of plan)
+
+Define outcomes. The executor breaks them into steps — that's their job.
+
+```markdown
+## Mission
+
+**Phase 1: Make indexing actually work**
+- Reproduce the failure using commands above
+- Find where code claims success but does nothing
+- Fix with proper error propagation
+- Verify by querying for indexed data
+
+**Phase 2: Enrich indexed data**
+- Once Phase 1 works, add git metadata
+- Connect to existing enrichment pipeline
+
+You should understand:
+- Why logs show nothing during indexing
+- What "success" means in the current code
+- How to make it fail loudly instead of silently
+```
+
+### 3. Approach Guidance (~20% of plan)
+
+Teach methodology, not commands:
+
+```markdown
+## How to Approach This
+
+**Key Files (with context, not just paths):**
+- `src/indexer.ts:372-423` — addDocuments() claims success here,
+  check if embeddings are actually generated before this call
+- `src/client.ts:89` — error handling wraps everything in try/catch
+  that returns success on failure
+
+**Debugging Strategy:**
+1. Add instrumentation at every major step
+2. Test with 3 documents, not 82
+3. Check if function X() is even being called
+4. Verify data format matches what downstream expects
+
+**DON'T:** Assume the fix is adding a log line.
+**DO:** Understand the data flow end-to-end first.
+```
+
+### 4. Success Criteria (~10% of plan)
+
+Observable outcomes, not task completion:
+
+```markdown
+## Success Criteria
+- [ ] Run indexing → see log output at every stage
+- [ ] Query indexed data → get results (not empty)
+- [ ] Root cause documented in commit message
+- [ ] Error handling propagates failures instead of swallowing
+```
+
+### 5. Discovery Results (~10% of plan)
+
+What exists that the executor should know about:
+
+```markdown
+## Discovery
+- Searched for: existing indexing, embedding pipelines
+- Found: `src/legacy-indexer.ts` — old implementation, partially working
+- Decision: extend legacy indexer rather than rewrite
+- Related issues: #83 (semantic search roadmap), #56 (embedding pipeline)
+```
+
+## Plan Document Structure
+
+```markdown
+# [End Goal — what this enables, not what it fixes]
+
+> **For Claude:** Use kinderpowers:executing-plans to implement.
+> This is an investigative brief, not a script. Read the whole thing,
+> understand the problem, then solve it.
+
+**Goal:** [One sentence — the outcome, not the activity]
 **Architecture:** [2-3 sentences about approach]
 
-**Tech Stack:** [Key technologies/libraries]
-
 ---
+
+## Current System State
+[Session context transfer — what you learned]
+
+## Discovery
+[What exists, what was searched, extend-vs-create decisions]
+
+## Mission
+[Phases with goals, not steps]
+
+## Approach Guidance
+[Key files WITH context, debugging methodology, anti-patterns]
+
+## Success Criteria
+[Observable outcomes per phase]
+
+## Rejected Alternatives
+[What was considered and why it was dropped — prevents executor from rediscovering dead ends]
 ```
 
-## Task Structure
+## Granularity Control
 
-````markdown
-### Task N: [Component Name]
+| Level | When | Plan Shape |
+|-------|------|-----------|
+| **coarse** | Well-understood domain, experienced executor | 3-5 mission objectives, minimal guidance |
+| **medium** (default) | Typical feature work | 5-8 phased goals with key files and context |
+| **fine** | Unfamiliar domain, complex debugging | Detailed system state, ranked hypotheses, instrumentation strategy |
 
-**Files:**
-- Create: `exact/path/to/file.py`
-- Modify: `exact/path/to/existing.py:123-145`
-- Test: `tests/exact/path/to/test.py`
-
-**Step 1: Write the failing test**
-
-```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
-```
-
-**Step 2: Run test to verify it fails**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
-
-**Step 3: Write minimal implementation**
-
-```python
-def function(input):
-    return expected
-```
-
-**Step 4: Run test to verify it passes**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
-
-**Step 5: Commit**
-
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-```
-
-**Risks** *(include when `include_risks=true`)*
-
-- [Risk: what could go wrong] → [Mitigation: how to handle it]
-
-**Rejected Alternatives** *(include when `include_alternatives=true`)*
-
-- [Approach considered] — rejected because [reason]
-````
+Granularity controls **depth of context**, not **number of sed commands**.
 
 ## Discovery Before Creation
 
-**Before writing any plan, search for what already exists.** This prevents the most common planning failure: proposing new solutions when existing ones can be extended.
+Before proposing ANY new file, tool, or system:
 
-**Planning-phase checkpoints**:
-1. Before proposing ANY new file/tool/script, run discovery:
-   - Search for similar function names or patterns
-   - Search for similar file names
-   - Check project documentation for existing solutions
-2. Include discovery results in each task: "Found existing X, will extend" or "No existing solution found"
-3. If existing solution found, pivot task to extension approach
+1. Search for similar function names or patterns
+2. Search for similar file names
+3. Check existing documentation and issue trackers
+4. Include results: "Found existing X, will extend" or "No existing solution"
 
-**Anti-patterns**:
-- Creating `new-feature-v2.py` without checking if `feature.py` exists
-- Proposing new documentation when similar docs already exist
-- Building parallel systems that duplicate existing capabilities
-- Skipping search because "I'm pretty sure there's nothing"
-
-## Extend Over Duplicate
-
-When discovery reveals similar existing work:
-1. Document what the existing system does
-2. Identify the gap between current and needed capability
-3. Write the task as "Extend X to support Y" not "Create new Z"
-4. Reference the existing file paths in the task's Files section
-
-**The WHY**: Duplication creates maintenance burden. Every parallel system is technical debt. Extension tasks are also faster to execute because the foundation exists.
-
-## Remember
-- Exact file paths always
-- Complete code in plan (not "add validation")
-- Exact commands with expected output
-- Reference relevant skills with @ syntax
-- DRY, YAGNI, TDD, frequent commits
-- Discovery before creation (search before proposing new)
-- Extend over duplicate (modify existing before building new)
+If existing solution found, the plan should say "Extend X to support Y" not "Create new Z."
 
 ## Execution Handoff
 
 After saving the plan, offer execution choice:
 
-**"Plan complete and saved to `docs/plans/<filename>.md`. Two execution options:**
+**1. Subagent-Driven (this session)** — dispatch fresh subagent per phase, review between phases
+- **Uses:** kinderpowers:subagent-driven-development
 
-**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
+**2. Parallel Session (separate)** — open new session, batch execution with checkpoints
+- **Uses:** kinderpowers:executing-plans
 
-**2. Parallel Session (separate)** - Open new session with executing-plans, batch execution with checkpoints
+## Integration
 
-**Which approach?"**
-
-**If Subagent-Driven chosen:**
-- **Recommended next skill:** Use kinderpowers:subagent-driven-development
-- Stay in this session
-- Fresh subagent per task + code review
-
-**If Parallel Session chosen:**
-- Guide them to open new session in worktree
-- **Recommended next skill:** New session uses kinderpowers:executing-plans
+- **Follows:** strategic-planning (for the investigative/discovery phase)
+- **Precedes:** executing-plans, subagent-driven-development
+- **Complements:** brainstorming (design work), metathinking (deep analysis)
