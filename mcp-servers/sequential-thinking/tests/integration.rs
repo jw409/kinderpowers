@@ -702,3 +702,117 @@ async fn test_subagent_spawn_hint_on_parallel_branch() {
     assert!(msg.contains("approach-a"), "Hint should reference branch name");
     assert!(msg.contains("3 proposals"), "Hint should mention proposal count");
 }
+
+#[tokio::test]
+async fn test_subagent_orchestration_hint_on_three_branches() {
+    let mut client = McpClient::new().await;
+
+    // Base thought
+    let _ = client
+        .tool_call(
+            "sequentialthinking",
+            json!({
+                "thought": "Analyzing the problem",
+                "thoughtNumber": 1,
+                "totalThoughts": 8
+            }),
+        )
+        .await;
+
+    // Create 3 branches
+    for (i, name) in ["branch-x", "branch-y", "branch-z"].iter().enumerate() {
+        let _ = client
+            .tool_call(
+                "sequentialthinking",
+                json!({
+                    "thought": format!("Exploring {}", name),
+                    "thoughtNumber": (i + 2) as u32,
+                    "totalThoughts": 8,
+                    "branchFromThought": 1,
+                    "branchId": name
+                }),
+            )
+            .await;
+    }
+
+    // Non-merge thought should trigger subagent_orchestration hint
+    let resp = client
+        .tool_call(
+            "sequentialthinking",
+            json!({
+                "thought": "Continuing analysis without merging",
+                "thoughtNumber": 5,
+                "totalThoughts": 8,
+                "continuationMode": "continue"
+            }),
+        )
+        .await;
+    assert!(!McpClient::is_error(&resp));
+    assert!(!McpClient::is_tool_error(&resp));
+
+    let parsed = McpClient::get_parsed(&resp);
+    let hints = parsed["hints"].as_array().expect("should have hints");
+    let orch_hint = hints.iter().find(|h| h["kind"] == "subagent_orchestration");
+    assert!(
+        orch_hint.is_some(),
+        "Should emit subagent_orchestration hint when 3+ branches exist"
+    );
+    let msg = orch_hint.unwrap()["message"].as_str().unwrap();
+    assert!(msg.contains("3 branches"), "Should mention branch count");
+    // All three branch names should appear
+    assert!(msg.contains("branch-x"), "Should list branch-x");
+    assert!(msg.contains("branch-y"), "Should list branch-y");
+    assert!(msg.contains("branch-z"), "Should list branch-z");
+}
+
+#[tokio::test]
+async fn test_subagent_orchestration_suppressed_during_merge() {
+    let mut client = McpClient::new().await;
+
+    let _ = client
+        .tool_call(
+            "sequentialthinking",
+            json!({"thought": "Base", "thoughtNumber": 1, "totalThoughts": 6}),
+        )
+        .await;
+
+    // Create 3 branches
+    for (i, name) in ["m-a", "m-b", "m-c"].iter().enumerate() {
+        let _ = client
+            .tool_call(
+                "sequentialthinking",
+                json!({
+                    "thought": format!("Branch {}", name),
+                    "thoughtNumber": (i + 2) as u32,
+                    "totalThoughts": 6,
+                    "branchFromThought": 1,
+                    "branchId": name
+                }),
+            )
+            .await;
+    }
+
+    // Merge thought should NOT trigger subagent_orchestration
+    let resp = client
+        .tool_call(
+            "sequentialthinking",
+            json!({
+                "thought": "Merging all branches",
+                "thoughtNumber": 5,
+                "totalThoughts": 6,
+                "continuationMode": "merge",
+                "mergeBranches": ["m-a", "m-b", "m-c"]
+            }),
+        )
+        .await;
+    assert!(!McpClient::is_error(&resp));
+
+    let parsed = McpClient::get_parsed(&resp);
+    let empty = vec![];
+    let hints = parsed["hints"].as_array().unwrap_or(&empty);
+    let orch_hint = hints.iter().find(|h| h["kind"] == "subagent_orchestration");
+    assert!(
+        orch_hint.is_none(),
+        "Should NOT emit subagent_orchestration during merge"
+    );
+}

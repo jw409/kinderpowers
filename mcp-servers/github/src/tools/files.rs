@@ -447,6 +447,25 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_push_files_commit_creation_fails_reports_tree_plus_blobs() {
+        use crate::github::client::ClientError;
+        // Steps 1-4 succeed, step 5 (commit creation) fails
+        let client = GithubClient::mock_results(vec![
+            Ok(json!({"object": {"sha": "commit_abc"}})),    // step 1: GET ref
+            Ok(json!({"tree": {"sha": "tree_abc"}})),         // step 2: GET commit
+            Ok(json!({"sha": "blob_abc"})),                   // step 3: POST blob
+            Ok(json!({"sha": "newtree_abc"})),                // step 4: POST tree
+            Err(ClientError::Api("500: commit creation failed".into())), // step 5: fails
+        ]);
+        let result = push_files(&client, "o", "r", "main", "push",
+            r#"[{"path":"a.txt","content":"aGk="}]"#).await;
+        assert!(result.is_err());
+        let err_msg = result.unwrap_err().to_string();
+        assert!(err_msg.contains("step 5/6"), "error should include step: {err_msg}");
+        assert!(err_msg.contains("tree+"), "error should mention tree orphaned: {err_msg}");
+    }
+
+    #[tokio::test]
     async fn test_push_files_ref_update_fails_reports_full_orphan_chain() {
         use crate::github::client::ClientError;
         // Steps 1-5 succeed, step 6 (ref update) fails
