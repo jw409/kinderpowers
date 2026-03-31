@@ -22,36 +22,29 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 **Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
-## Parameters (caller controls)
-
-| Parameter | Default | Range | Description |
-|-----------|---------|-------|-------------|
-| `batch_size` | 3 | 1-10 | Number of tasks to execute before pausing for review |
-| `review_frequency` | per_batch | per_task, per_batch, end_only | When to report progress and wait for feedback |
-| `deviation_handling` | ask | ask, adapt, strict | What to do when plan step is ambiguous — ask for clarification, adapt intelligently, or follow strictly |
-| `commit_style` | per_task | per_task, per_batch, single | When to create git commits |
-
 ## The Process
 
-### Step 1: Load and Review Plan
-1. Read plan file
-2. Review critically - identify any questions or concerns about the plan
-3. If concerns: Raise them with your human partner before starting
-4. If no concerns: Create TodoWrite and proceed
+### Load and Review
 
-### Step 2: Execute Batch
-**Default: First 3 tasks**
+Read the plan critically. Identify ambiguities, missing context, or tasks that need reordering. Raise concerns before starting — adapting mid-execution is cheaper than fixing bad assumptions later.
 
-For each task:
-1. Mark as in_progress
-2. Follow each step exactly (plan has bite-sized steps)
-3. Run verifications as specified
-4. Mark as completed
+### Execute in Chunks
 
-### Step 3: Report
-When batch complete:
-- Show what was implemented
-- Show verification output
+Work through the plan in logical chunks. Chunk size is adaptive — small for risky changes, larger for straightforward work. After each chunk:
+- Verify what you built works
+- Commit (granularity depends on context)
+- Report progress to the caller
+
+### Adapt, Don't Follow Blindly
+
+Plans are written before implementation reveals reality. When a task doesn't match what you find:
+- **Simple mismatch**: adapt and note the deviation
+- **Architectural conflict**: pause and discuss with the caller
+- **Missing prerequisite**: handle it, then continue
+
+### Report for Review
+
+After each chunk, show what was implemented and verification output.
 - Say: "Ready for feedback."
 
 ### Step 4: Continue
