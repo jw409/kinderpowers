@@ -352,7 +352,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_push_files_atomic_single_file() {
+    async fn test_push_files_single_file() {
         // Git Data API flow: ref → commit → blob → tree → commit → update ref
         let client = GithubClient::mock(vec![
             json!({"object": {"sha": "commit111"}}),           // GET ref
@@ -369,7 +369,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_push_files_atomic_multiple_files() {
+    async fn test_push_files_multiple_files() {
         // 2 files: ref → commit → blob1 → blob2 → tree → commit → update ref
         let client = GithubClient::mock(vec![
             json!({"object": {"sha": "commit222"}}),

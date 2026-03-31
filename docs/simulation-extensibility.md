@@ -117,7 +117,7 @@ Kinderpowers suggests 5 standard archetypes for product testing:
 4. **The Open Source Maintainer** — needs to triage and review. Success = "I process PRs in half the time"
 5. **The AI-Native Builder** — builds on top of AI tools. Success = "This gives me capabilities I couldn't build alone"
 
-Archetype definitions live in `var/archetypes/` as JSON files following the scenario format above.
+Archetype definitions should live in `var/archetypes/` as JSON files following the scenario format above (create this directory when first needed).
 
 ## Example: Connecting romancer4
 

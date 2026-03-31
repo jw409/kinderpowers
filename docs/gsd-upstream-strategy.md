@@ -1,7 +1,9 @@
 # GSD Upstream Evolution Strategy
 
-**Current**: kinderpowers vendors GSD v1.26.0
-**Upstream**: gsd-build/get-shit-done v1.30.0 (101 commits ahead, 97 files changed)
+**Current**: kinderpowers vendors GSD v1.26.0-kp.1
+**Upstream**: gsd-build/get-shit-done v1.30.0 (as of 2026-03-31)
+
+Check current delta: `gh api repos/gsd-build/get-shit-done/compare/v1.26.0...main --jq '{ahead_by, files: (.files | length)}'`
 
 ## Strategy: Selective Merge + Diverge
 
@@ -76,7 +78,7 @@ For each cherry-picked feature:
 1. Read the upstream diff for that feature
 2. Adapt to kinderpowers directory structure (`gsd/bin/` not `get-shit-done/bin/`)
 3. Preserve kinderpowers-specific modifications
-4. Update `gsd/VERSION` to reflect selective merge (e.g., `1.26.0+kp.1`)
+4. Update `gsd/VERSION` to reflect selective merge (e.g., `1.26.0-kp.2`)
 5. Update `gsd/CHANGELOG.md` with cherry-picked features
 
 ## Priority Order for Merge

@@ -91,8 +91,8 @@ Skills are `SKILL.md` files with instructions. They're runtime-agnostic by desig
 The `kp-sequential-thinking` MCP server works identically with Gemini CLI — it's MCP-native. Gemini even has a pre-tuned profile (`gemini_flash`) in the server that optimizes explore counts and branching thresholds for Gemini's strengths:
 
 - Wider exploration (5-7 alternatives vs Claude's 4-5)
-- Lower depth (2 layers vs 3)
-- Creative guidance emphasizing Gemini's broad association patterns
+- More liberal branching threshold
+- Guidance tuned for wide parallel evaluation then convergence
 
 ## Best Practices for Cross-Runtime Skills
 
