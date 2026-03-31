@@ -174,3 +174,13 @@ If investigation shows the issue is truly environmental, timing-dependent, or ex
 **Related skills:**
 - **kinderpowers:test-driven-development** — For creating failing test case
 - **kinderpowers:verification-before-completion** — Verify fix before claiming success
+
+## Adaptive Work Sizing
+
+Assess scope before committing to a work plan. If the task is larger than you can complete in your current context:
+
+1. **Do what you can** — complete a meaningful chunk with clear boundaries
+2. **Document what remains** — leave a concrete continuation prompt, not vague notes
+3. **Spawn a follow-on agent** — or tell the caller to. The continuation agent should be able to pick up from your output without re-reading everything
+
+Never assume you can finish everything. A completed chunk is more valuable than an incomplete sweep.
