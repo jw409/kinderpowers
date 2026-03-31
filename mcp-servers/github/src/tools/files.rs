@@ -143,7 +143,7 @@ pub async fn push_files(
     // NOTE: if a later step fails, these blobs become orphaned objects.
     // GitHub will GC them after ~90 days. No rollback is possible via the API.
     let mut tree_entries = Vec::new();
-    let mut created_blobs: Vec<String> = Vec::new();
+    let mut created_blob_count: usize = 0;
     for file in &files {
         let file_path = file["path"].as_str().unwrap(); // validated above
         let content = file["content"].as_str().unwrap(); // validated above
@@ -155,7 +155,7 @@ pub async fn push_files(
         });
         let blob_result = client.api_json(&blob_endpoint, "POST", &blob_body).await
             .map_err(|e| ClientError::Api(format!(
-                "push_files step 3/6 (create blob for '{file_path}'): {e}"
+                "push_files step 3/6 (create blob for '{file_path}', {created_blob_count} prior blobs orphaned): {e}"
             )))?;
         let blob_sha = blob_result["sha"]
             .as_str()
@@ -163,7 +163,7 @@ pub async fn push_files(
                 "push_files step 3/6: could not get blob SHA for '{file_path}'"
             )))?;
 
-        created_blobs.push(blob_sha.to_string());
+        created_blob_count += 1;
         tree_entries.push(serde_json::json!({
             "path": file_path,
             "mode": "100644",
@@ -181,7 +181,7 @@ pub async fn push_files(
     let tree_result = client.api_json(&tree_endpoint, "POST", &tree_body).await
         .map_err(|e| ClientError::Api(format!(
             "push_files step 4/6 (create tree, {} blobs orphaned): {e}",
-            created_blobs.len()
+            created_blob_count
         )))?;
     let new_tree_sha = tree_result["sha"]
         .as_str()
@@ -199,7 +199,7 @@ pub async fn push_files(
         .await
         .map_err(|e| ClientError::Api(format!(
             "push_files step 5/6 (create commit, tree+{} blobs orphaned): {e}",
-            created_blobs.len()
+            created_blob_count
         )))?;
     let new_commit_sha = new_commit_result["sha"]
         .as_str()
@@ -215,7 +215,7 @@ pub async fn push_files(
         .await
         .map_err(|e| ClientError::Api(format!(
             "push_files step 6/6 (update ref, commit+tree+{} blobs orphaned): {e}",
-            created_blobs.len()
+            created_blob_count
         )))?;
 
     Ok(serde_json::json!({

@@ -396,8 +396,9 @@ impl ThinkingEngine {
             });
         }
 
-        // --- Hint: merge available when multiple branches exist ---
-        if self.branches.len() >= 2
+        // --- Hint: merge available when exactly 2 branches exist ---
+        // At 3+ branches, subagent_orchestration takes over with richer guidance.
+        if self.branches.len() == 2
             && validated.continuation_mode.as_deref() != Some("merge")
             && validated.merge_branches.is_none()
         {
