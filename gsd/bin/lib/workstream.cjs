@@ -340,6 +340,11 @@ function cmdWorkstreamComplete(cwd, name, options, raw) {
 
 function cmdWorkstreamSet(cwd, name, raw) {
   if (!name) {
+    error('workstream name required. Usage: workstream set <name>\nTo clear: workstream set --clear');
+    return;
+  }
+
+  if (name === '--clear' || name === 'clear') {
     setActiveWorkstream(cwd, null);
     output({ active: null, cleared: true }, raw);
     return;

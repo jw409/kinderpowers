@@ -273,8 +273,33 @@ async function main() {
 
   const command = args[0];
 
-  if (!command) {
-    error('Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]\nCommands: state, resolve-model, find-phase, commit, verify-summary, verify, frontmatter, template, generate-slug, current-timestamp, list-todos, verify-path-exists, config-ensure-section, config-new-project, init, workstream');
+  if (!command || command === '--help' || command === '-h' || command === 'help') {
+    const usage = `Usage: gsd-tools <command> [args] [--raw] [--pick <field>] [--cwd <path>] [--ws <name>]
+
+Commands:
+  state              Project state management (load, update, advance-plan, ...)
+  init               Workflow initialization (new-project, execute-phase, plan-phase, ...)
+  resolve-model      Get model for agent based on profile
+  find-phase         Find phase directory by number
+  commit             Commit planning docs
+  verify             Verification suite (plan-structure, phase-completeness, ...)
+  frontmatter        Frontmatter CRUD (get, set, merge, validate)
+  template           Template fill (summary, plan, verification)
+  scaffold           Create template files (context, uat, verification)
+  workstream         Workstream management (create, list, status, complete, ...)
+  progress           Render progress (json, table, bar)
+  validate           Check integrity (consistency, health, agents)
+  generate-slug      Convert text to URL-safe slug
+  current-timestamp  Get timestamp
+  list-todos         Count and enumerate pending todos
+
+Use: gsd-tools <command> --help for subcommand details`;
+    if (!command) {
+      error(usage);
+    } else {
+      process.stdout.write(usage + '\n');
+      process.exit(0);
+    }
   }
 
   // Multi-repo guard: resolve project root for commands that read/write .planning/.
@@ -711,6 +736,9 @@ async function runCommand(command, args, cwd, raw) {
 
     case 'init': {
       const workflow = args[1];
+      if (!workflow || workflow === '--help' || workflow === '-h') {
+        error('Usage: gsd-tools init <workflow>\nWorkflows: execute-phase, plan-phase, new-project, new-milestone, quick, resume, verify-work, phase-op, todos, milestone-op, map-codebase, progress, manager, new-workspace, list-workspaces, remove-workspace');
+      }
       switch (workflow) {
         case 'execute-phase':
           init.cmdInitExecutePhase(cwd, args[2], raw);
