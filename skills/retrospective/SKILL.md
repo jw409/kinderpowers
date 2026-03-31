@@ -13,6 +13,15 @@ A retrospective extracts lessons from completed work so future iterations improv
 
 **Announce at start:** "I'm using the retrospective skill to extract lessons from this work."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `time_horizon` | current_milestone | last_task, current_milestone, full_project | How far back to look — last task, current milestone/sprint, or entire project history |
+| `depth` | standard | quick, standard, comprehensive | Quick=what went well + action items, standard=full structure, comprehensive=includes metrics and multi-agent perspectives |
+| `action_item_count` | 3 | 1-10 | Target number of concrete action items to produce |
+| `include_metrics` | auto | auto, yes, no | Whether to include estimation calibration metrics — auto includes for milestones and longer work |
+
 ## When to Run
 
 **Strongly recommended after:**

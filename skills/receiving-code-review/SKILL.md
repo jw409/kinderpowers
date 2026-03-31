@@ -9,6 +9,15 @@ description: Use when receiving code review feedback, before implementing sugges
 
 Verify before implementing. Ask before assuming. Focus on technical correctness.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `response_style` | technical | technical, conversational, terse | How to acknowledge feedback — technical=restate+verify, conversational=natural, terse=just fix it |
+| `auto_verify` | true | true/false | Whether to automatically verify suggestions against codebase before implementing |
+| `pushback_threshold` | medium | low, medium, high | How readily to push back — low=accept most suggestions, high=verify everything rigorously |
+| `implementation_order` | priority | priority, sequential, batch | Priority=blocking first, sequential=as listed, batch=clarify all then implement all |
+
 ## The Response Pattern
 
 ```

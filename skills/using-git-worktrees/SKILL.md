@@ -13,6 +13,15 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 
 **Announce at start:** "I'm using the using-git-worktrees skill to set up an isolated workspace."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `auto_cleanup` | false | true/false | Whether to automatically remove worktree after merge/discard (vs asking) |
+| `naming_style` | feature | feature, date, custom | Branch naming — feature/name, YYYY-MM-DD-name, or caller-specified |
+| `baseline_tests` | true | true/false | Whether to run tests after worktree creation to verify clean starting state |
+| `setup_deps` | auto | auto, skip, force | Whether to auto-detect and install dependencies — auto=detect from project files, skip=no install, force=always install |
+
 ## Directory Selection Process
 
 Follow this priority order:

@@ -396,8 +396,9 @@ impl ThinkingEngine {
             });
         }
 
-        // --- Hint: merge available when multiple branches exist ---
-        if self.branches.len() >= 2
+        // --- Hint: merge available when exactly 2 branches exist ---
+        // At 3+ branches, subagent_orchestration takes over with richer guidance.
+        if self.branches.len() == 2
             && validated.continuation_mode.as_deref() != Some("merge")
             && validated.merge_branches.is_none()
         {
@@ -471,6 +472,51 @@ impl ThinkingEngine {
                     recommended_depth,
                     recommended_model,
                 }),
+            });
+        }
+
+        // --- Hint: subagent spawn opportunity ---
+        // When a branch is created AND the branch_strategy is "parallel" (or multiple
+        // proposals exist), hint that the caller could spawn independent subagents to
+        // explore branches concurrently, then merge results back.
+        if validated.branch_from_thought.is_some() && validated.branch_id.is_some() {
+            let strategy = validated.branch_strategy.as_deref().unwrap_or("sequential");
+            if strategy == "parallel" || (validated.proposals.as_ref().map_or(false, |p| p.len() >= 3)) {
+                let branch_name = validated.branch_id.as_deref().unwrap_or("unknown");
+                let proposal_count = validated.proposals.as_ref().map_or(0, |p| p.len());
+                hints.push(Hint {
+                    kind: "subagent_spawn_available".into(),
+                    message: format!(
+                        "Branch '{}' could be explored by an independent subagent. \
+                         {} proposals identified. The caller can spawn an Agent tool with \
+                         this branch's context, let it explore independently, then merge \
+                         results back with continuation_mode: \"merge\", \
+                         merge_branches: [\"{}\"].",
+                        branch_name, proposal_count, branch_name
+                    ),
+                    severity: "suggestion".into(),
+                    spawn_meta: None,
+                });
+            }
+        }
+
+        // --- Hint: multi-branch subagent orchestration ---
+        // When 3+ branches exist, suggest spawning agents for each and merging
+        if self.branches.len() >= 3
+            && validated.continuation_mode.as_deref() != Some("merge")
+        {
+            let branch_names: Vec<String> = self.branches.keys().cloned().collect();
+            hints.push(Hint {
+                kind: "subagent_orchestration".into(),
+                message: format!(
+                    "{} branches exist. Consider spawning {} parallel subagents (one per branch: {}) \
+                     to explore independently, then merge all results in a final thought.",
+                    self.branches.len(),
+                    self.branches.len(),
+                    branch_names.join(", ")
+                ),
+                severity: "suggestion".into(),
+                spawn_meta: None,
             });
         }
 

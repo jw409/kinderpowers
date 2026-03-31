@@ -7,6 +7,14 @@ description: Use when user asks 'how should I...' or 'what's the best approach..
 
 **Core principle:** Search before reinventing. Searching costs nothing; reinventing or repeating mistakes costs everything.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `search_depth` | standard | quick, standard, thorough | Quick=top 2 results, standard=top 5, thorough=top 10 with cross-referencing |
+| `recency_bias` | balanced | recent, balanced, historical | Recent=last 7 days, balanced=weighted by relevance, historical=all time equally |
+| `source_filter` | all | all, decisions, patterns, code | Filter by type of memory — all, architectural decisions, learned patterns, or code examples |
+
 ## Mandatory: Use the Search Agent
 
 **Dispatch the search-conversations agent for any historical search — searching costs nothing, reinventing costs everything.**

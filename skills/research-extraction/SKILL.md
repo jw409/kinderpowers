@@ -11,6 +11,16 @@ Point at a codebase, repo, paper collection, or reference implementation. Extrac
 
 **Announce at start:** "I'm using the research-extraction skill to analyze [target]."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `mode` | idea_extraction | idea_extraction, usage_evaluation, deep_integration | Pipeline depth — full 6-phase, phases 1-2 only, or 1-3 with integration mapping |
+| `extraction_depth` | L2 | L0, L1, L2, L3 | Maximum extraction level — L0=structure, L1=positioning, L2=capabilities, L3=killer insights |
+| `relevance_filter` | moderate | none, moderate, strict | How aggressively to filter findings against project goals |
+| `output_format` | ranked_list | ranked_list, action_items, comparison_table | How to present results |
+| `max_source_files` | 20 | 5-50 | Maximum source files to analyze per target (controls cost) |
+
 ## Core Pipeline
 
 ```

@@ -14,6 +14,14 @@ Discover and install skills from the open agent skills ecosystem. This is the hu
 - User wants to extend capabilities beyond what's installed
 - User mentions a domain (design, testing, deployment) that might have dedicated skills
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `search_scope` | all | kinderpowers, ecosystem, all | Where to search — kinderpowers built-ins first, ecosystem via skills CLI, or both |
+| `auto_install` | false | true/false | Whether to install found skills automatically or just recommend |
+| `source_filter` | any | any, verified, popular | Filter results — any source, verified publishers only, or 1K+ installs |
+
 ## The Skills CLI
 
 The Skills CLI (`npx skills`) is the package manager for the open agent skills ecosystem.

@@ -19,11 +19,11 @@ Adversarial review is a disciplined approach to finding problems in work product
 
 | Parameter | Default | Range | Description |
 |-----------|---------|-------|-------------|
-| `intensity` | standard | gentle, standard, hostile | Review aggression level. gentle=blocking issues only (proportional review: light), standard=material issues (proportional review: standard/full), hostile=assume everything is broken, find every flaw |
-| `min_findings` | 0 | 0-10 | Minimum findings before accepting review as complete. 0=no floor. When set, zero-finding reviews trigger re-analysis with stronger prompting |
-| `focus` | all | all, security, correctness, completeness, performance | Which review categories to prioritize. all=full review protocol, specific=deep-dive that category only |
-
-**Parse from caller prompt.** "Be gentle" -> intensity=gentle. "Tear it apart" -> intensity=hostile. "Find at least 5 issues" -> min_findings=5. "Security review only" -> focus=security.
+| `intensity` | medium | light, medium, full | Review depth — light for typos/config, medium for routine changes, full for security/architecture |
+| `scope` | diff | diff, module, system | How wide to look — just the diff, the containing module, or cross-cutting system concerns |
+| `auto_fix` | false | true/false | Whether to propose inline fixes or just report findings |
+| `council_mode` | false | true/false | Spawn multi-perspective lenses (2-3x cost, 3-5x coverage) |
+| `pedanticness` | medium | low, medium, high | What severity level gets raised — low=bugs only, high=includes nitpicks |
 
 ## When to Use
 
@@ -35,11 +35,9 @@ Adversarial review is a disciplined approach to finding problems in work product
 - Security-sensitive changes (auth, permissions, data handling, cryptography)
 
 **Proportional review — match depth to risk:**
-- **Full adversarial:** New features, security changes, architecture decisions, public APIs — maps to intensity=hostile
-- **Standard review:** Routine changes, internal refactors, test additions — maps to intensity=standard
-- **Light review:** Typo fixes, config changes, documentation updates, dependency bumps — maps to intensity=gentle
-
-**intensity=hostile always uses Full adversarial regardless of change size.**
+- **Full adversarial:** New features, security changes, architecture decisions, public APIs
+- **Standard review:** Routine changes, internal refactors, test additions
+- **Light review:** Typo fixes, config changes, documentation updates, dependency bumps
 
 **Cost of skipping:** Issues caught in review cost minutes to fix. Issues caught in production cost hours to debug. Earlier is cheaper.
 
@@ -60,7 +58,7 @@ Pull up the requirements, acceptance criteria, or task description. Verify:
 
 ### Step 3: Hunt for Issues
 
-Systematically check each category. **When focus != all, prioritize that category.** When focus=security, spend 80% of review time on the Security checklist. Still note blocking issues in other categories, but don't deep-dive them.
+Systematically check each category:
 
 **Correctness:**
 - Does it do what it claims to do?
@@ -92,11 +90,6 @@ Systematically check each category. **When focus != all, prioritize that categor
 
 ### Step 4: Classify Findings
 
-**Intensity controls which findings to surface:**
-- **intensity=gentle** — Only report Blocking severity. Minor style issues and nits are noise at this level.
-- **intensity=standard** — Report Blocking + Important (default behavior). This is the normal review mode.
-- **intensity=hostile** — Report everything including nits. Treat Important as Blocking. Assume all code is broken until proven otherwise.
-
 | Severity | Meaning | Action |
 |----------|---------|--------|
 | **Blocking** | Prevents merge. Bug, security issue, broken functionality | Fix before proceeding |
@@ -114,8 +107,6 @@ If you found zero issues, pause. Possible explanations:
 - **The scope was small.** A one-line fix legitimately might have zero issues. Proportional review means this is fine for small changes.
 
 For significant changes, finding zero issues should prompt a second look, not immediate approval.
-
-**When min_findings > 0:** If findings < min_findings, re-examine with stronger prompting. This is not about manufacturing issues — it's about ensuring thoroughness. A legitimate zero-finding result is still possible after re-examination.
 
 ## Constructive Adversarial
 
@@ -192,13 +183,13 @@ This creates psychological distance from criticism and lets the author "agree wi
 
 Not every finding is worth raising. Match depth to context:
 
-| Level | What Gets Raised | Maps to intensity |
-|-------|------------------|-------------------|
-| **Low** | Bugs that affect users, security issues, broken promises | gentle |
-| **Medium** (default) | Above + misleading docs, confusing APIs, performance gaps | standard |
-| **High** | Above + style issues, nitpicks, technically-true-but-pedantic | hostile |
+| Level | What Gets Raised |
+|-------|------------------|
+| **Low** | Bugs that affect users, security issues, broken promises |
+| **Medium** (default) | Above + misleading docs, confusing APIs, performance gaps |
+| **High** | Above + style issues, nitpicks, technically-true-but-pedantic |
 
-Default to medium. Raise material issues. Skip the nitpicks unless asked. The `intensity` parameter maps to this slider: gentle=Low, standard=Medium, hostile=High.
+Default to medium. Raise material issues. Skip the nitpicks unless asked.
 
 ### Skip Cost
 

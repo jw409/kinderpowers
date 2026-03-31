@@ -13,6 +13,14 @@ Guide completion of development work by presenting clear options and handling ch
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `merge_strategy` | ask | ask, merge, pr, keep | Default completion action — ask presents 4 options, others skip to that choice |
+| `cleanup_level` | standard | minimal, standard, thorough | Minimal=keep worktree, standard=clean worktree on merge/discard, thorough=also prune remote branches |
+| `pr_detail` | standard | brief, standard, detailed | PR body depth — brief=bullets only, standard=summary+test plan, detailed=full context with screenshots |
+
 ## The Process
 
 ### Step 1: Verify Tests

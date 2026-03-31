@@ -11,6 +11,15 @@ When dispatching work to non-Claude runtimes (Gemini, GPT, local models, or any 
 
 **Announce at start:** "I'm using the dispatching-to-runtimes skill to structure the prompt for [runtime]."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `target_runtime` | auto | auto, gemini, gpt, local, claude | Which runtime to structure the prompt for — auto detects from context |
+| `prompt_style` | structured | structured, conversational, minimal | Structured=full template with headers, conversational=natural language, minimal=task+files only |
+| `fallback_strategy` | escalate | escalate, retry, self_execute | What to do when dispatched agent fails — escalate to stronger model, retry with adjusted prompt, or self-execute |
+| `verification` | required | required, optional, skip | Whether to include verification commands in the dispatch prompt |
+
 ## Universal Prompt Template
 
 All runtimes benefit from this structure:
@@ -44,6 +53,14 @@ All runtimes benefit from this structure:
 - Absolute paths only — relative paths cause failures
 - Explicit verification commands with timeout: `timeout 120 [cmd]`
 - Success criteria as checkboxes
+
+**Tool name mapping** (Gemini uses different names):
+- `Read` → `read_file` | `Grep` → `search_file_content`
+- `Edit` → `replace` | `Bash` → `run_shell_command`
+- `WebSearch` → `google_web_search` | `WebFetch` → `web_fetch`
+- `Agent` → spawn via `gemini --prompt` | MCP tools work identically
+
+**Full mapping**: See `docs/gemini-compatibility.md`
 
 **Known anti-patterns** (from empirical observation):
 - Interactive commands (`python`, `node`, `bash` with no args) hang forever

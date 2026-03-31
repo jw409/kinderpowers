@@ -11,6 +11,16 @@ Coordinate multiple agents working in parallel. The key insight: agents are chea
 
 **Announce at start:** "I'm using the team-orchestration skill to plan the parallel work."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `team_size` | auto | auto, 2-15 | Number of workers — auto sizes based on task count and independence |
+| `coordination_style` | inject | inject, checkpoint, supervised | Inject=all context upfront, checkpoint=workers report progress, supervised=orchestrator redirects mid-task |
+| `model_selection` | auto | auto, all_opus, all_haiku, mixed | Which models to use — auto matches model to task type |
+| `shutdown_policy` | wait_all | wait_all, first_failure, timeout | When to stop — wait for all workers, abort on first failure, or timeout after duration |
+| `file_domain_check` | strict | strict, warn, skip | Whether to enforce non-overlapping file domains — strict=block, warn=log, skip=allow overlaps |
+
 ## Core Principles
 
 ### 1. One Task Per Worker

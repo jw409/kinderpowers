@@ -17,10 +17,10 @@ Requirements work separates *what we're building* from *how we're building it*. 
 
 | Parameter | Default | Range | Description |
 |-----------|---------|-------|-------------|
-| `depth` | standard | quick, standard, deep | How thoroughly to elicit. Quick = extract from description. Deep = multi-round questioning. |
-| `format` | checklist | checklist, user-stories, gherkin, jobs-to-be-done | Output format for requirements |
-| `scope` | feature | feature, epic, product | How broad the requirements gathering is |
-| `include_out_of_scope` | true | true/false | Explicitly document what's NOT being built |
+| `elicitation_depth` | conversational | quick, conversational, formal | Quick=problem+scope in one pass, conversational=iterative discovery, formal=full FR/NFR document |
+| `output_format` | brief | brief, full, user_stories | Brief=1-2 page product brief, full=requirements doc with FRs/NFRs, user_stories=acceptance criteria format |
+| `scope_strictness` | moderate | loose, moderate, strict | How aggressively to define and enforce scope boundaries |
+| `include_nfrs` | auto | auto, yes, no | Whether to include non-functional requirements — auto includes them for large features |
 
 ## When to Use
 

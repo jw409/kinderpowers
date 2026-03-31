@@ -25,6 +25,15 @@ Start by understanding the current project context, then ask questions one at a 
 Avoid invoking implementation skills, writing code, or scaffolding before presenting a design and getting user approval. Skipping this step risks wasted work from unexamined assumptions, even on projects that seem simple. If time pressure or context makes skipping appropriate, note the trade-off explicitly.
 </DESIGN-FIRST>
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `breadth` | 3 | 2-5 | Number of alternative approaches to propose before settling |
+| `depth` | standard | quick, standard, deep | Quick=few sentences, standard=sectioned design, deep=full design doc with diagrams |
+| `constraint_level` | moderate | none, moderate, strict | How aggressively to apply YAGNI — none=explore freely, strict=cut everything non-essential |
+| `interactive` | true | true/false | Whether to ask clarifying questions one-at-a-time or infer from context |
+
 ## Even Simple Projects
 
 Simple projects often get skipped because they seem straightforward. A quick design pass (even a few sentences) catches assumptions before they become rework. Scale the design to the complexity — a config change needs a paragraph, not a document.

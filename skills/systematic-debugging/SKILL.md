@@ -31,6 +31,15 @@ Use for ANY technical issue:
 - Build failures
 - Integration issues
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `hypothesis_limit` | 3 | 1-5 | Maximum fix attempts before questioning architecture and escalating to human |
+| `auto_fix` | false | true/false | Whether to implement the fix after confirming root cause, or just report findings |
+| `scope` | local | local, module, system | Investigation breadth — local=single file/function, module=containing module, system=cross-cutting trace |
+| `evidence_level` | standard | minimal, standard, thorough | How much evidence to gather — minimal=reproduce+check changes, thorough=full data flow trace across component boundaries |
+
 **Especially valuable when:**
 - Under time pressure (guessing wastes more time than investigating)
 - "Just one quick fix" seems obvious
