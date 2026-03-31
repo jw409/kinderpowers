@@ -19,6 +19,15 @@ You write test cases (pressure scenarios with subagents), watch them fail (basel
 
 **Official guidance:** See anthropic-best-practices.md for Anthropic's skill authoring patterns.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `validation_level` | full | quick, standard, full | Quick=structure check only, standard=baseline test, full=RED-GREEN-REFACTOR with pressure scenarios |
+| `template_style` | technique | technique, pattern, reference | Which SKILL.md structure to use — technique=steps, pattern=mental model, reference=API docs |
+| `auto_test` | true | true/false | Whether to automatically run pressure scenarios against the skill before deployment |
+| `keyword_coverage` | standard | minimal, standard, thorough | How many search keywords to embed — minimal=core terms, thorough=errors+symptoms+synonyms |
+
 ## What is a Skill?
 
 A reusable reference guide for proven techniques, patterns, or tools.

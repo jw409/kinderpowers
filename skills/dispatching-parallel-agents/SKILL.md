@@ -31,6 +31,15 @@ digraph when_to_use {
 }
 ```
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `max_agents` | 5 | 2-15 | Maximum concurrent agents to dispatch |
+| `isolation` | strict | strict, relaxed | Strict=no shared files, relaxed=allow shared reads with separate writes |
+| `coordination_style` | fire_and_forget | fire_and_forget, checkpoint, supervised | How results are collected — fire_and_forget returns all at end, checkpoint reports after each, supervised allows mid-task redirection |
+| `conflict_check` | true | true/false | Verify no file domain overlap before dispatching |
+
 **Use when:**
 - 3+ test files failing with different root causes
 - Multiple subsystems broken independently

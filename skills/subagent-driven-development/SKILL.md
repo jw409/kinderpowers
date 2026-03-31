@@ -39,6 +39,15 @@ digraph when_to_use {
 }
 ```
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `max_review_rounds` | 2 | 1-5 | Maximum spec+quality review iterations before escalating to human |
+| `task_granularity` | as_planned | as_planned, split_large, merge_small | Whether to execute tasks as-is, split large ones, or merge trivial adjacent ones |
+| `review_gates` | both | spec_only, quality_only, both, none | Which review stages to run — spec compliance, code quality, both, or skip reviews |
+| `auto_proceed` | true | true/false | Whether to automatically proceed to next task on approval or pause for human confirmation |
+
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per task (no context pollution)

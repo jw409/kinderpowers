@@ -69,6 +69,70 @@ Do NOT use "high", "medium", "low" — `bd` expects integers.
 
 **Types:** `task`, `bug`, `feature`
 
+## Batch Mode — Creating Beads from Plans
+
+When creating multiple beads from a plan document, use batch mode to auto-enrich in a single pass. This replaces the manual 5-step workflow (create → deps → labels → robot-suggest → acceptance criteria).
+
+**CRITICAL**: Dolt is single-writer. NEVER parallelize `bd create`/`bd update`/`bd dep add`. Chain all writes with `&&`.
+
+### Workflow
+
+```bash
+# 1. Create all beads serially (from your plan)
+bd create --title="Phase 1: schema migration" --description="..." --type=task --priority=2 && \
+bd create --title="Phase 2: API endpoints" --description="..." --type=feature --priority=2 && \
+bd create --title="Phase 3: integration tests" --description="..." --type=task --priority=2
+
+# 2. Wire to active epic (if one exists)
+EPIC=$(bd list --status=open --type=epic --limit=1 --format=id 2>/dev/null)
+if [ -n "$EPIC" ]; then
+  bd dep add <new-id-1> $EPIC && \
+  bd dep add <new-id-2> $EPIC && \
+  bd dep add <new-id-3> $EPIC
+fi
+
+# 3. Add inter-phase dependencies (later phases depend on earlier)
+bd dep add <phase-2-id> <phase-1-id> && \
+bd dep add <phase-3-id> <phase-2-id>
+
+# 4. Auto-label from title/description keywords
+bd label add <id> gpu       # if title mentions GPU/CUDA
+bd label add <id> dashboard # if title mentions UI/dashboard
+bd label add <id> test      # if type=task and title mentions test
+
+# 5. Run robot suggestions (apply high-confidence, surface rest)
+bv --robot-suggest
+# Apply suggestions with confidence > 0.9 automatically
+# Surface lower-confidence suggestions for human review
+
+# 6. Flag beads missing acceptance criteria
+bd lint  # reports beads without --acceptance set
+```
+
+### Auto-enrichment Checklist
+
+When creating beads from a plan, the agent should:
+
+- [ ] Create all beads serially (never parallel `bd create`)
+- [ ] Wire each bead to the active epic via `bd dep add`
+- [ ] Infer inter-phase dependencies from plan ordering and cross-references
+- [ ] Apply labels based on domain keywords in title/description
+- [ ] Run `bv --robot-suggest` and auto-apply high-confidence (>0.9) dep suggestions
+- [ ] Run `bd lint` to flag beads missing acceptance criteria
+- [ ] Report a summary: N created, N deps added, N labels applied, N missing AC
+
+### Keywords → Labels Mapping
+
+| Keywords in title/description | Label |
+|-------------------------------|-------|
+| GPU, CUDA, model, inference | `gpu` |
+| dashboard, UI, frontend, page | `dashboard` |
+| test, spec, coverage, TDD | `test` |
+| API, endpoint, route, handler | `api` |
+| migration, schema, database | `database` |
+| deploy, CI, pipeline, release | `infra` |
+| security, auth, token, encrypt | `security` |
+
 ## Session Recovery
 
 When you start a new session or context has been compacted:

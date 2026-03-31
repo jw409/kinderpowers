@@ -17,10 +17,10 @@ Architecture work captures the *why* behind technical choices before implementat
 
 | Parameter | Default | Range | Description |
 |-----------|---------|-------|-------------|
-| `formality` | standard | lightweight, standard, formal | ADR depth. Lightweight = 1 paragraph. Formal = full template with alternatives. |
-| `scope` | decision | decision, module, system | What the ADR covers |
-| `include_alternatives` | true | true/false | Document rejected options with rationale |
-| `review_mode` | none | none, council, adversarial | Run multi-perspective review on the ADR before finalizing |
+| `detail_level` | medium | light, medium, full | Light=PR description, medium=short ADR, full=ADR with alternatives analysis |
+| `include_alternatives` | true | true/false | Whether to document alternatives considered (skip for obvious choices) |
+| `output_format` | adr | adr, inline, architecture_doc | ADR file, inline in PR/commit, or update architecture overview |
+| `diagram_style` | text | text, mermaid, none | How to render component diagrams |
 
 ## When to Write ADRs
 

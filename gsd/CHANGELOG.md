@@ -6,6 +6,27 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Kinderpowers Fork (1.26.0-kp.1)
+
+**Strategy**: Selective merge from upstream v1.27-v1.30. See `docs/gsd-upstream-strategy.md`.
+
+**Planned cherry-picks** (P1):
+- Multi-repo workspace support (v1.27)
+- Worktree-aware `.planning/` resolution (v1.27)
+- Context window 1M+ awareness (v1.27)
+- Stub detection in verifier/executor (v1.27)
+- CLAUDE.md compliance as plan-checker dimension (v1.28)
+- Agent skill injection (v1.29)
+- Temp file reaper (v1.28)
+- Consolidated `planningPaths()` helper (v1.27)
+
+**Kinderpowers differentiators** (won't merge away):
+- MCP-native tooling (kp-github, kp-sequential-thinking)
+- LSP brownfield mapping in gsd-codebase-mapper
+- Parameterized agents/skills with slider-based tuning
+- Beads integration for persistent tracking
+- Sequential thinking per-model profiles + subagent orchestration
+
 ## [1.26.0] - 2026-03-18
 
 ### Added

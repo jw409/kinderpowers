@@ -651,3 +651,54 @@ async fn test_merge_mode() {
     let branches = parsed["branches"].as_array().unwrap();
     assert_eq!(branches.len(), 2, "Should still have both branches tracked");
 }
+
+#[tokio::test]
+async fn test_subagent_spawn_hint_on_parallel_branch() {
+    let mut client = McpClient::new().await;
+
+    // Base thought
+    let _ = client
+        .tool_call(
+            "sequentialthinking",
+            json!({
+                "thought": "Analyzing the problem",
+                "thoughtNumber": 1,
+                "totalThoughts": 5
+            }),
+        )
+        .await;
+
+    // Branch with parallel strategy and 3+ proposals → should trigger subagent hint
+    let resp = client
+        .tool_call(
+            "sequentialthinking",
+            json!({
+                "thought": "Three approaches to explore independently",
+                "thoughtNumber": 2,
+                "totalThoughts": 5,
+                "branchFromThought": 1,
+                "branchId": "approach-a",
+                "branchStrategy": "parallel",
+                "proposals": [
+                    "Approach A: use caching layer",
+                    "Approach B: optimize queries",
+                    "Approach C: add read replicas"
+                ],
+                "confidence": 0.4
+            }),
+        )
+        .await;
+    assert!(!McpClient::is_error(&resp));
+    assert!(!McpClient::is_tool_error(&resp));
+
+    let parsed = McpClient::get_parsed(&resp);
+    let hints = parsed["hints"].as_array().expect("should have hints");
+    let subagent_hint = hints.iter().find(|h| h["kind"] == "subagent_spawn_available");
+    assert!(
+        subagent_hint.is_some(),
+        "Should emit subagent_spawn_available hint for parallel branch with 3+ proposals"
+    );
+    let msg = subagent_hint.unwrap()["message"].as_str().unwrap();
+    assert!(msg.contains("approach-a"), "Hint should reference branch name");
+    assert!(msg.contains("3 proposals"), "Hint should mention proposal count");
+}

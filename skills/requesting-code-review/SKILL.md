@@ -9,6 +9,15 @@ Dispatch kinderpowers:code-reviewer subagent to catch issues before they cascade
 
 **Core principle:** Review early, review often.
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `review_depth` | standard | quick, standard, thorough | Quick=correctness only, standard=correctness+maintainability, thorough=full adversarial review |
+| `focus_areas` | auto | auto, security, performance, correctness, style | What to emphasize — auto detects from diff content |
+| `include_tests` | true | true/false | Whether reviewer should also evaluate test quality and coverage |
+| `act_on_feedback` | prompt | prompt, auto_fix, log_only | How to handle review results — prompt user, auto-fix critical/important, or just log |
+
 ## When to Request Review
 
 **Mandatory:**

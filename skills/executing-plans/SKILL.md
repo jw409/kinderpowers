@@ -22,6 +22,15 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 **Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `batch_size` | 3 | 1-10 | Number of tasks to execute before pausing for review |
+| `review_frequency` | per_batch | per_task, per_batch, end_only | When to report progress and wait for feedback |
+| `deviation_handling` | ask | ask, adapt, strict | What to do when plan step is ambiguous — ask for clarification, adapt intelligently, or follow strictly |
+| `commit_style` | per_task | per_task, per_batch, single | When to create git commits |
+
 ## The Process
 
 ### Step 1: Load and Review Plan

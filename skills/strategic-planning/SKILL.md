@@ -11,6 +11,15 @@ Plans for subagents are **investigative briefs**, not sed-scripts. You're briefi
 
 **Announce at start:** "I'm using the strategic-planning skill to design the approach."
 
+## Parameters (caller controls)
+
+| Parameter | Default | Range | Description |
+|-----------|---------|-------|-------------|
+| `horizon` | immediate | immediate, sprint, project | Planning scope — immediate=single task, sprint=multi-task iteration, project=full lifecycle |
+| `alternatives` | 2 | 1-4 | Number of alternative approaches to consider before recommending one |
+| `constraint_awareness` | standard | minimal, standard, thorough | How deeply to investigate existing code/systems before proposing — minimal=skip discovery, thorough=full search |
+| `execution_mode` | plan_and_execute | plan_only, plan_and_execute, plan_and_dispatch | Whether to stop after planning, execute immediately, or dispatch to subagents |
+
 ## When to Use
 
 - Request needs design work or clarification
