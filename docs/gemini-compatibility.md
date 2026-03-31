@@ -8,18 +8,18 @@ Kinderpowers agents declare tools using Claude Code names. Gemini CLI uses diffe
 
 | Claude Code (kinderpowers) | Gemini CLI | Notes |
 |---------------------------|------------|-------|
-| `Read` | `read_file` | Same semantics |
+| `Read` | `read_file` / `read_many_files` | Same semantics; Gemini also has batch read |
 | `Write` | `write_file` | Same semantics |
-| `Edit` | `edit_file` | Gemini uses search/replace |
+| `Edit` | `replace` | Gemini uses search/replace within file |
 | `Bash` | `run_shell_command` | Same semantics |
-| `Grep` | `run_shell_command` + grep | No dedicated grep tool |
-| `Glob` | `run_shell_command` + find | No dedicated glob tool |
-| `WebSearch` | `google_search` | Different parameter names |
-| `WebFetch` | `run_shell_command` + curl | No dedicated fetch tool |
+| `Grep` | `search_file_content` | Gemini has a dedicated search tool |
+| `Glob` | `list_directory` | Gemini lists dirs; for glob patterns use `run_shell_command` + find |
+| `WebSearch` | `google_web_search` | Note the `_web_` in the name |
+| `WebFetch` | `web_fetch` | Gemini has a dedicated fetch tool |
 | `LSP` | Not available | Use shell-based LSP clients |
 | `Agent` | `run_shell_command` + gemini | Spawn via CLI |
 | `AskUserQuestion` | Not available | Use inline prompts |
-| `TodoWrite` | Not available | Use shell-based tracking |
+| `TodoWrite` | `write_todos` | Gemini has built-in todo tracking |
 
 ## Agent Definition Adaptation
 

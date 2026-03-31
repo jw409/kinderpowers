@@ -55,10 +55,10 @@ All runtimes benefit from this structure:
 - Success criteria as checkboxes
 
 **Tool name mapping** (Gemini uses different names):
-- `Read` → `read_file` | `Grep`/`Glob` → `run_shell_command` + rg/find
-- `Edit` → `edit_file` | `Bash` → `run_shell_command`
-- `WebSearch` → `google_search` | `Agent` → spawn via `gemini --prompt`
-- MCP tools work identically (MCP is runtime-agnostic)
+- `Read` → `read_file` | `Grep` → `search_file_content`
+- `Edit` → `replace` | `Bash` → `run_shell_command`
+- `WebSearch` → `google_web_search` | `WebFetch` → `web_fetch`
+- `Agent` → spawn via `gemini --prompt` | MCP tools work identically
 
 **Full mapping**: See `docs/gemini-compatibility.md`
 
