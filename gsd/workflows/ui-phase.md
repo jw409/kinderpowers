@@ -1,20 +1,28 @@
 <purpose>
-Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd-ui (mode=spec) and gsd-ui (mode=validate) with a revision loop. Inserts between discuss-phase and plan-phase in the lifecycle.
+Generate a UI design contract (UI-SPEC.md) for frontend phases. Orchestrates gsd-ui-researcher and gsd-ui-checker with a revision loop. Inserts between discuss-phase and plan-phase in the lifecycle.
 
 UI-SPEC.md locks spacing, typography, color, copywriting, and design system decisions before the planner creates tasks. This prevents design debt caused by ad-hoc styling decisions during execution.
 </purpose>
 
 <required_reading>
-@${CLAUDE_PLUGIN_ROOT}/gsd/references/ui-brand.md
+@~/.claude/get-shit-done/references/ui-brand.md
 </required_reading>
+
+<available_agent_types>
+Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+- gsd-ui-researcher — Researches UI/UX approaches
+- gsd-ui-checker — Reviews UI implementation quality
+</available_agent_types>
 
 <process>
 
 ## 1. Initialize
 
 ```bash
-INIT=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" init plan-phase "$PHASE")
+INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+AGENT_SKILLS_UI=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-ui-researcher 2>/dev/null)
+AGENT_SKILLS_UI_CHECKER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-ui-checker 2>/dev/null)
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`.
@@ -24,14 +32,14 @@ Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded
 Resolve UI agent models:
 
 ```bash
-UI_RESEARCHER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" resolve-model gsd-ui --raw)
-UI_CHECKER_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" resolve-model gsd-ui --raw)
+UI_RESEARCHER_MODEL=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" resolve-model gsd-ui-researcher --raw)
+UI_CHECKER_MODEL=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" resolve-model gsd-ui-checker --raw)
 ```
 
 Check config:
 
 ```bash
-UI_ENABLED=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" config-get workflow.ui_phase 2>/dev/null || echo "true")
+UI_ENABLED=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" config-get workflow.ui_phase 2>/dev/null || echo "true")
 ```
 
 **If `UI_ENABLED` is `false`:**
@@ -47,7 +55,7 @@ Exit workflow.
 Extract phase number from $ARGUMENTS. If not provided, detect next unplanned phase.
 
 ```bash
-PHASE_INFO=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" roadmap get-phase "${PHASE}")
+PHASE_INFO=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" roadmap get-phase "${PHASE}")
 ```
 
 **If `found` is false:** Error with available phases.
@@ -87,7 +95,7 @@ If "View": display file contents, exit.
 If "Skip": proceed to step 7 (checker).
 If "Update": continue to step 5.
 
-## 5. Spawn gsd-ui (mode=spec)
+## 5. Spawn gsd-ui-researcher
 
 Display:
 ```
@@ -101,9 +109,7 @@ Display:
 Build prompt:
 
 ```markdown
-Your mode is: spec
-
-Read ~/.claude/agents/gsd-ui.md for instructions.
+Read ~/.claude/agents/gsd-ui-researcher.md for instructions.
 
 <objective>
 Create UI design contract for Phase {phase_number}: {phase_name}
@@ -118,9 +124,11 @@ Answer: "What visual and interaction contracts does this phase need?"
 - {research_path} (Technical Research — stack decisions)
 </files_to_read>
 
+${AGENT_SKILLS_UI}
+
 <output>
 Write to: {phase_dir}/{padded_phase}-UI-SPEC.md
-Template: ${CLAUDE_PLUGIN_ROOT}/gsd/templates/UI-SPEC.md
+Template: ~/.claude/get-shit-done/templates/UI-SPEC.md
 </output>
 
 <config>
@@ -135,7 +143,7 @@ Omit null file paths from `<files_to_read>`.
 ```
 Task(
   prompt=ui_research_prompt,
-  subagent_type="gsd-ui",
+  subagent_type="gsd-ui-researcher",
   model="{UI_RESEARCHER_MODEL}",
   description="UI Design Contract Phase {N}"
 )
@@ -149,7 +157,7 @@ Display confirmation. Continue to step 7.
 **If `## UI-SPEC BLOCKED`:**
 Display blocker details and options. Exit workflow.
 
-## 7. Spawn gsd-ui (mode=validate)
+## 7. Spawn gsd-ui-checker
 
 Display:
 ```
@@ -163,9 +171,7 @@ Display:
 Build prompt:
 
 ```markdown
-Your mode is: validate
-
-Read ~/.claude/agents/gsd-ui.md for instructions.
+Read ~/.claude/agents/gsd-ui-checker.md for instructions.
 
 <objective>
 Validate UI design contract for Phase {phase_number}: {phase_name}
@@ -178,6 +184,8 @@ Check all 6 dimensions. Return APPROVED or BLOCKED.
 - {research_path} (Technical Research — check stack alignment)
 </files_to_read>
 
+${AGENT_SKILLS_UI_CHECKER}
+
 <config>
 ui_safety_gate: {ui_safety_gate config value}
 </config>
@@ -186,7 +194,7 @@ ui_safety_gate: {ui_safety_gate config value}
 ```
 Task(
   prompt=ui_checker_prompt,
-  subagent_type="gsd-ui",
+  subagent_type="gsd-ui-checker",
   model="{UI_CHECKER_MODEL}",
   description="Verify UI-SPEC Phase {N}"
 )
@@ -206,7 +214,7 @@ Track `revision_count` (starts at 0).
 
 **If `revision_count` < 2:**
 - Increment `revision_count`
-- Re-spawn gsd-ui (mode=spec) with revision context:
+- Re-spawn gsd-ui-researcher with revision context:
 
 ```markdown
 <revision>
@@ -265,13 +273,13 @@ Dimensions: 6/6 passed
 ## 11. Commit (if configured)
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```
 
 ## 12. Update State
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state record-session \
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state record-session \
   --stopped-at "Phase ${PHASE} UI-SPEC approved" \
   --resume-file "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```
@@ -283,9 +291,9 @@ node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state record-session \
 - [ ] Phase validated against roadmap
 - [ ] Prerequisites checked (CONTEXT.md, RESEARCH.md — non-blocking warnings)
 - [ ] Existing UI-SPEC handled (update/view/skip)
-- [ ] gsd-ui (mode=spec) spawned with correct context and file paths
+- [ ] gsd-ui-researcher spawned with correct context and file paths
 - [ ] UI-SPEC.md created in correct location
-- [ ] gsd-ui (mode=validate) spawned with UI-SPEC.md
+- [ ] gsd-ui-checker spawned with UI-SPEC.md
 - [ ] All 6 dimensions evaluated
 - [ ] Revision loop if BLOCKED (max 2 iterations)
 - [ ] Final status displayed with next steps
