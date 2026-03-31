@@ -6,6 +6,11 @@ Each agent has fresh context, explores a specific focus area, and **writes docum
 Output: .planning/codebase/ folder with 7 structured documents about the codebase state.
 </purpose>
 
+<available_agent_types>
+Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+- gsd-codebase-mapper — Maps project structure and dependencies
+</available_agent_types>
+
 <philosophy>
 **Why dedicated mapper agents:**
 - Fresh context per domain (no token contamination)
@@ -26,8 +31,9 @@ Documents are reference material for Claude when planning/executing. Always incl
 Load codebase mapping context:
 
 ```bash
-INIT=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" init map-codebase)
+INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init map-codebase)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+AGENT_SKILLS_MAPPER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-codebase-mapper 2>/dev/null)
 ```
 
 Extract from init JSON: `mapper_model`, `commit_docs`, `codebase_dir`, `existing_maps`, `has_maps`, `codebase_dir_exists`.
@@ -83,89 +89,16 @@ Continue to spawn_agents.
 </step>
 
 <step name="detect_runtime_capabilities">
-Before spawning agents, detect whether the current runtime supports team-based or task-based subagent delegation.
+Before spawning agents, detect whether the current runtime supports the `Task` tool for subagent delegation.
 
-**Runtimes with TeamCreate tool:** Claude Code v2.1.77+ (team-based collaboration with SendMessage)
-**Runtimes with Task tool:** Claude Code, Cursor (native subagent support, fire-and-forget)
-**Runtimes WITHOUT Task tool:** Antigravity, Gemini CLI, OpenCode, Codex, and others
+**How to detect:** Check if you have access to a `Task` tool (may be capitalized as `Task` or lowercase as `task` depending on runtime). If you do NOT have a `Task`/`task` tool (or only have tools like `browser_subagent` which is for web browsing, NOT code analysis):
 
-**How to detect (priority order):**
+→ **Skip `spawn_agents` and `collect_confirmations`** — go directly to `sequential_mapping` instead.
 
-1. Check if you have access to a `TeamCreate` tool. If yes → use `team_spawn` path in spawn_agents.
-2. Check if you have access to a `Task` tool. If yes → use `task_spawn` path in spawn_agents.
-3. Neither available → go to `sequential_mapping`.
-
-**CRITICAL:** Never use `browser_subagent` or `Explore` as a substitute for `Task`. The `browser_subagent` tool is exclusively for web page interaction and will fail for codebase analysis. If neither `TeamCreate` nor `Task` is available, perform the mapping sequentially in-context.
+**CRITICAL:** Never use `browser_subagent` or `Explore` as a substitute for `Task`. The `browser_subagent` tool is exclusively for web page interaction and will fail for codebase analysis. If `Task` is unavailable, perform the mapping sequentially in-context.
 </step>
 
-<step name="spawn_agents" condition="TeamCreate tool is available">
-Create a mapping team for inter-agent communication via SendMessage.
-
-TeamCreate({team_name: "gsd-mapping", description: "Parallel codebase mapping — 4 focus areas"})
-
-Spawn 4 named mapper agents using Agent (NOT Task):
-
-**Agent 1: Tech Focus**
-
-```
-Agent({
-  name: "mapper-tech",
-  team_name: "gsd-mapping",
-  subagent_type: "gsd-codebase-mapper",
-  model: "{mapper_model}",
-  run_in_background: true,
-  prompt: "Focus: tech\n\nAnalyze this codebase for technology stack and external integrations.\n\nWrite these documents to .planning/codebase/:\n- STACK.md - Languages, runtime, frameworks, dependencies, configuration\n- INTEGRATIONS.md - External APIs, databases, auth providers, webhooks\n\nExplore thoroughly. Write documents directly using templates.\nWhen done, SendMessage({to: '*', message: 'Tech mapping complete', summary: 'Wrote STACK.md and INTEGRATIONS.md'}).\nReturn confirmation only."
-})
-```
-
-**Agent 2: Architecture Focus**
-
-```
-Agent({
-  name: "mapper-arch",
-  team_name: "gsd-mapping",
-  subagent_type: "gsd-codebase-mapper",
-  model: "{mapper_model}",
-  run_in_background: true,
-  prompt: "Focus: arch\n\nAnalyze this codebase architecture and directory structure.\n\nWrite these documents to .planning/codebase/:\n- ARCHITECTURE.md - Pattern, layers, data flow, abstractions, entry points\n- STRUCTURE.md - Directory layout, key locations, naming conventions\n\nExplore thoroughly. Write documents directly using templates.\nWhen done, SendMessage({to: '*', message: 'Architecture mapping complete', summary: 'Wrote ARCHITECTURE.md and STRUCTURE.md'}).\nReturn confirmation only."
-})
-```
-
-**Agent 3: Quality Focus**
-
-```
-Agent({
-  name: "mapper-quality",
-  team_name: "gsd-mapping",
-  subagent_type: "gsd-codebase-mapper",
-  model: "{mapper_model}",
-  run_in_background: true,
-  prompt: "Focus: quality\n\nAnalyze this codebase for coding conventions and testing patterns.\n\nWrite these documents to .planning/codebase/:\n- CONVENTIONS.md - Code style, naming, patterns, error handling\n- TESTING.md - Framework, structure, mocking, coverage\n\nExplore thoroughly. Write documents directly using templates.\nWhen done, SendMessage({to: '*', message: 'Quality mapping complete', summary: 'Wrote CONVENTIONS.md and TESTING.md'}).\nReturn confirmation only."
-})
-```
-
-**Agent 4: Concerns Focus**
-
-```
-Agent({
-  name: "mapper-concerns",
-  team_name: "gsd-mapping",
-  subagent_type: "gsd-codebase-mapper",
-  model: "{mapper_model}",
-  run_in_background: true,
-  prompt: "Focus: concerns\n\nAnalyze this codebase for technical debt, known issues, and areas of concern.\n\nWrite this document to .planning/codebase/:\n- CONCERNS.md - Tech debt, bugs, security, performance, fragile areas\n\nIf you receive a message about layer violations from mapper-arch, incorporate those findings.\nExplore thoroughly. Write document directly using template.\nWhen done, SendMessage({to: '*', message: 'Concerns mapping complete', summary: 'Wrote CONCERNS.md'}).\nReturn confirmation only."
-})
-```
-
-Wait for all 4 agents to complete (idle notifications).
-
-**Shutdown team:**
-TeamDelete({team_name: "gsd-mapping"})
-
-Continue to verify_output.
-</step>
-
-<step name="spawn_agents" condition="Task tool is available but TeamCreate is NOT">
+<step name="spawn_agents" condition="Task tool is available">
 Spawn 4 parallel gsd-codebase-mapper agents.
 
 Use Task tool with `subagent_type="gsd-codebase-mapper"`, `model="{mapper_model}"`, and `run_in_background=true` for parallel execution.
@@ -188,7 +121,8 @@ Write these documents to .planning/codebase/:
 - STACK.md - Languages, runtime, frameworks, dependencies, configuration
 - INTEGRATIONS.md - External APIs, databases, auth providers, webhooks
 
-Explore thoroughly. Write documents directly using templates. Return confirmation only."
+Explore thoroughly. Write documents directly using templates. Return confirmation only.
+${AGENT_SKILLS_MAPPER}"
 )
 ```
 
@@ -208,7 +142,8 @@ Write these documents to .planning/codebase/:
 - ARCHITECTURE.md - Pattern, layers, data flow, abstractions, entry points
 - STRUCTURE.md - Directory layout, key locations, naming conventions
 
-Explore thoroughly. Write documents directly using templates. Return confirmation only."
+Explore thoroughly. Write documents directly using templates. Return confirmation only.
+${AGENT_SKILLS_MAPPER}"
 )
 ```
 
@@ -228,7 +163,8 @@ Write these documents to .planning/codebase/:
 - CONVENTIONS.md - Code style, naming, patterns, error handling
 - TESTING.md - Framework, structure, mocking, coverage
 
-Explore thoroughly. Write documents directly using templates. Return confirmation only."
+Explore thoroughly. Write documents directly using templates. Return confirmation only.
+${AGENT_SKILLS_MAPPER}"
 )
 ```
 
@@ -247,7 +183,8 @@ Analyze this codebase for technical debt, known issues, and areas of concern.
 Write this document to .planning/codebase/:
 - CONCERNS.md - Tech debt, bugs, security, performance, fragile areas
 
-Explore thoroughly. Write document directly using template. Return confirmation only."
+Explore thoroughly. Write document directly using template. Return confirmation only.
+${AGENT_SKILLS_MAPPER}"
 )
 ```
 
@@ -255,9 +192,19 @@ Continue to collect_confirmations.
 </step>
 
 <step name="collect_confirmations">
-Wait for all 4 agents to complete.
+Wait for all 4 agents to complete using TaskOutput tool.
 
-Read each agent's output file to collect confirmations.
+**For each agent task_id returned by the Agent tool calls above:**
+```
+TaskOutput tool:
+  task_id: "{task_id from Agent result}"
+  block: true
+  timeout: 300000
+```
+
+Call TaskOutput for all 4 agents in parallel (single message with 4 TaskOutput calls).
+
+Once all TaskOutput calls return, read each agent's output file to collect confirmations.
 
 **Expected confirmation format from each agent:**
 ```
@@ -365,7 +312,7 @@ Continue to commit_codebase_map.
 Commit the codebase map:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs: map existing codebase" --files .planning/codebase/*.md
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs: map existing codebase" --files .planning/codebase/*.md
 ```
 
 Continue to offer_next.

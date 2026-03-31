@@ -12,7 +12,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Parse arguments and load project state:
 
 ```bash
-INIT=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -20,7 +20,7 @@ Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, 
 
 Also load config for branching strategy:
 ```bash
-CONFIG=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state load)
+CONFIG=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state load)
 ```
 
 Extract: `branching_strategy`, `branch_name`.
@@ -177,25 +177,13 @@ Report the PR URL and suggest: "Review the diff at {url}/files"
 Update STATE.md to reflect the shipping action:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
 ```
 
 If `commit_docs` is true:
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
-```
-
-**Close phase bead with PR link (silent no-op if beads not installed):**
-
-```bash
-BEADS_OK=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead available --raw)
-if [ "$BEADS_OK" = "true" ]; then
-  PHASE_BEAD=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" state get phase_bead 2>/dev/null | tr -d '"[:space:]')
-  if [ -n "$PHASE_BEAD" ] && [ "$PHASE_BEAD" != "null" ]; then
-    node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" bead close "$PHASE_BEAD" --notes "Shipped: PR #${PR_NUMBER} (${PR_URL})"
-  fi
-fi
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
 ```
 </step>
 
