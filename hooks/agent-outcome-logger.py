@@ -35,7 +35,7 @@ def main():
         return
 
     tool_input = hook_input.get("tool_input", {})
-    tool_result = hook_input.get("tool_result", "")
+    tool_result = hook_input.get("tool_response", hook_input.get("tool_result", ""))
 
     # Extract variant from prompt if tagged
     prompt = tool_input.get("prompt", "")
