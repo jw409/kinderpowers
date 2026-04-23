@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.2.6] — 2026-04-23
+
+### Fixed
+
+- **Plugin install error on recent Claude Code builds: `unrecognized key: incorporates`.** Same class of bug as v6.2.4's `upstream` fix — recent Claude Code releases strict-validate `plugin.json` and reject unknown top-level keys. The `incorporates` array (our attribution block listing superpowers, get-shit-done, hookify, toon-format) was not in the schema. Removed from `plugin.json`. Attribution is retained in `README.md`'s Credits section and in `KINDERPOWERS.xml` (which is canonical metadata, not validated by Claude Code). The known-safe top-level keys are: `name`, `description`, `version`, `author`, `homepage`, `repository`, `license`, `keywords`, `commands`, `agents`, `hooks`, `mcpServers`.
+
 ## [6.2.5] — 2026-04-23
 
 ### Fixed
