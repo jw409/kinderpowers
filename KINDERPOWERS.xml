@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<kinderpowers-manifest version="6.2.0" architecture="plugin-first">
+<kinderpowers-manifest version="6.2.5" architecture="plugin-first">
 
 <!--
   kinderpowers: AN OPERATING SYSTEM FOR AI AGENTS
@@ -16,8 +16,8 @@
 <index>
   <section name="emergency-start" what="Install and use in 60 seconds"/>
   <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
-  <section name="skill-catalog" what="All 27 skills with levels, triggers, and costs"/>
-  <section name="agent-catalog" what="All 14 agents with capabilities, tools, and model requirements"/>
+  <section name="skill-catalog" what="Skills with levels, triggers, and costs — see skills/ directory for complete roster"/>
+  <section name="agent-catalog" what="Agents with capabilities, tools, and model requirements — see agents/ directory for complete roster"/>
   <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Sequential Thinking)"/>
   <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
   <section name="hookify-rules" what="3 default enforcement rules (ship disabled)"/>
@@ -69,7 +69,7 @@
 <!-- ═══════════════════════════════════════════════════════════════
      SKILL CATALOG: 26 skills across 4 levels
      ═══════════════════════════════════════════════════════════════ -->
-<skill-catalog count="27">
+<skill-catalog note="Subset catalog — see skills/ directory for complete roster. crucible removed in v6.2.5, moved to jw-scry.">
   <!-- Level 1: Coding Assistant -->
   <skill name="using-kinderpowers" level="1" trigger="orientation, first use of kinderpowers"
     description="Establishes how skills work as invitations with documented costs, not commands without escape"/>
@@ -132,9 +132,13 @@
 </skill-catalog>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     AGENT CATALOG: 14 agents (6 kinderpowers + 8 GSD)
+     AGENT CATALOG: kinderpowers agents + GSD agents (both legacy and parameterized)
+     NOTE: The v6.2.0 "Agent Collapse" claim (that 10 legacy GSD agents were replaced
+     by 4 parameterized ones) was retracted in v6.2.4. Legacy agents remain canonical;
+     parameterized agents exist and can be invoked but don't displace them.
+     See agents/ directory for the complete roster.
      ═══════════════════════════════════════════════════════════════ -->
-<agent-catalog count="14">
+<agent-catalog note="Subset catalog — see agents/ directory for complete roster including all legacy GSD agents. crucible-* agents removed in v6.2.5, moved to jw-scry.">
   <!-- ──────────────────────────────────────────────────────────── -->
   <!-- Kinderpowers agents (6)                                     -->
   <!-- ──────────────────────────────────────────────────────────── -->
@@ -191,7 +195,11 @@
   </agent>
 
   <!-- ──────────────────────────────────────────────────────────── -->
-  <!-- GSD agents (8) — collapsed from 16 via parameterized modes   -->
+  <!-- GSD agents — parameterized set shown below; legacy agents (gsd-roadmapper,
+       gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer,
+       gsd-plan-checker, gsd-integration-checker, gsd-nyquist-auditor,
+       gsd-ui-researcher, gsd-ui-checker, gsd-ui-auditor) remain canonical in
+       agents/ and are called by the GSD workflows. See agents/ directory. -->
   <!-- ──────────────────────────────────────────────────────────── -->
   <agent name="gsd-codebase-mapper" level="4" model="sonnet">
     <description>Explores codebase with parallel focus areas (tech, arch, quality, concerns).
@@ -463,9 +471,13 @@
 
   <!-- Ecosystem -->
   <project id="superpowers" author="Jesse Vincent" url="https://github.com/obra/superpowers"
-    informs="Craft philosophy, skill format, scanner, hook system. The foundation layer."/>
-  <project id="get-shit-done" author="Davíd Braun" url="https://github.com/davidjbauer/get-shit-done"
-    informs="Lifecycle engine, 42 commands, 16 agents, workflow machinery. The execution layer."/>
+    informs="Craft philosophy, skill format, scanner, hook system. The foundation layer."
+    kinderpowers-fork-at="v4.3.1" upstream-latest="v5.0.7"
+    gap-note="Our fork sits at v4.3.1. Upstream released v5.x line (22 days ago). Major-version merge is queued but not scheduled for this release."/>
+  <project id="get-shit-done" author="TÂCHES (gsd-build)" url="https://github.com/gsd-build/get-shit-done"
+    informs="Lifecycle engine, 42 commands, agents, workflow machinery. The execution layer."
+    kinderpowers-fork-at="v1.30.0" upstream-latest="v1.38.3"
+    gap-note="Our fork sits at upstream v1.30.0 (merged in PR #17). Upstream has moved to v1.38.3 plus v1.39.0-rc.1 — a merge is queued but not scheduled for this release."/>
   <project id="hookify" author="Diego Perez" url="https://github.com/QuantGeekDev/hookify"
     informs="Enforcement rule format and Claude Code hook framework."/>
   <project id="toon-format" url="https://github.com/toon-format/spec"

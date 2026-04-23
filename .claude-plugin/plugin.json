@@ -1,7 +1,7 @@
 {
   "name": "kinderpowers",
   "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
-  "version": "6.2.4",
+  "version": "6.2.5",
   "author": {
     "name": "jw409"
   },
@@ -19,9 +19,9 @@
     },
     {
       "name": "get-shit-done",
-      "version": "1.26.0",
-      "author": "Davíd Braun",
-      "url": "https://github.com/davidjbauer/get-shit-done",
+      "version": "1.30.0",
+      "author": "TÂCHES (gsd-build)",
+      "url": "https://github.com/gsd-build/get-shit-done",
       "what": "lifecycle engine, commands, agents, workflows"
     },
     {
@@ -46,7 +46,7 @@
       "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-sequential-thinking",
       "args": [],
       "env": {
-        "SEQUENTIAL_THINKING_MODEL": "claude-opus-4-6",
+        "SEQUENTIAL_THINKING_MODEL": "claude-opus-4-7",
         "KP_SEQTHINK_LOG_LEVEL": "warn"
       }
     }

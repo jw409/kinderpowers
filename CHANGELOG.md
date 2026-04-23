@@ -1,5 +1,27 @@
 # Changelog
 
+## [6.2.5] — 2026-04-23
+
+### Fixed
+
+- **SessionStart hook was broken since the kinderpowers rebrand.** `hooks/session-start` was forked verbatim from upstream superpowers and still `cat`-ted `skills/using-superpowers/SKILL.md` (nonexistent — the skill is `using-kinderpowers`). Every session silently emitted `cat: ... using-superpowers/SKILL.md: No such file or directory` and the model was told "You have superpowers" instead of the kinderpowers orientation. Fixed the path, the branding, and the legacy-skills-directory warning copy.
+- **GSD upstream URL was a 404.** `plugin.json` and `KINDERPOWERS.xml` referenced `https://github.com/davidjbauer/get-shit-done`, which doesn't exist. The canonical upstream — maintained by TÂCHES — is `https://github.com/gsd-build/get-shit-done`. Corrected URL and author attribution. Bumped our claimed fork point from `1.26.0` to `1.30.0` to match the actual merge in PR #17.
+
+### Changed
+
+- **README rewritten entry-point-forward.** The previous README led with catalog counts (27 skills, 14 agents, 42 commands, 63 MCP tools). The new README leads with the two commands a user actually types and an explanation of how skills surface via Claude Code's `Skill` tool based on context, not name. Full catalog is deferred to `KINDERPOWERS.xml` as the canonical machine-readable manifest.
+- **`SEQUENTIAL_THINKING_MODEL` default bumped `claude-opus-4-6` → `claude-opus-4-7`.** Sets the per-model profile that kp-sequential-thinking uses for hint thresholds and guidance shaping.
+- **`KINDERPOWERS.xml` bumped to 6.2.5.** Stale v6.2.0 counts (14 agents, 27 skills — both wrong) replaced with "see agents/ and skills/ directories" since the filesystem is ground truth. Added explicit `upstream-latest`/`kinderpowers-fork-at`/`gap-note` attributes on the superpowers and get-shit-done project entries so downstream consumers know the merge position.
+
+### Removed
+
+- **crucible skill and 7 crucible-* agents.** `skills/crucible/`, `agents/crucible-auditor.md`, `agents/crucible-challenger.md`, `agents/crucible-composer.md`, `agents/crucible-exploder.md`, `agents/crucible-forecaster.md`, `agents/crucible-hunter.md`, `agents/crucible-verifier.md` removed from kinderpowers. Research-intelligence tooling will live in the `jw-scry` plugin going forward — kinderpowers keeps its focus on agency-preserving discipline for coding agents.
+
+### Known gaps (not addressed here)
+
+- **superpowers upstream is a major version ahead.** We sit at v4.3.1; upstream latest is v5.0.7 (22 days old, with 7 patch releases in the v5 line). Merge queued, not scheduled.
+- **get-shit-done upstream is 8 minor versions ahead.** We sit at v1.30.0; upstream latest is v1.38.3 with v1.39.0-rc.1 in flight. Merge queued, not scheduled.
+
 ## [6.2.4] — 2026-04-23
 
 ### Fixed
