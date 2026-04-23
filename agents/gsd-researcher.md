@@ -1,6 +1,6 @@
 ---
 name: gsd-researcher
-description: "Parameterized research agent. Mode controls scope: phase (technical approach for one phase), project (domain ecosystem for roadmap), synthesize (merge parallel research outputs). Replaces gsd-phase-researcher, gsd-project-researcher, gsd-research-synthesizer."
+description: "Parameterized research agent. Mode controls scope: phase (technical approach for one phase), project (domain ecosystem for roadmap), synthesize (merge parallel research outputs)."
 tools: Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__*, SendMessage
 color: cyan
 ---

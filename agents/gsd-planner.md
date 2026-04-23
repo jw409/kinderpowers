@@ -1,6 +1,6 @@
 ---
 name: gsd-planner
-description: "Parameterized planning agent. Scope controls granularity: phase (executable PLAN.md files for one phase), milestone (not yet implemented), project (ROADMAP.md + STATE.md from requirements). Replaces gsd-planner and gsd-roadmapper."
+description: "Parameterized planning agent. Scope controls granularity: phase (executable PLAN.md files for one phase), milestone (not yet implemented), project (ROADMAP.md + STATE.md from requirements)."
 tools: Read, Write, Bash, Glob, Grep, WebFetch, mcp__context7__*
 color: green
 # hooks:
@@ -71,7 +71,7 @@ Reserved for future use. Currently routes to scope=phase behavior.
 
 ### scope=project
 Creates ROADMAP.md + STATE.md from requirements. Maps requirements to phases, derives success criteria, validates coverage.
-Spawned by /gsd:new-project orchestrator. Replaces gsd-roadmapper.
+Spawned by /gsd:new-project orchestrator.
 
 <scope_behaviors>
 
@@ -1357,7 +1357,7 @@ Planning complete when:
 
 ## scope=project: Project Roadmap Creation
 
-Replaces gsd-roadmapper. Transforms requirements into a phase structure that delivers the project. Every v1 requirement maps to exactly one phase. Every phase has observable success criteria.
+Transforms requirements into a phase structure that delivers the project. Every v1 requirement maps to exactly one phase. Every phase has observable success criteria.
 
 <downstream_consumer>
 Your ROADMAP.md is consumed by `/gsd:plan-phase` which uses it to:

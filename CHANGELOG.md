@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.2.4] — 2026-04-23
+
+### Fixed
+
+- **Marketplace install error on recent Claude Code builds.** Removed the non-schema `upstream` attribution block from `.claude-plugin/marketplace.json`; recent Claude Code releases validate marketplace entries strictly and rejected the key with `invalid schema "upstream"`, blocking fresh `/plugin marketplace add jw409/kinderpowers` installs. Upstream attribution is retained in `plugin.json`'s `incorporates` array. Also synced the marketplace plugin entry's `version` field (was pinned at `6.2.2`) to match `plugin.json`.
+
+### Changed
+
+- **Retraction of v6.2.0 "Agent Collapse" claim.** The v6.2.0 CHANGELOG entry claimed that `gsd-researcher`, `gsd-verifier`, `gsd-ui`, and `gsd-planner` (with mode/scope parameters) "replaced" 10 legacy GSD agents, reducing the agent count from 16 to 8. In practice this migration was never completed: all 10 legacy agents retain full ~400–1300 line specifications, and every workflow (`gsd/workflows/*.md`), model router (`gsd/bin/lib/model-profiles.cjs`), and initializer (`gsd/bin/lib/init.cjs`) continues to spawn them by their original names with 13–22 live references each. Removed the "Replaces gsd-X" language from the description frontmatter of `gsd-planner.md`, `gsd-researcher.md`, and `gsd-ui.md`. `gsd-verifier.md` never carried the claim in its spec. Legacy agents (`gsd-roadmapper`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-nyquist-auditor`, `gsd-ui-researcher`, `gsd-ui-checker`, `gsd-ui-auditor`) remain canonical. Actual GSD agent count: 18, not 8. Parameterized agents still exist and can be invoked on their own merits; they just don't displace anything. Finishing the collapse (migrating call sites, reworking MODEL_PROFILES to preserve per-legacy-agent cost tiers) is tracked but unscheduled.
+
 ## [6.2.3] — 2026-03-21
 
 ### Changed
