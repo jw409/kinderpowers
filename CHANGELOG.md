@@ -1,5 +1,33 @@
 # Changelog
 
+## [6.3.0] — 2026-04-27
+
+### Fixed
+
+- **kp-github MCP: URL-encode path segments** (closes #19) — label tools (`get`, `update`, `delete`) returned 404 on label names containing characters that require URL encoding (e.g. `priority: P0`). The `urlencode` helper used form-encoding (space → `+`), which is wrong for path segments — GitHub treats `+` as a literal `+` in paths. Two new RFC 3986 path encoders (`urlencode_path` for single segments, `urlencode_path_multi` preserving `/`) are applied to every path-interpolating call site:
+  - `tools/labels.rs`: get/update/delete (the documented bug)
+  - `tools/files.rs`: get_contents, create_or_update, delete, push_files (path + branch in 2 ref endpoints)
+  - `tools/tags.rs`: get
+  - `tools/releases.rs`: get_by_tag
+  - `tools/repos.rs`: compare (base + head, preserving slashes for `feature/foo` refs)
+  - `tools/teams.rs`: members (team_slug)
+  - 34 new tests including wiremock end-to-end tests asserting the actual wire path (e.g. `/labels/priority%3A%20P0`) and proptests proving path encoders never emit form-style `+` for space.
+- **SessionStart hook: bash 5.3+ heredoc hang + Claude Code double-injection** — picked from upstream superpowers `537ec64`. The hook used `cat <<EOF` to emit context, which hangs on bash 5.3+ when the heredoc body exceeds ~512 bytes (the kinderpowers context payload is ~4 KB so every macOS Homebrew-bash session blocked indefinitely). Replaced with `printf`. While there, fixed a separate Claude Code bug: it reads BOTH `additional_context` and `hookSpecificOutput.additionalContext` without deduplication, so the hook now branches on `CLAUDE_PLUGIN_ROOT` and emits only the field the current platform consumes.
+
+### Added
+
+- **kp-github MCP: author/committer overrides on file tools** — `github_files_create_or_update`, `github_files_delete`, and `github_files_push` now accept optional `author_name` / `author_email` / `committer_name` / `committer_email`. Both name+email of a side must be set together; an asymmetric pair errors before the request is sent. Omitting all four keeps the prior behavior (commits attributed to the OAuth user). Implementation switches the contents API calls to JSON bodies via `api_json` so nested `{author: {name, email}}` objects can ride the request, and `client::api_json` now handles `DELETE` (was falling through to GET). +9 tests including wiremock body-matchers asserting the author/committer JSON reaches the wire and a partial-pair test proving validation short-circuits before any HTTP request.
+
+### Build
+
+- **Rebuilt linux-x86_64 `kp-github-mcp`** carrying both kp-github changes above. macOS-arm64 binary still needs rebuilding on a Mac to pick up these changes.
+
+### Not in this release
+
+- **superpowers upstream merge (v4.3.1 → v5.0.7)** — still queued per v6.2.5's Known gaps; not addressed here.
+- **get-shit-done upstream bump (v1.30.0 → v1.38.5)** — same; queued.
+- 8 superpowers cherry-pick candidates evaluated during this release were either already subsumed by v6.2.5's hook rewrite or conflicted with diverged kinderpowers files (`using-superpowers`/`using-kinderpowers` rename, `.opencode/plugins/superpowers.js` divergent OpenCode tool mapping, brainstorm-server scripts we don't carry, RELEASE-NOTES divergence). Deferred to the broader upstream merge.
+
 ## [6.2.6] — 2026-04-23
 
 ### Fixed

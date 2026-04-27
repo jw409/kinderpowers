@@ -1,7 +1,7 @@
 {
   "name": "kinderpowers",
   "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
-  "version": "6.2.6",
+  "version": "6.3.0",
   "author": {
     "name": "jw409"
   },
