@@ -3,22 +3,28 @@ Retroactive 6-pillar visual audit of implemented frontend code. Standalone comma
 </purpose>
 
 <required_reading>
-@${CLAUDE_PLUGIN_ROOT}/gsd/references/ui-brand.md
+@~/.claude/get-shit-done/references/ui-brand.md
 </required_reading>
+
+<available_agent_types>
+Valid GSD subagent types (use exact names — do not fall back to 'general-purpose'):
+- gsd-ui-auditor — Audits UI against design requirements
+</available_agent_types>
 
 <process>
 
 ## 0. Initialize
 
 ```bash
-INIT=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
+AGENT_SKILLS_UI_REVIEWER=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" agent-skills gsd-ui-reviewer 2>/dev/null)
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
 
 ```bash
-UI_AUDITOR_MODEL=$(node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" resolve-model gsd-ui --raw)
+UI_AUDITOR_MODEL=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" resolve-model gsd-ui-auditor --raw)
 ```
 
 Display banner:
@@ -56,7 +62,7 @@ Build file list for auditor:
 - UI-SPEC.md (if exists — audit baseline)
 - CONTEXT.md (if exists — locked decisions)
 
-## 3. Spawn gsd-ui (mode=audit)
+## 3. Spawn gsd-ui-auditor
 
 ```
 ◆ Spawning UI auditor...
@@ -65,9 +71,7 @@ Build file list for auditor:
 Build prompt:
 
 ```markdown
-Your mode is: audit
-
-Read ~/.claude/agents/gsd-ui.md for instructions.
+Read ~/.claude/agents/gsd-ui-auditor.md for instructions.
 
 <objective>
 Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
@@ -82,6 +86,8 @@ Conduct 6-pillar visual audit of Phase {phase_number}: {phase_name}
 - {context_path} (User decisions, if exists)
 </files_to_read>
 
+${AGENT_SKILLS_UI_REVIEWER}
+
 <config>
 phase_dir: {phase_dir}
 padded_phase: {padded_phase}
@@ -93,7 +99,7 @@ Omit null file paths.
 ```
 Task(
   prompt=ui_audit_prompt,
-  subagent_type="gsd-ui",
+  subagent_type="gsd-ui-auditor",
   model="{UI_AUDITOR_MODEL}",
   description="UI Audit Phase {N}"
 )
@@ -143,7 +149,7 @@ Full review: {path to UI-REVIEW.md}
 ## 5. Commit (if configured)
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs(${padded_phase}): UI audit review" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-REVIEW.md"
+node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" commit "docs(${padded_phase}): UI audit review" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-REVIEW.md"
 ```
 
 </process>
@@ -152,7 +158,7 @@ node "${CLAUDE_PLUGIN_ROOT}/gsd/bin/gsd-tools.cjs" commit "docs(${padded_phase})
 - [ ] Phase validated
 - [ ] SUMMARY.md files found (execution completed)
 - [ ] Existing review handled (re-audit/view)
-- [ ] gsd-ui (mode=audit) spawned with correct context
+- [ ] gsd-ui-auditor spawned with correct context
 - [ ] UI-REVIEW.md created in phase directory
 - [ ] Score summary displayed to user
 - [ ] Next steps presented
