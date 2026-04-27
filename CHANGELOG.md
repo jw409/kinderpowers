@@ -1,5 +1,61 @@
 # Changelog
 
+## [6.3.0] — 2026-04-27
+
+### Fixed
+
+- **kp-github MCP: URL-encode path segments** (closes #19) — label tools (`get`, `update`, `delete`) returned 404 on label names containing characters that require URL encoding (e.g. `priority: P0`). The `urlencode` helper used form-encoding (space → `+`), which is wrong for path segments — GitHub treats `+` as a literal `+` in paths. Two new RFC 3986 path encoders (`urlencode_path` for single segments, `urlencode_path_multi` preserving `/`) are applied to every path-interpolating call site:
+  - `tools/labels.rs`: get/update/delete (the documented bug)
+  - `tools/files.rs`: get_contents, create_or_update, delete, push_files (path + branch in 2 ref endpoints)
+  - `tools/tags.rs`: get
+  - `tools/releases.rs`: get_by_tag
+  - `tools/repos.rs`: compare (base + head, preserving slashes for `feature/foo` refs)
+  - `tools/teams.rs`: members (team_slug)
+  - 34 new tests including wiremock end-to-end tests asserting the actual wire path (e.g. `/labels/priority%3A%20P0`) and proptests proving path encoders never emit form-style `+` for space.
+- **SessionStart hook fixes** — picked from upstream superpowers:
+  - Hook script now uses POSIX-safe `$0` instead of `BASH_SOURCE` (works under sh/dash, not just bash).
+  - heredoc → printf for emitting context, fixes a multi-second hang on bash 5.3+.
+  - SessionStart context is emitted only once per platform (no duplicate context blocks).
+  - `CLAUDE_PLUGIN_ROOT` is properly double-quoted in the hook (paths with spaces work).
+- **OpenCode TodoWrite tool mapping** corrected to `todowrite` (lowercase) so OpenCode actually wires the tool.
+
+### Added
+
+- **kp-github MCP: author/committer overrides on file tools** — `github_files_create_or_update`, `github_files_delete`, and `github_files_push` now accept optional `author_name` / `author_email` / `committer_name` / `committer_email`. Both name+email of a side must be set together; an asymmetric pair errors before the request is sent. Omitting all four keeps the prior behavior (commits attributed to the OAuth user). Implementation switches the contents API calls to JSON bodies via `api_json` so nested `{author: {name, email}}` objects can ride the request, and `client::api_json` now handles `DELETE` (was falling through to GET).
+- **Adaptive work sizing** applied to 16 skills — work-volume guidance scales with task complexity instead of one-size-fits-all checklists.
+- **GSD upstream v1.30.0 merged** into the kinderpowers fork (`gsd/VERSION` → `1.30.0-kp.1`):
+  - Multi-repo workspace support, worktree-aware `.planning/`
+  - 1M+ context window awareness, stub detection in verifier/executor
+  - CLAUDE.md compliance as plan-checker dimension
+  - Workstream namespacing for parallel milestones
+  - `/gsd:fast`, `/gsd:review`, `/gsd:forensics`, `/gsd:plant-seed` commands
+  - Security hardening (prompt injection guards, path traversal)
+  - GSD SDK headless TypeScript support
+  - Brownfield detection expanded to 15+ ecosystems
+  - i18n (pt-BR, ko-KR, ja-JP)
+
+### Changed
+
+- GSD CLI fixes: `--help` support, undefined leak in error paths, workstream-set footgun resolved.
+- Param deduplication and reduced prescriptiveness across debugging and executing-plans skills.
+
+### Deferred from upstream sync
+
+The following superpowers upstream commits could not be cherry-picked cleanly because the relevant files have diverged in the kinderpowers fork. They remain candidates for a future sync:
+
+- `b23c084` Add instruction priority hierarchy to using-superpowers skill — we replaced this skill with `using-kinderpowers`.
+- `1c53f5d` Add SUBAGENT-STOP gate to prevent subagent skill leakage — same `using-superpowers` divergence.
+- `9ccce3b` Add context isolation principle to all delegation skills — conflicts with our heavily-customized brainstorming/requesting-code-review skills.
+- `d19703b` fix: stop firing SessionStart hook on `--resume` — the hook diff applies cleanly but the commit also touches `RELEASE-NOTES.md` which has diverged.
+- `addfe85` fix: portable shebang in shell scripts — touches brainstorm-server scripts we don't carry.
+- `4fd9aa2` fix(writing-skills): correct frontmatter doc claim — `writing-skills` heavily customized.
+- `0a1124b` fix(opencode): inject bootstrap as user message instead of system message — `.opencode/plugins/superpowers.js` diverged.
+- `2d942f3` fix(opencode): align skills path across bootstrap, runtime, and tests — `tests/opencode/test-plugin-loading.sh` diverged.
+
+### Not in this release
+
+GSD upstream beyond v1.30.0 (the v1.31–v1.38.5 series, including 13 new lib modules around audit/decisions/drift/gap-checker/intel/learnings/schema-detect/secrets) is deferred to v6.4.0 — too large for a single release cycle alongside the rest of this work.
+
 ## [6.2.3] — 2026-03-21
 
 ### Changed
