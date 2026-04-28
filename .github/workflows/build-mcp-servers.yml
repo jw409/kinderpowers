@@ -87,8 +87,11 @@ jobs:
           for artifact_dir in artifacts/mcp-servers-*; do
             platform="${artifact_dir#artifacts/mcp-servers-}"
             mkdir -p "mcp-servers/bin/$platform"
-            cp "$artifact_dir"/* "mcp-servers/bin/$platform/"
-            chmod +x "mcp-servers/bin/$platform"/*
+            # Copy only regular files at top level (defends against nested
+            # artifact dirs that have crept in historically and broke `cp`
+            # without -r). chmod likewise scoped to files.
+            find "$artifact_dir" -maxdepth 1 -type f -exec cp -t "mcp-servers/bin/$platform/" {} +
+            find "mcp-servers/bin/$platform" -maxdepth 1 -type f -exec chmod +x {} +
           done
           ls -lhR mcp-servers/bin/
 
