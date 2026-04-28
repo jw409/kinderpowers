@@ -72,6 +72,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Tag-triggered runs would land in detached HEAD; we need to be ON
+          # main to push the rebuilt binaries back.
+          ref: main
           fetch-depth: 0
 
       - name: Clean old binaries
