@@ -103,7 +103,10 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git pull --rebase origin main
+            # Commit first, then rebase onto any new main commits, then push.
+            # The previous order (add → pull --rebase → commit) failed because
+            # `git pull --rebase` refuses to run with staged changes.
             git commit -m "build: update pre-built MCP server binaries [skip ci]"
+            git pull --rebase origin main
             git push
           fi
