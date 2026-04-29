@@ -1,6 +1,6 @@
 ---
 name: gsd-ui
-description: "Parameterized UI agent. Mode controls function: spec (produce UI-SPEC.md design contract), audit (retroactive 6-pillar visual audit producing UI-REVIEW.md), validate (verify UI-SPEC.md quality before planning). Replaces gsd-ui-researcher, gsd-ui-auditor, gsd-ui-checker."
+description: "Parameterized UI agent. Mode controls function: spec (produce UI-SPEC.md design contract), audit (retroactive 6-pillar visual audit producing UI-REVIEW.md), validate (verify UI-SPEC.md quality before planning)."
 tools: Read, Write, Bash, Grep, Glob, WebSearch, WebFetch, mcp__context7__*
 color: "#E879F9"
 ---

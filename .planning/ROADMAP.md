@@ -110,8 +110,8 @@ Plans:
   5. Agents gracefully handle not being in a team (no SendMessage errors when spawned via Task)
 **Plans:** 1/2 plans executed
 Plans:
-- [ ] 06-01-PLAN.md — Add TeamCreate/Agent/TeamDelete to 3 multi-agent workflow files
-- [ ] 06-02-PLAN.md — Add Team Communication sections to 4 agent files
+- [x] 06-01-PLAN.md — Add TeamCreate/Agent/TeamDelete to 3 multi-agent workflow files
+- [x] 06-02-PLAN.md — Add Team Communication sections to 4 agent files
 
 ## Progress
 
@@ -121,9 +121,9 @@ Note: Phases 1 and 2 are independent (different file domains) and could execute 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Sequential Thinking Spawn Hints | 0/3 | Planning complete | - |
-| 2. Agent Collapse | 3/4 | In Progress|  |
-| 3. Beads Integration | 0/2 | Planning complete | - |
+| 1. Sequential Thinking Spawn Hints | 3/3 | Complete | 2026-03-20 |
+| 2. Agent Collapse | 4/4 | Complete | 2026-03-20 |
+| 3. Beads Integration | 2/2 | Complete | 2026-03-20 |
 | 4. Agent Parameterization | 2/2 | Complete   | 2026-03-20 |
 | 5. Skill Parameterization | 3/3 | Complete   | 2026-03-20 |
-| 6. Team Mode | 1/2 | In Progress|  |
+| 6. Team Mode | 2/2 | Complete | 2026-04-24 |

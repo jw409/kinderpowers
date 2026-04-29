@@ -1,5 +1,71 @@
 # Changelog
 
+## [6.3.0] — 2026-04-27
+
+### Fixed
+
+- **kp-github MCP: URL-encode path segments** (closes #19) — label tools (`get`, `update`, `delete`) returned 404 on label names containing characters that require URL encoding (e.g. `priority: P0`). The `urlencode` helper used form-encoding (space → `+`), which is wrong for path segments — GitHub treats `+` as a literal `+` in paths. Two new RFC 3986 path encoders (`urlencode_path` for single segments, `urlencode_path_multi` preserving `/`) are applied to every path-interpolating call site:
+  - `tools/labels.rs`: get/update/delete (the documented bug)
+  - `tools/files.rs`: get_contents, create_or_update, delete, push_files (path + branch in 2 ref endpoints)
+  - `tools/tags.rs`: get
+  - `tools/releases.rs`: get_by_tag
+  - `tools/repos.rs`: compare (base + head, preserving slashes for `feature/foo` refs)
+  - `tools/teams.rs`: members (team_slug)
+  - 34 new tests including wiremock end-to-end tests asserting the actual wire path (e.g. `/labels/priority%3A%20P0`) and proptests proving path encoders never emit form-style `+` for space.
+- **SessionStart hook: bash 5.3+ heredoc hang + Claude Code double-injection** — picked from upstream superpowers `537ec64`. The hook used `cat <<EOF` to emit context, which hangs on bash 5.3+ when the heredoc body exceeds ~512 bytes (the kinderpowers context payload is ~4 KB so every macOS Homebrew-bash session blocked indefinitely). Replaced with `printf`. While there, fixed a separate Claude Code bug: it reads BOTH `additional_context` and `hookSpecificOutput.additionalContext` without deduplication, so the hook now branches on `CLAUDE_PLUGIN_ROOT` and emits only the field the current platform consumes.
+
+### Added
+
+- **kp-github MCP: author/committer overrides on file tools** — `github_files_create_or_update`, `github_files_delete`, and `github_files_push` now accept optional `author_name` / `author_email` / `committer_name` / `committer_email`. Both name+email of a side must be set together; an asymmetric pair errors before the request is sent. Omitting all four keeps the prior behavior (commits attributed to the OAuth user). Implementation switches the contents API calls to JSON bodies via `api_json` so nested `{author: {name, email}}` objects can ride the request, and `client::api_json` now handles `DELETE` (was falling through to GET). +9 tests including wiremock body-matchers asserting the author/committer JSON reaches the wire and a partial-pair test proving validation short-circuits before any HTTP request.
+
+### Build
+
+- **Rebuilt linux-x86_64 `kp-github-mcp`** carrying both kp-github changes above. macOS-arm64 binary still needs rebuilding on a Mac to pick up these changes.
+
+### Not in this release
+
+- **superpowers upstream merge (v4.3.1 → v5.0.7)** — still queued per v6.2.5's Known gaps; not addressed here.
+- **get-shit-done upstream bump (v1.30.0 → v1.38.5)** — same; queued.
+- 8 superpowers cherry-pick candidates evaluated during this release were either already subsumed by v6.2.5's hook rewrite or conflicted with diverged kinderpowers files (`using-superpowers`/`using-kinderpowers` rename, `.opencode/plugins/superpowers.js` divergent OpenCode tool mapping, brainstorm-server scripts we don't carry, RELEASE-NOTES divergence). Deferred to the broader upstream merge.
+
+## [6.2.6] — 2026-04-23
+
+### Fixed
+
+- **Plugin install error on recent Claude Code builds: `unrecognized key: incorporates`.** Same class of bug as v6.2.4's `upstream` fix — recent Claude Code releases strict-validate `plugin.json` and reject unknown top-level keys. The `incorporates` array (our attribution block listing superpowers, get-shit-done, hookify, toon-format) was not in the schema. Removed from `plugin.json`. Attribution is retained in `README.md`'s Credits section and in `KINDERPOWERS.xml` (which is canonical metadata, not validated by Claude Code). The known-safe top-level keys are: `name`, `description`, `version`, `author`, `homepage`, `repository`, `license`, `keywords`, `commands`, `agents`, `hooks`, `mcpServers`.
+
+## [6.2.5] — 2026-04-23
+
+### Fixed
+
+- **SessionStart hook was broken since the kinderpowers rebrand.** `hooks/session-start` was forked verbatim from upstream superpowers and still `cat`-ted `skills/using-superpowers/SKILL.md` (nonexistent — the skill is `using-kinderpowers`). Every session silently emitted `cat: ... using-superpowers/SKILL.md: No such file or directory` and the model was told "You have superpowers" instead of the kinderpowers orientation. Fixed the path, the branding, and the legacy-skills-directory warning copy.
+- **GSD upstream URL was a 404.** `plugin.json` and `KINDERPOWERS.xml` referenced `https://github.com/davidjbauer/get-shit-done`, which doesn't exist. The canonical upstream — maintained by TÂCHES — is `https://github.com/gsd-build/get-shit-done`. Corrected URL and author attribution. Bumped our claimed fork point from `1.26.0` to `1.30.0` to match the actual merge in PR #17.
+
+### Changed
+
+- **README rewritten entry-point-forward.** The previous README led with catalog counts (27 skills, 14 agents, 42 commands, 63 MCP tools). The new README leads with the two commands a user actually types and an explanation of how skills surface via Claude Code's `Skill` tool based on context, not name. Full catalog is deferred to `KINDERPOWERS.xml` as the canonical machine-readable manifest.
+- **`SEQUENTIAL_THINKING_MODEL` default bumped `claude-opus-4-6` → `claude-opus-4-7`.** Sets the per-model profile that kp-sequential-thinking uses for hint thresholds and guidance shaping.
+- **`KINDERPOWERS.xml` bumped to 6.2.5.** Stale v6.2.0 counts (14 agents, 27 skills — both wrong) replaced with "see agents/ and skills/ directories" since the filesystem is ground truth. Added explicit `upstream-latest`/`kinderpowers-fork-at`/`gap-note` attributes on the superpowers and get-shit-done project entries so downstream consumers know the merge position.
+
+### Removed
+
+- **crucible skill and 7 crucible-* agents.** `skills/crucible/`, `agents/crucible-auditor.md`, `agents/crucible-challenger.md`, `agents/crucible-composer.md`, `agents/crucible-exploder.md`, `agents/crucible-forecaster.md`, `agents/crucible-hunter.md`, `agents/crucible-verifier.md` removed from kinderpowers. Research-intelligence tooling will live in the `jw-scry` plugin going forward — kinderpowers keeps its focus on agency-preserving discipline for coding agents.
+
+### Known gaps (not addressed here)
+
+- **superpowers upstream is a major version ahead.** We sit at v4.3.1; upstream latest is v5.0.7 (22 days old, with 7 patch releases in the v5 line). Merge queued, not scheduled.
+- **get-shit-done upstream is 8 minor versions ahead.** We sit at v1.30.0; upstream latest is v1.38.3 with v1.39.0-rc.1 in flight. Merge queued, not scheduled.
+
+## [6.2.4] — 2026-04-23
+
+### Fixed
+
+- **Marketplace install error on recent Claude Code builds.** Removed the non-schema `upstream` attribution block from `.claude-plugin/marketplace.json`; recent Claude Code releases validate marketplace entries strictly and rejected the key with `invalid schema "upstream"`, blocking fresh `/plugin marketplace add jw409/kinderpowers` installs. Upstream attribution is retained in `plugin.json`'s `incorporates` array. Also synced the marketplace plugin entry's `version` field (was pinned at `6.2.2`) to match `plugin.json`.
+
+### Changed
+
+- **Retraction of v6.2.0 "Agent Collapse" claim.** The v6.2.0 CHANGELOG entry claimed that `gsd-researcher`, `gsd-verifier`, `gsd-ui`, and `gsd-planner` (with mode/scope parameters) "replaced" 10 legacy GSD agents, reducing the agent count from 16 to 8. In practice this migration was never completed: all 10 legacy agents retain full ~400–1300 line specifications, and every workflow (`gsd/workflows/*.md`), model router (`gsd/bin/lib/model-profiles.cjs`), and initializer (`gsd/bin/lib/init.cjs`) continues to spawn them by their original names with 13–22 live references each. Removed the "Replaces gsd-X" language from the description frontmatter of `gsd-planner.md`, `gsd-researcher.md`, and `gsd-ui.md`. `gsd-verifier.md` never carried the claim in its spec. Legacy agents (`gsd-roadmapper`, `gsd-phase-researcher`, `gsd-project-researcher`, `gsd-research-synthesizer`, `gsd-plan-checker`, `gsd-integration-checker`, `gsd-nyquist-auditor`, `gsd-ui-researcher`, `gsd-ui-checker`, `gsd-ui-auditor`) remain canonical. Actual GSD agent count: 18, not 8. Parameterized agents still exist and can be invoked on their own merits; they just don't displace anything. Finishing the collapse (migrating call sites, reworking MODEL_PROFILES to preserve per-legacy-agent cost tiers) is tracked but unscheduled.
+
 ## [6.2.3] — 2026-03-21
 
 ### Changed

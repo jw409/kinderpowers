@@ -1,7 +1,7 @@
 {
   "name": "kinderpowers",
   "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
-  "version": "6.2.3",
+  "version": "6.3.0",
   "author": {
     "name": "jw409"
   },
@@ -9,33 +9,6 @@
   "repository": "https://github.com/jw409/kinderpowers",
   "license": "MIT",
   "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving", "skill-discovery", "hub", "lifecycle-engine", "gsd", "hookify", "agents", "team-orchestration", "mcp-servers", "sequential-thinking", "github"],
-  "incorporates": [
-    {
-      "name": "superpowers",
-      "version": "4.3.1",
-      "author": "Jesse Vincent",
-      "url": "https://github.com/obra/superpowers",
-      "what": "craft philosophy, skill format, scanner, hook system"
-    },
-    {
-      "name": "get-shit-done",
-      "version": "1.26.0",
-      "author": "Davíd Braun",
-      "url": "https://github.com/davidjbauer/get-shit-done",
-      "what": "lifecycle engine, commands, agents, workflows"
-    },
-    {
-      "name": "hookify",
-      "author": "Diego Perez",
-      "url": "https://github.com/QuantGeekDev/hookify",
-      "what": "enforcement rule format"
-    },
-    {
-      "name": "toon-format",
-      "url": "https://github.com/toon-format/spec",
-      "what": "TOON output format specification"
-    }
-  ],
   "mcpServers": {
     "kp-github": {
       "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-github-mcp",
@@ -46,7 +19,7 @@
       "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-sequential-thinking",
       "args": [],
       "env": {
-        "SEQUENTIAL_THINKING_MODEL": "claude-opus-4-6",
+        "SEQUENTIAL_THINKING_MODEL": "claude-opus-4-7",
         "KP_SEQTHINK_LOG_LEVEL": "warn"
       }
     }

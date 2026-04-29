@@ -72,6 +72,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Tag-triggered runs would land in detached HEAD; we need to be ON
+          # main to push the rebuilt binaries back.
+          ref: main
           fetch-depth: 0
 
       - name: Clean old binaries
@@ -87,8 +90,11 @@ jobs:
           for artifact_dir in artifacts/mcp-servers-*; do
             platform="${artifact_dir#artifacts/mcp-servers-}"
             mkdir -p "mcp-servers/bin/$platform"
-            cp "$artifact_dir"/* "mcp-servers/bin/$platform/"
-            chmod +x "mcp-servers/bin/$platform"/*
+            # Copy only regular files at top level (defends against nested
+            # artifact dirs that have crept in historically and broke `cp`
+            # without -r). chmod likewise scoped to files.
+            find "$artifact_dir" -maxdepth 1 -type f -exec cp -t "mcp-servers/bin/$platform/" {} +
+            find "mcp-servers/bin/$platform" -maxdepth 1 -type f -exec chmod +x {} +
           done
           ls -lhR mcp-servers/bin/
 
@@ -100,7 +106,10 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            git pull --rebase origin main
+            # Commit first, then rebase onto any new main commits, then push.
+            # The previous order (add → pull --rebase → commit) failed because
+            # `git pull --rebase` refuses to run with staged changes.
             git commit -m "build: update pre-built MCP server binaries [skip ci]"
+            git pull --rebase origin main
             git push
           fi

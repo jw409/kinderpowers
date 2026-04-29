@@ -153,3 +153,13 @@ After saving the plan, offer execution choice:
 **If Parallel Session chosen:**
 - Guide them to open new session in worktree
 - **REQUIRED SUB-SKILL:** New session uses kinderpowers:executing-plans
+
+## Adaptive Work Sizing
+
+Assess scope before committing to a work plan. If the task is larger than you can complete in your current context:
+
+1. **Do what you can** — complete a meaningful chunk with clear boundaries
+2. **Document what remains** — leave a concrete continuation prompt, not vague notes
+3. **Spawn a follow-on agent** — or tell the caller to. The continuation agent should be able to pick up from your output without re-reading everything
+
+Never assume you can finish everything. A completed chunk is more valuable than an incomplete sweep.

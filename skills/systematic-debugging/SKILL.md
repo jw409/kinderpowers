@@ -15,30 +15,17 @@ Find root cause before attempting fixes. Symptom fixes waste time and can create
 
 | Parameter | Default | Range | Description |
 |-----------|---------|-------|-------------|
-| `depth` | standard | quick, standard, exhaustive | Investigation thoroughness. quick=Phase 1+3 only (skip pattern analysis), standard=all 4 phases, exhaustive=all phases with mandatory multi-component evidence gathering |
-| `hypothesis_count` | 3 | 2-8 | Number of hypotheses to generate before investigating any. Higher=more thorough, lower=faster |
-| `reproduce_first` | true | true, false | Whether to require consistent reproduction before investigating. false=proceed on reported symptoms alone |
+| `depth` | standard | quick, standard, exhaustive | Investigation thoroughness. quick=reproduce+hypothesize only, exhaustive=full evidence gathering across boundaries |
+| `hypothesis_count` | 3 | 2-8 | Hypotheses to generate before investigating. Adapt based on system complexity |
+| `reproduce_first` | true | true/false | Require reproduction before investigating. false=proceed on reported symptoms |
+| `auto_fix` | false | true/false | Implement the fix after confirming root cause, or just report findings |
+| `scope` | local | local, module, system | Investigation breadth — adapt based on where symptoms appear |
 
-**Parsing hints:** Parse from caller prompt. "Quick debug" -> depth=quick. "Be thorough" -> depth=exhaustive. "I can describe it but can't reproduce" -> reproduce_first=false. "Generate lots of theories" -> hypothesis_count=6.
+If the caller says "quick debug" → depth=quick. "Be thorough" → depth=exhaustive. "Can't reproduce" → reproduce_first=false.
 
 ## When to Use
 
-Use for ANY technical issue:
-- Test failures
-- Bugs in production
-- Unexpected behavior
-- Performance problems
-- Build failures
-- Integration issues
-
-## Parameters (caller controls)
-
-| Parameter | Default | Range | Description |
-|-----------|---------|-------|-------------|
-| `hypothesis_limit` | 3 | 1-5 | Maximum fix attempts before questioning architecture and escalating to human |
-| `auto_fix` | false | true/false | Whether to implement the fix after confirming root cause, or just report findings |
-| `scope` | local | local, module, system | Investigation breadth — local=single file/function, module=containing module, system=cross-cutting trace |
-| `evidence_level` | standard | minimal, standard, thorough | How much evidence to gather — minimal=reproduce+check changes, thorough=full data flow trace across component boundaries |
+Use for ANY technical issue — test failures, bugs, unexpected behavior, performance, build failures, integration issues.
 
 **Especially valuable when:**
 - Under time pressure (guessing wastes more time than investigating)
@@ -48,7 +35,7 @@ Use for ANY technical issue:
 
 ## The Four Phases
 
-Complete each phase before proceeding to the next, unless you have a clear reason to skip ahead.
+These phases are a framework, not a rigid checklist. Adapt the depth and order to the problem — a simple typo bug doesn't need exhaustive boundary logging, and a complex multi-component issue may need Phase 1 evidence gathering before you can even form hypotheses.
 
 ### Phase 1: Root Cause Investigation
 
@@ -187,3 +174,13 @@ If investigation shows the issue is truly environmental, timing-dependent, or ex
 **Related skills:**
 - **kinderpowers:test-driven-development** — For creating failing test case
 - **kinderpowers:verification-before-completion** — Verify fix before claiming success
+
+## Adaptive Work Sizing
+
+Assess scope before committing to a work plan. If the task is larger than you can complete in your current context:
+
+1. **Do what you can** — complete a meaningful chunk with clear boundaries
+2. **Document what remains** — leave a concrete continuation prompt, not vague notes
+3. **Spawn a follow-on agent** — or tell the caller to. The continuation agent should be able to pick up from your output without re-reading everything
+
+Never assume you can finish everything. A completed chunk is more valuable than an incomplete sweep.

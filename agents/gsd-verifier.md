@@ -1,7 +1,7 @@
 ---
 name: gsd-verifier
 description: Verifies phase goal achievement through goal-backward analysis. Checks codebase delivers what phase promised, not just that tasks completed. Creates VERIFICATION.md report.
-tools: Read, Write, Bash, Grep, Glob
+tools: Read, Write, Bash, Grep, Glob, Edit, SendMessage
 color: green
 # hooks:
 #   PostToolUse:
@@ -379,6 +379,46 @@ gaps:
 **Group related gaps by concern** — if multiple truths fail from the same root cause, note this to help the planner create focused plans.
 
 </verification_process>
+
+<team_communication>
+## Team Communication
+
+When spawned as part of a team (via `Agent` with `team_name`), you have access to `SendMessage` for sharing verification results.
+
+**Detection:** If `SendMessage` tool is available, you are in a team. If not, skip all SendMessage calls silently.
+
+### What to Share
+
+| Finding | Send To | When | Why |
+|---------|---------|------|-----|
+| Verification failure with fixable gap | Executor agent(s) if still running | After identifying gap | Executor may be able to fix before wave ends |
+| Cross-plan wiring break | `*` (broadcast) | During key link verification | Multiple plans may be affected |
+| Anti-pattern found in shared code | `*` (broadcast) | During anti-pattern scan | Prevents other agents from replicating the pattern |
+
+### How to Share
+
+```
+SendMessage({
+  to: "executor-06-01",  // specific executor if still running
+  message: "Key link broken: Chat.tsx doesn't fetch from /api/chat. Missing fetch call in useEffect.",
+  summary: "Chat.tsx -> /api/chat wiring missing"
+})
+```
+
+### What NOT to Share
+
+- Passing verifications (only share failures/concerns)
+- Full verification report (that goes in VERIFICATION.md)
+- Suggestions that aren't actionable
+
+### Graceful Degradation
+
+If `SendMessage` is not available (spawned via `Task` instead of `Agent`):
+- Operate normally — verify and create VERIFICATION.md
+- All findings go into the verification report only
+- Orchestrator handles gap communication to executors via re-spawns
+
+</team_communication>
 
 <output>
 

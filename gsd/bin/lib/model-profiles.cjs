@@ -7,21 +7,15 @@
  * would be faster, use fewer tokens, and be less error-prone).
  */
 const MODEL_PROFILES = {
-  // Parameterized agents — use these in new workflows
   'gsd-planner': { quality: 'opus', balanced: 'opus', budget: 'sonnet' },
-  'gsd-researcher': { quality: 'opus', balanced: 'sonnet', budget: 'haiku' },
-  'gsd-ui': { quality: 'opus', balanced: 'sonnet', budget: 'haiku' },
-  'gsd-verifier': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
+  'gsd-roadmapper': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet' },
   'gsd-executor': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet' },
-  'gsd-debugger': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet' },
-  'gsd-codebase-mapper': { quality: 'sonnet', balanced: 'haiku', budget: 'haiku' },
-
-  // Legacy aliases — old agent names that resolve via alias .md files
-  // These entries ensure resolve-model still works for old subagent_type values
   'gsd-phase-researcher': { quality: 'opus', balanced: 'sonnet', budget: 'haiku' },
   'gsd-project-researcher': { quality: 'opus', balanced: 'sonnet', budget: 'haiku' },
   'gsd-research-synthesizer': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
-  'gsd-roadmapper': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet' },
+  'gsd-debugger': { quality: 'opus', balanced: 'sonnet', budget: 'sonnet' },
+  'gsd-codebase-mapper': { quality: 'sonnet', balanced: 'haiku', budget: 'haiku' },
+  'gsd-verifier': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
   'gsd-plan-checker': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
   'gsd-integration-checker': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
   'gsd-nyquist-auditor': { quality: 'sonnet', balanced: 'sonnet', budget: 'haiku' },
