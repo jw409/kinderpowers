@@ -2,22 +2,26 @@
 # kinderpowers setup.sh — post-install symlink wiring
 # Idempotent: safe to re-run at any time.
 # Use --force to replace existing real files/directories with symlinks.
+# Use --no-gsd to skip GSD runtime installation.
 
 set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE_DIR="${HOME}/.claude"
 FORCE=false
+NO_GSD=false
 
 for arg in "$@"; do
   case "$arg" in
     --force) FORCE=true ;;
+    --no-gsd) NO_GSD=true ;;
   esac
 done
 
 echo "=== kinderpowers setup ==="
 echo "Plugin root: ${PLUGIN_ROOT}"
 [ "$FORCE" = true ] && echo "Mode: --force (replacing existing files)"
+[ "$NO_GSD" = true ] && echo "Mode: --no-gsd (skipping GSD runtime)"
 echo ""
 
 # --- Helpers ---
@@ -58,7 +62,9 @@ link_file() {
 # GSD workflows reference ~/.claude/get-shit-done at runtime
 echo "[1/3] GSD runtime"
 mkdir -p "${CLAUDE_DIR}"
-if [ -d "${PLUGIN_ROOT}/gsd" ]; then
+if [ "$NO_GSD" = true ]; then
+  echo "  SKIP: --no-gsd passed"
+elif [ -d "${PLUGIN_ROOT}/gsd" ]; then
   link_dir "${PLUGIN_ROOT}/gsd" "${CLAUDE_DIR}/get-shit-done"
 else
   echo "  WARN: ${PLUGIN_ROOT}/gsd not found — skipping GSD symlink"
