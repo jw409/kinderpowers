@@ -542,7 +542,7 @@ impl KpGithubServer {
                 Ok(CallToolResult::success(vec![Content::text(text)]))
             }
             PrAction::Update => {
-                let result = tools::prs::update(&self.client, &p.owner, &p.repo, number()?, p.title.as_deref(), p.body.as_deref(), p.state.as_deref(), p.base.as_deref())
+                let result = tools::prs::update(&self.client, &p.owner, &p.repo, number()?, p.title.as_deref(), p.body.as_deref(), p.state.as_deref(), p.base.as_deref(), p.draft)
                     .await
                     .map_err(|e| McpError::internal_error(e.to_string(), None))?;
                 let text = self.compress_and_format(result, p.fields, p.format);
