@@ -115,6 +115,7 @@ pub async fn update(
     body: Option<&str>,
     state: Option<&str>,
     base: Option<&str>,
+    draft: Option<bool>,
 ) -> Result<Value, ClientError> {
     let endpoint = format!("/repos/{owner}/{repo}/pulls/{number}");
     let mut args: Vec<&str> = vec!["-X", "PATCH"];
@@ -141,6 +142,12 @@ pub async fn update(
         base_field = format!("base={b}");
         args.push("-f");
         args.push(&base_field);
+    }
+    let draft_field;
+    if let Some(d) = draft {
+        draft_field = format!("draft={d}");
+        args.push("-f");
+        args.push(&draft_field);
     }
     client.api(&endpoint, &args).await
 }
@@ -839,14 +846,14 @@ mod tests {
     #[tokio::test]
     async fn test_update_pr() {
         let client = GithubClient::mock(vec![json!({"number": 10, "state": "closed"})]);
-        let result = update(&client, "o", "r", 10, Some("T"), Some("B"), Some("closed"), Some("dev")).await.unwrap();
+        let result = update(&client, "o", "r", 10, Some("T"), Some("B"), Some("closed"), Some("dev"), None).await.unwrap();
         assert_eq!(result["state"], "closed");
     }
 
     #[tokio::test]
     async fn test_update_pr_minimal() {
         let client = GithubClient::mock(vec![json!({"number": 10})]);
-        let result = update(&client, "o", "r", 10, None, None, None, None).await.unwrap();
+        let result = update(&client, "o", "r", 10, None, None, None, None, None).await.unwrap();
         assert_eq!(result["number"], 10);
     }
 
