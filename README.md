@@ -170,6 +170,21 @@ Repos     · get, search, fork
 ...
 ```
 
+**Commit author identity.** The file-mutating tools (`files_create_or_update`, `files_delete`, `files_push`) accept per-call `author_name`/`author_email`/`committer_name`/`committer_email`, but you usually want a default so every agent call gets the right attribution. The server reads `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL` at request time; per-call args win, env fills the rest, and a fully-unset committer mirrors the author so a single env pair attributes both sides. Set them in the MCP server's env block:
+
+```json
+"kp-github": {
+  "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-github-mcp",
+  "env": {
+    "GIT_AUTHOR_NAME": "your-name",
+    "GIT_AUTHOR_EMAIL": "you@example.com",
+    "KP_GITHUB_REQUIRE_AUTHOR": "1"
+  }
+}
+```
+
+`KP_GITHUB_REQUIRE_AUTHOR=1` is optional belt-and-suspenders: it turns "no author resolved from either args or env" into a hard error instead of silently falling back to the OAuth token's GitHub user (which is rarely who you want stamped on the commit).
+
 </details>
 
 <details>

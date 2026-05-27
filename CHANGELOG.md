@@ -1,5 +1,15 @@
 # Changelog
 
+## [6.3.1] — 2026-05-27
+
+### Fixed
+
+- **kp-github MCP: commit author defaults from env vars** — `files_create_or_update`, `files_delete`, and `files_push` previously required the caller to pass `author_name`/`author_email` on *every* call. Any agent that forgot stamped the commit with the OAuth token's GitHub user — commonly the operator running the MCP server, not the identity the repo owner intended for the commit. The MCP adapter now layers caller args over `GIT_AUTHOR_NAME`, `GIT_AUTHOR_EMAIL`, `GIT_COMMITTER_NAME`, and `GIT_COMMITTER_EMAIL` read from the server process env at request time. Per-call args still win; env fills the rest. If the committer side is fully unset after env resolution, it mirrors the author so a single `GIT_AUTHOR_*` env pair attributes both sides — no more silent OAuth-user fallback on the committer slot. Empty strings (`""`) on either args or env are treated as unset. New env flag `KP_GITHUB_REQUIRE_AUTHOR=1` (or `true`/`yes`) hard-errors any commit attempt that can't resolve an author, turning a misconfigured deployment into a loud failure. +13 unit tests including an end-to-end wire test asserting the env-derived `{author, committer}` JSON reaches the GitHub request body via a stubbed env closure (no real env mutation, no test races).
+
+### Build
+
+- **Rebuilt `linux-x86_64/kp-github-mcp`** carrying the env-var resolver. macOS-arm64 binary still needs rebuilding on a Mac.
+
 ## [6.3.0] — 2026-04-27
 
 ### Fixed
