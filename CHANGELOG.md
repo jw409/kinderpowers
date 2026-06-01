@@ -1,5 +1,11 @@
 # Changelog
 
+## [6.3.2] — 2026-06-01
+
+### Fixed
+
+- **SessionStart hook broken on Unix — `${CLAUDE_PLUGIN_ROOT}` no longer expanded.** Commit `31bbbe2` ("quote CLAUDE_PLUGIN_ROOT for spaces") wrapped the hook command in **single** quotes: `'${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd' session-start`. Claude Code runs the hook command via `/bin/sh -c`, where `${CLAUDE_PLUGIN_ROOT}` is a shell environment variable — and single quotes suppress shell expansion, so `sh` tried to exec a path containing the literal text `${CLAUDE_PLUGIN_ROOT}` and failed with `not found` (exit 127). Every Unix session on 6.3.0–6.3.1 silently lost SessionStart context injection (the `using-kinderpowers` orientation). Restored **double** quotes (`"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" session-start`), which both expand the variable and still handle paths containing spaces — the form that shipped through 6.2.x. Verified end-to-end: the single-quote form reproduces `sh: 1: ${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd: not found`; the double-quote form exits 0 and emits the SessionStart `additionalContext` payload. Hooks-only change — no MCP binary rebuild required. Also synced `marketplace.json` plugin version (had lagged at 6.2.6) to match `plugin.json`.
+
 ## [6.3.1] — 2026-05-27
 
 ### Fixed
