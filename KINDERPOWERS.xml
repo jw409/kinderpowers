@@ -18,7 +18,7 @@
   <section name="invariants" what="Agency-preserving philosophy — the rules of the system"/>
   <section name="skill-catalog" what="Skills with levels, triggers, and costs — see skills/ directory for complete roster"/>
   <section name="agent-catalog" what="Agents with capabilities, tools, and model requirements — see agents/ directory for complete roster"/>
-  <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Sequential Thinking)"/>
+  <section name="mcp-servers" what="2 optional Rust MCP servers (GitHub, Stepwise Planning)"/>
   <section name="command-catalog" what="42 GSD commands with when-to-use guidance"/>
   <section name="hookify-rules" what="3 default enforcement rules (ship disabled)"/>
   <section name="progression" what="L1 → L2 → L3 → L4 capability model"/>
@@ -93,8 +93,8 @@
     description="Batch execution with checkpoints, claim protocol, verify-before-assuming"/>
   <skill name="strategic-planning" level="2" trigger="work needs design or discovery before execution"
     description="Strategic briefs with investigative and implementation modes"/>
-  <skill name="metathinking" level="2" trigger="complex decisions, debugging mysteries, architectural choices"
-    description="Sequential thinking with mandatory branching and confidence tracking"/>
+  <skill name="stepwise" level="2" trigger="complex decisions, debugging mysteries, architectural choices"
+    description="Stepwise planning with structured branching and confidence tracking"/>
   <skill name="research-extraction" level="2" trigger="analyzing external codebases, libraries, or papers"
     description="Harvest → extract → analyze → rank → verify pipeline"/>
   <skill name="subagent-driven-development" level="2" trigger="executing plans with independent tasks"
@@ -295,7 +295,7 @@
     <capability>brainstorming, TDD, systematic-debugging, verification, code-review</capability>
   </level>
   <level n="2" name="Agentic Worker" description="Agent plans work, tracks progress, works in isolation">
-    <capability>Plans, memory, worktrees, strategic-planning, metathinking, research-extraction</capability>
+    <capability>Plans, memory, worktrees, strategic-planning, stepwise, research-extraction</capability>
     <requires>Level 1 skills</requires>
   </level>
   <level n="3" name="Team Orchestrator" description="Agent coordinates parallel workers">
@@ -326,10 +326,10 @@
     <coverage>484 unit + 23 integration tests, 97% line coverage</coverage>
   </server>
 
-  <server name="kp-sequential-thinking" language="rust" transport="stdio">
-    <description>Enhanced sequential thinking with hints (not mandates), branching, merge,
+  <server name="kp-stepwise" language="rust" transport="stdio">
+    <description>Stepwise planning with hints (not mandates), branching, merge,
       confidence tracking, Dunning-Kruger detection, and per-model tuning profiles.</description>
-    <tools count="1">sequentialthinking — the caller controls depth, branching, and when to act on hints.</tools>
+    <tools count="1">stepwise_plan — the caller controls depth, branching, and when to act on hints.</tools>
     <features>
       <feature>Hints system: non-prescriptive observations (linear_chain, premature_confidence, merge_available, etc.)</feature>
       <feature>Branch merge: continuation_mode="merge" with merge_branches to synthesize insights</feature>
@@ -338,12 +338,12 @@
       <feature>JSONL logging for learning pipeline harvesting</feature>
       <feature>Brenner "Third Alternative" and Four Self-Checks in first-call guidance</feature>
     </features>
-    <install>cd mcp-servers/sequential-thinking &amp;&amp; cargo build --release</install>
-    <register>claude mcp add kp-sequential-thinking --transport stdio -- ./target/release/kp-sequential-thinking</register>
-    <coverage>87 unit + 19 integration tests, 95.6% line coverage</coverage>
+    <install>cd mcp-servers/stepwise &amp;&amp; cargo build --release</install>
+    <register>claude mcp add kp-stepwise --transport stdio -- ./target/release/kp-stepwise</register>
+    <coverage>105 unit + 23 integration tests</coverage>
     <env>
-      <var name="SEQUENTIAL_THINKING_MODEL" default="auto-detected" what="Model ID for profile matching"/>
-      <var name="KP_SEQTHINK_LOG_LEVEL" default="info" what="tracing level (error/warn/info/debug)"/>
+      <var name="STEPWISE_MODEL" default="auto-detected" what="Model ID for profile matching"/>
+      <var name="KP_STEPWISE_LOG_LEVEL" default="info" what="tracing level (error/warn/info/debug)"/>
     </env>
   </server>
 </mcp-servers>
@@ -417,8 +417,8 @@
   <paper id="tot" title="Tree of Thoughts: Deliberate Problem Solving with Large Language Models"
     authors="Yao, Yu, Zhao, Shafran, Griffiths, Cao, Narasimhan" year="2023"
     url="https://arxiv.org/abs/2305.10601"
-    informs="Branching architecture in kp-sequential-thinking. ToT frames reasoning as tree search
-      with branching and evaluation — our branchFromThought + branchId implements this."/>
+    informs="Branching architecture in kp-stepwise. ToT frames reasoning as tree search
+      with branching and evaluation — our branchFromStep + branchId implements this."/>
 
   <paper id="got" title="Graph of Thoughts: Solving Elaborate Problems with Large Language Models"
     authors="Besta, Blach, Kubicek, Gerstenberger, Podstawski, Gianinazzi, Gajda, Lehmann, Nyczyk, Niewiadomski, Hoefler" year="2023"
@@ -466,7 +466,7 @@
     author="Sydney Brenner" context="Nobel lecture / scientific methodology"
     text="Someone said, 'Either model A is right or model B is right.' And I said, 'You've forgotten
       there's a third alternative... Both could be wrong.'"
-    informs="Third Alternative pattern in metathinking skill and first-call guidance.
+    informs="Third Alternative pattern in stepwise skill and first-call guidance.
       Prevents false dichotomy traps in reasoning."/>
 
   <!-- Ecosystem -->

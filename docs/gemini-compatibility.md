@@ -66,14 +66,14 @@ EOF
 
 ### 4. MCP Server Compatibility
 
-Kinderpowers MCP servers (kp-github, kp-sequential-thinking) work with any MCP-compatible client, including Gemini CLI. No adaptation needed — MCP is runtime-agnostic.
+Kinderpowers MCP servers (kp-github, kp-stepwise) work with any MCP-compatible client, including Gemini CLI. No adaptation needed — MCP is runtime-agnostic.
 
 ## Skill Compatibility
 
 Skills are `SKILL.md` files with instructions. They're runtime-agnostic by design — the instructions describe *what to do*, not *which tools to call*. Gemini can follow skill instructions directly.
 
 **High compatibility** (work as-is):
-- metathinking, brainstorming, strategic-planning, requirements
+- stepwise, brainstorming, strategic-planning, requirements
 - retrospective, adversarial-review, architecture
 - All research and analysis skills
 
@@ -86,9 +86,9 @@ Skills are `SKILL.md` files with instructions. They're runtime-agnostic by desig
 - using-kinderpowers (Claude plugin system)
 - find-skills (skills.sh marketplace, Claude plugin)
 
-## Sequential Thinking MCP
+## Stepwise Planning MCP
 
-The `kp-sequential-thinking` MCP server works identically with Gemini CLI — it's MCP-native. Gemini even has a pre-tuned profile (`gemini_flash`) in the server that optimizes explore counts and branching thresholds for Gemini's strengths:
+The `kp-stepwise` MCP server works identically with Gemini CLI — it's MCP-native. Gemini even has a pre-tuned profile (`gemini_flash`) in the server that optimizes explore counts and branching thresholds for Gemini's strengths:
 
 - Wider exploration (5-7 alternatives vs Claude's 4-5)
 - More liberal branching threshold

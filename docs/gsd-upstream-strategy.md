@@ -65,12 +65,12 @@ Kinderpowers doesn't just track upstream — it adds value. The strategy is:
 
 These are areas where kinderpowers diverges from upstream on purpose:
 
-1. **MCP-native tooling** — kp-github and kp-sequential-thinking are Rust MCP servers. Upstream uses shell-based equivalents.
+1. **MCP-native tooling** — kp-github and kp-stepwise are Rust MCP servers. Upstream uses shell-based equivalents.
 2. **LSP brownfield mapping** — `gsd-codebase-mapper` has LSP integration that upstream lacks. This is the primary differentiator.
 3. **Parameterized agents/skills** — Upstream agents are fixed. Kinderpowers adds slider-based tuning.
 4. **Multi-perspective review** — Upstream has `/gsd:review`, but kinderpowers has a richer council-based review system.
 5. **Beads integration** — Persistent tracking across sessions. Upstream uses `.planning/STATE.md` only.
-6. **Sequential thinking MCP** — Per-model tuning profiles, subagent spawn hints.
+6. **Stepwise planning MCP** — Per-model tuning profiles, subagent spawn hints.
 
 ## Merge Process
 

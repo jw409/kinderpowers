@@ -207,7 +207,7 @@ After discovery, if a similar system exists:
 
 - **Precedes:** executing-plans, subagent-driven-development, writing-plans
 - **Follows:** brainstorming (when design work was needed first)
-- **Complements:** metathinking (for deep analysis during planning)
+- **Complements:** stepwise (for structured step-by-step analysis during planning)
 
 ## Adaptive Work Sizing
 

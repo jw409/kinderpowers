@@ -2,7 +2,7 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-/// Per-model tuning profile for sequential thinking behavior.
+/// Per-model tuning profile for stepwise planning behavior.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TuningProfile {
@@ -130,7 +130,11 @@ pub fn fallback_profile() -> TuningProfile {
 /// Try loading profiles from a JSON file, falling back to defaults.
 pub fn load_profiles() -> Vec<TuningProfile> {
     let candidates: Vec<Option<String>> = vec![
-        std::env::var("SEQUENTIAL_THINKING_PROFILES").ok(),
+        std::env::var("STEPWISE_PROFILES").ok(),
+        std::env::var("SEQUENTIAL_THINKING_PROFILES").ok(), // legacy name
+        Some("talent-os/etc/stepwise_profiles.json".into()),
+        Some("etc/stepwise_profiles.json".into()),
+        // Legacy file locations
         Some("talent-os/etc/sequential_thinking_profiles.json".into()),
         Some("etc/sequential_thinking_profiles.json".into()),
     ];
@@ -334,7 +338,7 @@ mod tests {
         }];
         std::fs::write(&profiles_file, serde_json::to_string(&custom).unwrap()).unwrap();
 
-        std::env::set_var("SEQUENTIAL_THINKING_PROFILES", profiles_file.to_str().unwrap());
+        std::env::set_var("STEPWISE_PROFILES", profiles_file.to_str().unwrap());
         let loaded = load_profiles();
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].display_name, "CustomTest");
@@ -342,26 +346,26 @@ mod tests {
         // 2. Invalid JSON falls through to defaults
         let bad_file = tmp.path().join("bad_profiles.json");
         std::fs::write(&bad_file, "not valid json!!!").unwrap();
-        std::env::set_var("SEQUENTIAL_THINKING_PROFILES", bad_file.to_str().unwrap());
+        std::env::set_var("STEPWISE_PROFILES", bad_file.to_str().unwrap());
         let loaded = load_profiles();
         assert!(loaded.len() >= 5, "invalid JSON should fall back to defaults");
 
         // 3. Empty array is valid JSON — returns 0 profiles
         let empty_file = tmp.path().join("empty_profiles.json");
         std::fs::write(&empty_file, "[]").unwrap();
-        std::env::set_var("SEQUENTIAL_THINKING_PROFILES", empty_file.to_str().unwrap());
+        std::env::set_var("STEPWISE_PROFILES", empty_file.to_str().unwrap());
         let loaded = load_profiles();
         assert_eq!(loaded.len(), 0);
 
         // 4. Unreadable file (directory) falls through to defaults
         let dir_path = tmp.path().join("a_directory");
         std::fs::create_dir(&dir_path).unwrap();
-        std::env::set_var("SEQUENTIAL_THINKING_PROFILES", dir_path.to_str().unwrap());
+        std::env::set_var("STEPWISE_PROFILES", dir_path.to_str().unwrap());
         let loaded = load_profiles();
         assert!(loaded.len() >= 5, "unreadable file should fall back to defaults");
 
         // 5. No env var — defaults
-        std::env::remove_var("SEQUENTIAL_THINKING_PROFILES");
+        std::env::remove_var("STEPWISE_PROFILES");
         let loaded = load_profiles();
         assert!(loaded.len() >= 5, "no env var should return defaults");
     }

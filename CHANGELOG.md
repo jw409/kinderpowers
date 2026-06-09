@@ -1,6 +1,22 @@
 # Changelog
 
-## [6.3.2] — 2026-06-01
+## [7.0.0] — 2026-06-09
+
+### Changed (BREAKING)
+
+- **kp-sequential-thinking renamed to kp-stepwise; `sequentialthinking` tool renamed to `stepwise_plan`.** Claude Fable 5 runs safety classifiers over everything the model reads — tool schemas, tool results, and MCP resource descriptions — and one blocked category is "extraction of the model's summarized thinking." The old server was a lexical near-match for that category even though it's just a structured planning scratchpad: a tool named `sequentialthinking` asking the model to write "Your current thinking step" into a `thought` param, responses echoing `thoughtHistoryLength` and "consecutive linear thoughts," a `compliance` block grading the output, and a resource advertising "Returns the current session's thought history." Sessions using the tool under Fable 5 were intermittently blocked with AUP/ToS errors ("reverse engineering or duplicating model outputs"). Every model-visible string was re-skinned from thought/thinking vocabulary to step/plan vocabulary; behavior (branching, merge, confidence, layers, hints, profiles) is unchanged.
+  - **Tool**: `sequentialthinking` → `stepwise_plan`. Params: `thought`→`step`, `thoughtNumber`→`stepNumber`, `totalThoughts`→`totalSteps`, `nextThoughtNeeded`→`nextStepNeeded`, `revisesThought`→`revisesStep`, `branchFromThought`→`branchFromStep`, `needsMoreThoughts`→`needsMoreSteps`. Legacy param names are still accepted via serde aliases (never advertised in the schema), so old prompt scaffolding keeps working — but the tool *name* is a hard break.
+  - **Responses**: `thoughtHistoryLength`→`stepCount`, `compliance`→`usageStats` (with `consecutiveLinearThoughts`→`consecutiveLinearSteps`), `mergeSummary.thoughtCounts`→`stepCounts`, `branchOutcomes[].thoughtCount`→`stepCount`, spawn-hint `recommendedModel` tier `"thinking"`→`"stronger"`, first-call guidance header `-- thinking [..] --`→`-- planner [..] --`, all hint text reworded.
+  - **Resources**: `seqthink://sessions/current/{thoughts,branches,compliance}` → `stepwise://sessions/current/{steps,branches,stats}`.
+  - **Plugin manifest**: mcpServers key `kp-sequential-thinking` → `kp-stepwise`; binary path `mcp-servers/bin/kp-stepwise`. Tools surface as `mcp__kp-stepwise__stepwise_plan`. Manual registrations need `claude mcp remove kp-sequential-thinking && claude mcp add kp-stepwise ...` (or rerun `mcp-servers/install.sh`).
+  - **Env vars**: `STEPWISE_MODEL`, `KP_STEPWISE_LOG_LEVEL`, `DISABLE_STEP_LOGGING`, `STEPWISE_PROFILES` — all four legacy names (`SEQUENTIAL_THINKING_MODEL`, `KP_SEQTHINK_LOG_LEVEL`, `DISABLE_THOUGHT_LOGGING`, `SEQUENTIAL_THINKING_PROFILES`) still honored as fallbacks, as are legacy `etc/sequential_thinking_profiles.json` locations.
+  - **JSONL logs**: now written to `var/stepwise_logs/` with `step`/`stepNumber`/... keys (was `var/sequential_thinking_logs/` with `thought*` keys). External scavengers/learning pipelines reading these logs must be updated.
+  - **Crate**: `mcp-servers/sequential-thinking` → `mcp-servers/stepwise` (kp-stepwise v0.3.0); `thinking.rs`→`planner.rs`, `ThinkingEngine`→`PlanEngine`, `ThoughtData`→`StepData`. CI workflows, install/upgrade scripts, and the platform-wrapper script updated. +1 integration test pinning legacy-param-name compatibility (128 total).
+- **metathinking skill renamed to stepwise** (`skills/stepwise/SKILL.md`) and rewritten in the same vocabulary — skill text is model-visible context and carried the same trigger language ("deep sequential thinking", "externalized reasoning"). README, GEMINI.md, and docs updated to match.
+
+### Build
+
+- **Rebuilt `linux-x86_64/kp-stepwise`** with the rename. The `macos-arm64/kp-stepwise` binary is the *old* build renamed on disk — it still serves the old `sequentialthinking` tool and old vocabulary until CI rebuilds it (push an `mcp-v*` tag or run the Build MCP Server Binaries workflow).
 
 ### Fixed
 

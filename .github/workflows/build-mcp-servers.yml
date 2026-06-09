@@ -38,7 +38,7 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             mcp-servers/github/target
-            mcp-servers/sequential-thinking/target
+            mcp-servers/stepwise/target
           key: ${{ matrix.target }}-cargo-${{ hashFiles('mcp-servers/*/Cargo.lock') }}
           restore-keys: ${{ matrix.target }}-cargo-
 
@@ -46,15 +46,15 @@ jobs:
         working-directory: mcp-servers/github
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Build kp-sequential-thinking
-        working-directory: mcp-servers/sequential-thinking
+      - name: Build kp-stepwise
+        working-directory: mcp-servers/stepwise
         run: cargo build --release --target ${{ matrix.target }}
 
       - name: Collect binaries
         run: |
           mkdir -p mcp-servers/bin/${{ matrix.dir }}
           cp mcp-servers/github/target/${{ matrix.target }}/release/kp-github-mcp mcp-servers/bin/${{ matrix.dir }}/
-          cp mcp-servers/sequential-thinking/target/${{ matrix.target }}/release/kp-sequential-thinking mcp-servers/bin/${{ matrix.dir }}/
+          cp mcp-servers/stepwise/target/${{ matrix.target }}/release/kp-stepwise mcp-servers/bin/${{ matrix.dir }}/
           ls -lh mcp-servers/bin/${{ matrix.dir }}/
 
       - name: Upload artifacts

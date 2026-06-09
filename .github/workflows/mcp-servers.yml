@@ -11,7 +11,7 @@ on:
       - 'mcp-servers/**'
 
 jobs:
-  test-sequential-thinking:
+  test-stepwise:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,15 +25,15 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            mcp-servers/sequential-thinking/target
-          key: ${{ runner.os }}-cargo-seqthink-${{ hashFiles('mcp-servers/sequential-thinking/Cargo.lock') }}
+            mcp-servers/stepwise/target
+          key: ${{ runner.os }}-cargo-stepwise-${{ hashFiles('mcp-servers/stepwise/Cargo.lock') }}
 
-      - name: Test kp-sequential-thinking
-        working-directory: mcp-servers/sequential-thinking
+      - name: Test kp-stepwise
+        working-directory: mcp-servers/stepwise
         run: cargo test
 
       - name: Build release
-        working-directory: mcp-servers/sequential-thinking
+        working-directory: mcp-servers/stepwise
         run: cargo build --release
 
   test-github:

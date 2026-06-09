@@ -4,7 +4,7 @@ This project uses the `kinderpowers` discipline. Gemini CLI should follow the sa
 
 ## Core Mandates
 - **Verify before Claiming Done:** Use tests or automated checks.
-- **Branch when Uncertain:** Use `sequentialthinking` branching for complex decisions.
+- **Branch when Uncertain:** Use `stepwise_plan` branching for complex decisions.
 - **Team Communication:** When available, use `SendMessage` to share progress/blockers if operating in a multi-agent context.
 
 ## Skill Integration

@@ -10,7 +10,7 @@ use serde::Deserialize;
 use std::sync::Mutex;
 
 use crate::profiles;
-use crate::thinking::{ThinkingEngine, ThoughtData};
+use crate::planner::{PlanEngine, StepData};
 
 // ============================================================================
 // MCP Parameter struct — maps to the tool's JSON Schema
@@ -19,43 +19,46 @@ use crate::thinking::{ThinkingEngine, ThoughtData};
 #[derive(Debug, Deserialize, JsonSchema)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
-pub struct SequentialThinkingParams {
-    /// Your current thinking step
-    pub thought: String,
+pub struct StepwisePlanParams {
+    /// The current step in your working plan
+    #[serde(alias = "thought")]
+    pub step: String,
 
-    /// Current thought number
+    /// Current step number
     #[schemars(range(min = 1))]
-    pub thought_number: u32,
+    #[serde(alias = "thoughtNumber")]
+    pub step_number: u32,
 
-    /// Estimated total thoughts needed
+    /// Estimated total steps needed
     #[schemars(range(min = 1))]
-    pub total_thoughts: u32,
+    #[serde(alias = "totalThoughts")]
+    pub total_steps: u32,
 
-    /// Whether another thought step is needed (backwards compat, prefer continuation_mode)
-    #[serde(default)]
-    pub next_thought_needed: Option<bool>,
+    /// Whether another step is needed (backwards compat, prefer continuation_mode)
+    #[serde(default, alias = "nextThoughtNeeded")]
+    pub next_step_needed: Option<bool>,
 
-    /// Whether this revises previous thinking
+    /// Whether this revises an earlier step
     #[serde(default)]
     pub is_revision: Option<bool>,
 
-    /// Which thought is being reconsidered
-    #[serde(default)]
+    /// Which step is being reconsidered
+    #[serde(default, alias = "revisesThought")]
     #[schemars(range(min = 1))]
-    pub revises_thought: Option<u32>,
+    pub revises_step: Option<u32>,
 
-    /// PRIMARY: Branching point thought number - USE LIBERALLY
-    #[serde(default)]
+    /// PRIMARY: Branching point step number - USE LIBERALLY
+    #[serde(default, alias = "branchFromThought")]
     #[schemars(range(min = 1))]
-    pub branch_from_thought: Option<u32>,
+    pub branch_from_step: Option<u32>,
 
     /// PRIMARY: Branch identifier - descriptive name for this exploration path
     #[serde(default)]
     pub branch_id: Option<String>,
 
-    /// If more thoughts are needed
-    #[serde(default)]
-    pub needs_more_thoughts: Option<bool>,
+    /// If more steps are needed
+    #[serde(default, alias = "needsMoreThoughts")]
+    pub needs_more_steps: Option<bool>,
 
     /// How to continue: explore (generate alternatives), done (early exit), delegate (pass to next layer), branch (alternative path), merge (combine branches), continue (default linear)
     #[serde(default)]
@@ -83,7 +86,7 @@ pub struct SequentialThinkingParams {
     #[serde(default)]
     pub branch_strategy: Option<String>,
 
-    /// Merge insights from these branch IDs into this thought (continuation_mode should be "merge")
+    /// Merge insights from these branch IDs into this step (continuation_mode should be "merge")
     #[serde(default)]
     pub merge_branches: Option<Vec<String>>,
 
@@ -96,11 +99,11 @@ pub struct SequentialThinkingParams {
     #[serde(default)]
     pub done_reason: Option<String>,
 
-    /// Token efficiency: compact (last 2 thoughts), normal (last 5), expanded (all)
+    /// Token efficiency: compact (last 2 steps), normal (last 5), expanded (all)
     #[serde(default)]
     pub context_window: Option<String>,
 
-    /// What to search for before next thought (orchestrator will execute)
+    /// What to search for before next step (orchestrator will execute)
     #[serde(default)]
     pub search_query: Option<String>,
 
@@ -108,23 +111,23 @@ pub struct SequentialThinkingParams {
     #[serde(default)]
     pub search_context: Option<String>,
 
-    /// Should orchestrator search before next thought?
+    /// Should orchestrator search before next step?
     #[serde(default)]
     pub incorporate_search: Option<bool>,
 }
 
-impl From<SequentialThinkingParams> for ThoughtData {
-    fn from(p: SequentialThinkingParams) -> Self {
-        ThoughtData {
-            thought: p.thought,
-            thought_number: p.thought_number,
-            total_thoughts: p.total_thoughts,
-            next_thought_needed: p.next_thought_needed.unwrap_or(true),
+impl From<StepwisePlanParams> for StepData {
+    fn from(p: StepwisePlanParams) -> Self {
+        StepData {
+            step: p.step,
+            step_number: p.step_number,
+            total_steps: p.total_steps,
+            next_step_needed: p.next_step_needed.unwrap_or(true),
             is_revision: p.is_revision,
-            revises_thought: p.revises_thought,
-            branch_from_thought: p.branch_from_thought,
+            revises_step: p.revises_step,
+            branch_from_step: p.branch_from_step,
             branch_id: p.branch_id,
-            needs_more_thoughts: p.needs_more_thoughts,
+            needs_more_steps: p.needs_more_steps,
             continuation_mode: p.continuation_mode,
             explore_count: p.explore_count,
             proposals: p.proposals,
@@ -146,20 +149,20 @@ impl From<SequentialThinkingParams> for ThoughtData {
 // MCP Server
 // ============================================================================
 
-pub struct SeqThinkServer {
-    engine: Mutex<ThinkingEngine>,
+pub struct StepwiseServer {
+    engine: Mutex<PlanEngine>,
     tool_router: ToolRouter<Self>,
 }
 
 #[rmcp::tool_router]
-impl SeqThinkServer {
-    /// Sequential thinking for multi-step problem-solving with branching and exploration.
-    #[rmcp::tool(name = "sequentialthinking")]
-    fn sequentialthinking(
+impl StepwiseServer {
+    /// Stepwise planning for multi-step problem-solving with branching and exploration.
+    #[rmcp::tool(name = "stepwise_plan")]
+    fn stepwise_plan(
         &self,
-        Parameters(params): Parameters<SequentialThinkingParams>,
+        Parameters(params): Parameters<StepwisePlanParams>,
     ) -> Result<CallToolResult, McpError> {
-        let data: ThoughtData = params.into();
+        let data: StepData = params.into();
         let mut engine = self.engine.lock().map_err(|e| {
             McpError::internal_error(format!("engine lock poisoned: {}", e), None)
         })?;
@@ -182,12 +185,12 @@ impl SeqThinkServer {
 }
 
 #[rmcp::tool_handler]
-impl ServerHandler for SeqThinkServer {
+impl ServerHandler for StepwiseServer {
     fn get_info(&self) -> ServerInfo {
         ServerInfo {
             server_info: rmcp::model::Implementation {
-                name: "kp-sequential-thinking".into(),
-                title: Some("Enhanced Sequential Thinking MCP Server".into()),
+                name: "kp-stepwise".into(),
+                title: Some("Stepwise Planning MCP Server".into()),
                 version: env!("CARGO_PKG_VERSION").into(),
                 description: None,
                 icons: None,
@@ -213,11 +216,11 @@ impl ServerHandler for SeqThinkServer {
         let templates = vec![
             Annotated::new(
                 RawResourceTemplate {
-                    uri_template: "seqthink://sessions/current/thoughts".into(),
-                    name: "current_thoughts".into(),
-                    title: Some("Current Session Thoughts".into()),
+                    uri_template: "stepwise://sessions/current/steps".into(),
+                    name: "current_steps".into(),
+                    title: Some("Current Session Steps".into()),
                     description: Some(
-                        "Returns the current session's thought history as compressed JSON"
+                        "Returns the current session's step history as compressed JSON"
                             .into(),
                     ),
                     mime_type: Some("application/json".into()),
@@ -227,11 +230,11 @@ impl ServerHandler for SeqThinkServer {
             ),
             Annotated::new(
                 RawResourceTemplate {
-                    uri_template: "seqthink://sessions/current/branches".into(),
+                    uri_template: "stepwise://sessions/current/branches".into(),
                     name: "current_branches".into(),
                     title: Some("Current Session Branches".into()),
                     description: Some(
-                        "Returns branch names and thought counts for the current session".into(),
+                        "Returns branch names and step counts for the current session".into(),
                     ),
                     mime_type: Some("application/json".into()),
                     icons: None,
@@ -240,11 +243,11 @@ impl ServerHandler for SeqThinkServer {
             ),
             Annotated::new(
                 RawResourceTemplate {
-                    uri_template: "seqthink://sessions/current/compliance".into(),
-                    name: "current_compliance".into(),
-                    title: Some("Current Session Compliance".into()),
+                    uri_template: "stepwise://sessions/current/stats".into(),
+                    name: "current_stats".into(),
+                    title: Some("Current Session Usage Stats".into()),
                     description: Some(
-                        "Returns compliance stats for the current session".into(),
+                        "Returns usage stats for the current session".into(),
                     ),
                     mime_type: Some("application/json".into()),
                     icons: None,
@@ -265,7 +268,7 @@ impl ServerHandler for SeqThinkServer {
             let uri = &request.uri;
 
             let path = uri
-                .strip_prefix("seqthink://sessions/current/")
+                .strip_prefix("stepwise://sessions/current/")
                 .ok_or_else(|| {
                     McpError::invalid_params(format!("Unknown resource URI: {uri}"), None)
                 })?;
@@ -275,15 +278,15 @@ impl ServerHandler for SeqThinkServer {
             })?;
 
             let json_text = match path {
-                "thoughts" => {
-                    let history = engine.thought_history();
+                "steps" => {
+                    let history = engine.step_history();
                     let compact: Vec<serde_json::Value> = history
                         .iter()
                         .map(|t| {
                             serde_json::json!({
-                                "n": t.thought_number,
-                                "total": t.total_thoughts,
-                                "thought": t.thought,
+                                "n": t.step_number,
+                                "total": t.total_steps,
+                                "step": t.step,
                                 "confidence": t.confidence,
                                 "branch": t.branch_id,
                                 "layer": t.layer,
@@ -297,15 +300,15 @@ impl ServerHandler for SeqThinkServer {
                     let branches = engine.branches();
                     let summary: serde_json::Value = branches
                         .iter()
-                        .map(|(name, thoughts)| {
-                            (name.clone(), serde_json::json!(thoughts.len()))
+                        .map(|(name, steps)| {
+                            (name.clone(), serde_json::json!(steps.len()))
                         })
                         .collect::<serde_json::Map<String, serde_json::Value>>()
                         .into();
                     serde_json::to_string(&summary).unwrap_or_default()
                 }
-                "compliance" => {
-                    let stats = engine.compliance_stats();
+                "stats" => {
+                    let stats = engine.usage_stats();
                     serde_json::to_string(&stats).unwrap_or_default()
                 }
                 other => {
@@ -325,7 +328,9 @@ impl ServerHandler for SeqThinkServer {
 
 pub async fn run() -> anyhow::Result<()> {
     let model_id =
-        std::env::var("SEQUENTIAL_THINKING_MODEL").unwrap_or_else(|_| "unknown".into());
+        std::env::var("STEPWISE_MODEL")
+            .or_else(|_| std::env::var("SEQUENTIAL_THINKING_MODEL")) // legacy name
+            .unwrap_or_else(|_| "unknown".into());
     let client_type = detect_client_type();
 
     let all_profiles = profiles::load_profiles();
@@ -335,16 +340,16 @@ pub async fn run() -> anyhow::Result<()> {
         model = %model_id,
         profile = %profile.display_name,
         client = %client_type,
-        "sequential thinking server ready"
+        "stepwise planning server ready"
     );
 
-    let server = SeqThinkServer {
-        engine: Mutex::new(ThinkingEngine::new(
+    let server = StepwiseServer {
+        engine: Mutex::new(PlanEngine::new(
             profile,
             model_id,
             client_type,
         )),
-        tool_router: SeqThinkServer::tool_router(),
+        tool_router: StepwiseServer::tool_router(),
     };
 
     let service = server.serve(rmcp::transport::io::stdio()).await?;
@@ -368,17 +373,17 @@ fn detect_client_type() -> String {
 mod tests {
     use super::*;
 
-    fn make_params(thought: &str, num: u32, total: u32) -> SequentialThinkingParams {
-        SequentialThinkingParams {
-            thought: thought.into(),
-            thought_number: num,
-            total_thoughts: total,
-            next_thought_needed: None,
+    fn make_params(step: &str, num: u32, total: u32) -> StepwisePlanParams {
+        StepwisePlanParams {
+            step: step.into(),
+            step_number: num,
+            total_steps: total,
+            next_step_needed: None,
             is_revision: None,
-            revises_thought: None,
-            branch_from_thought: None,
+            revises_step: None,
+            branch_from_step: None,
             branch_id: None,
-            needs_more_thoughts: None,
+            needs_more_steps: None,
             continuation_mode: None,
             explore_count: None,
             proposals: None,
@@ -395,44 +400,44 @@ mod tests {
         }
     }
 
-    fn make_server() -> SeqThinkServer {
-        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
+    fn make_server() -> StepwiseServer {
+        std::env::set_var("DISABLE_STEP_LOGGING", "true");
         let profile = crate::profiles::fallback_profile();
-        SeqThinkServer {
-            engine: Mutex::new(ThinkingEngine::new(
+        StepwiseServer {
+            engine: Mutex::new(PlanEngine::new(
                 profile,
                 "test-model".into(),
                 "test-client".into(),
             )),
-            tool_router: SeqThinkServer::tool_router(),
+            tool_router: StepwiseServer::tool_router(),
         }
     }
 
-    // ---- From<SequentialThinkingParams> for ThoughtData ----
+    // ---- From<StepwisePlanParams> for StepData ----
 
     #[test]
-    fn params_to_thought_data_required_fields() {
+    fn params_to_step_data_required_fields() {
         let params = make_params("hello", 1, 5);
-        let data: ThoughtData = params.into();
-        assert_eq!(data.thought, "hello");
-        assert_eq!(data.thought_number, 1);
-        assert_eq!(data.total_thoughts, 5);
-        // next_thought_needed defaults to true when None
-        assert!(data.next_thought_needed);
+        let data: StepData = params.into();
+        assert_eq!(data.step, "hello");
+        assert_eq!(data.step_number, 1);
+        assert_eq!(data.total_steps, 5);
+        // next_step_needed defaults to true when None
+        assert!(data.next_step_needed);
     }
 
     #[test]
-    fn params_to_thought_data_all_optional_fields() {
-        let params = SequentialThinkingParams {
-            thought: "test".into(),
-            thought_number: 2,
-            total_thoughts: 10,
-            next_thought_needed: Some(false),
+    fn params_to_step_data_all_optional_fields() {
+        let params = StepwisePlanParams {
+            step: "test".into(),
+            step_number: 2,
+            total_steps: 10,
+            next_step_needed: Some(false),
             is_revision: Some(true),
-            revises_thought: Some(1),
-            branch_from_thought: Some(1),
+            revises_step: Some(1),
+            branch_from_step: Some(1),
             branch_id: Some("branch-x".into()),
-            needs_more_thoughts: Some(true),
+            needs_more_steps: Some(true),
             continuation_mode: Some("explore".into()),
             explore_count: Some(3),
             proposals: Some(vec!["A".into(), "B".into()]),
@@ -447,13 +452,13 @@ mod tests {
             search_context: Some("context".into()),
             incorporate_search: Some(true),
         };
-        let data: ThoughtData = params.into();
-        assert!(!data.next_thought_needed);
+        let data: StepData = params.into();
+        assert!(!data.next_step_needed);
         assert_eq!(data.is_revision, Some(true));
-        assert_eq!(data.revises_thought, Some(1));
-        assert_eq!(data.branch_from_thought, Some(1));
+        assert_eq!(data.revises_step, Some(1));
+        assert_eq!(data.branch_from_step, Some(1));
         assert_eq!(data.branch_id.as_deref(), Some("branch-x"));
-        assert_eq!(data.needs_more_thoughts, Some(true));
+        assert_eq!(data.needs_more_steps, Some(true));
         assert_eq!(data.continuation_mode.as_deref(), Some("explore"));
         assert_eq!(data.explore_count, Some(3));
         assert_eq!(data.proposals.as_ref().unwrap().len(), 2);
@@ -469,7 +474,7 @@ mod tests {
         assert_eq!(data.incorporate_search, Some(true));
     }
 
-    // ---- sequentialthinking tool method ----
+    // ---- stepwise_plan tool method ----
 
     /// Extract the text string from the first content item of a CallToolResult.
     fn extract_text(result: &CallToolResult) -> String {
@@ -477,25 +482,25 @@ mod tests {
     }
 
     #[test]
-    fn tool_method_valid_thought_returns_success() {
+    fn tool_method_valid_step_returns_success() {
         let server = make_server();
         let params = make_params("Analyzing the problem", 1, 5);
-        let result = server.sequentialthinking(Parameters(params));
+        let result = server.stepwise_plan(Parameters(params));
         assert!(result.is_ok());
         let call_result = result.unwrap();
         assert!(!call_result.is_error.unwrap_or(false));
         let text = extract_text(&call_result);
         let parsed: serde_json::Value = serde_json::from_str(&text).unwrap();
-        assert_eq!(parsed["thoughtNumber"], 1);
-        assert_eq!(parsed["totalThoughts"], 5);
+        assert_eq!(parsed["stepNumber"], 1);
+        assert_eq!(parsed["totalSteps"], 5);
         assert!(parsed.get("firstCallGuidance").is_some());
     }
 
     #[test]
-    fn tool_method_invalid_thought_returns_error() {
+    fn tool_method_invalid_step_returns_error() {
         let server = make_server();
-        let params = make_params("", 1, 5); // empty thought = invalid
-        let result = server.sequentialthinking(Parameters(params));
+        let params = make_params("", 1, 5); // empty step = invalid
+        let result = server.stepwise_plan(Parameters(params));
         assert!(result.is_ok()); // MCP errors are returned as OK with error content
         let call_result = result.unwrap();
         assert!(call_result.is_error.unwrap_or(false));
@@ -506,29 +511,29 @@ mod tests {
     }
 
     #[test]
-    fn tool_method_sequential_thoughts_accumulate_state() {
+    fn tool_method_sequential_steps_accumulate_state() {
         let server = make_server();
-        // First thought
+        // First step
         let p1 = make_params("Step 1", 1, 5);
-        let r1 = server.sequentialthinking(Parameters(p1)).unwrap();
+        let r1 = server.stepwise_plan(Parameters(p1)).unwrap();
         assert!(!r1.is_error.unwrap_or(false));
 
-        // Second thought
+        // Second step
         let p2 = make_params("Step 2", 2, 5);
-        let r2 = server.sequentialthinking(Parameters(p2)).unwrap();
+        let r2 = server.stepwise_plan(Parameters(p2)).unwrap();
         let text2 = extract_text(&r2);
         let parsed2: serde_json::Value = serde_json::from_str(&text2).unwrap();
-        assert_eq!(parsed2["thoughtHistoryLength"], 2);
+        assert_eq!(parsed2["stepCount"], 2);
         assert!(parsed2.get("firstCallGuidance").is_none());
 
-        // Third thought with branch
+        // Third step with branch
         let mut p3 = make_params("Branch from step 1", 3, 5);
-        p3.branch_from_thought = Some(1);
+        p3.branch_from_step = Some(1);
         p3.branch_id = Some("alt-path".into());
-        let r3 = server.sequentialthinking(Parameters(p3)).unwrap();
+        let r3 = server.stepwise_plan(Parameters(p3)).unwrap();
         let text3 = extract_text(&r3);
         let parsed3: serde_json::Value = serde_json::from_str(&text3).unwrap();
-        assert_eq!(parsed3["thoughtHistoryLength"], 3);
+        assert_eq!(parsed3["stepCount"], 3);
         let branches = parsed3["branches"].as_array().unwrap();
         assert!(branches.iter().any(|b| b.as_str() == Some("alt-path")));
     }
@@ -539,8 +544,8 @@ mod tests {
     fn server_info_has_correct_name() {
         let server = make_server();
         let info = server.get_info();
-        assert_eq!(info.server_info.name, "kp-sequential-thinking");
-        assert!(info.server_info.title.as_deref().unwrap().contains("Sequential Thinking"));
+        assert_eq!(info.server_info.name, "kp-stepwise");
+        assert!(info.server_info.title.as_deref().unwrap().contains("Stepwise Planning"));
     }
 
     // ---- detect_client_type ----
@@ -557,7 +562,7 @@ mod tests {
         }));
         // Now the mutex is poisoned
         let params = make_params("This should fail", 1, 5);
-        let result = server.sequentialthinking(Parameters(params));
+        let result = server.stepwise_plan(Parameters(params));
         assert!(result.is_err()); // McpError from poisoned lock
     }
 
@@ -573,47 +578,47 @@ mod tests {
     // ---- engine getter tests (used by resource handlers) ----
 
     #[test]
-    fn engine_thought_history_empty() {
-        let engine = crate::thinking::ThinkingEngine::new(
+    fn engine_step_history_empty() {
+        let engine = crate::planner::PlanEngine::new(
             crate::profiles::fallback_profile(),
             "test".into(),
             "test".into(),
         );
-        assert!(engine.thought_history().is_empty());
+        assert!(engine.step_history().is_empty());
     }
 
     #[test]
-    fn engine_thought_history_after_processing() {
-        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
-        let mut engine = crate::thinking::ThinkingEngine::new(
+    fn engine_step_history_after_processing() {
+        std::env::set_var("DISABLE_STEP_LOGGING", "true");
+        let mut engine = crate::planner::PlanEngine::new(
             crate::profiles::fallback_profile(),
             "test".into(),
             "test".into(),
         );
-        let data: ThoughtData = make_params("First thought", 1, 3).into();
+        let data: StepData = make_params("First step", 1, 3).into();
         engine.process(data).unwrap();
-        let data2: ThoughtData = make_params("Second thought", 2, 3).into();
+        let data2: StepData = make_params("Second step", 2, 3).into();
         engine.process(data2).unwrap();
-        assert_eq!(engine.thought_history().len(), 2);
-        assert_eq!(engine.thought_history()[0].thought_number, 1);
-        assert_eq!(engine.thought_history()[1].thought_number, 2);
+        assert_eq!(engine.step_history().len(), 2);
+        assert_eq!(engine.step_history()[0].step_number, 1);
+        assert_eq!(engine.step_history()[1].step_number, 2);
     }
 
     #[test]
     fn engine_branches_after_branching() {
-        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
-        let mut engine = crate::thinking::ThinkingEngine::new(
+        std::env::set_var("DISABLE_STEP_LOGGING", "true");
+        let mut engine = crate::planner::PlanEngine::new(
             crate::profiles::fallback_profile(),
             "test".into(),
             "test".into(),
         );
-        let data: ThoughtData = make_params("Start", 1, 5).into();
+        let data: StepData = make_params("Start", 1, 5).into();
         engine.process(data).unwrap();
 
         let mut p2 = make_params("Branch A", 2, 5);
-        p2.branch_from_thought = Some(1);
+        p2.branch_from_step = Some(1);
         p2.branch_id = Some("branch-a".into());
-        let data2: ThoughtData = p2.into();
+        let data2: StepData = p2.into();
         engine.process(data2).unwrap();
 
         let branches = engine.branches();
@@ -622,17 +627,17 @@ mod tests {
     }
 
     #[test]
-    fn engine_compliance_stats() {
-        std::env::set_var("DISABLE_THOUGHT_LOGGING", "true");
-        let mut engine = crate::thinking::ThinkingEngine::new(
+    fn engine_usage_stats() {
+        std::env::set_var("DISABLE_STEP_LOGGING", "true");
+        let mut engine = crate::planner::PlanEngine::new(
             crate::profiles::fallback_profile(),
             "test".into(),
             "test".into(),
         );
-        let data: ThoughtData = make_params("Think", 1, 5).into();
+        let data: StepData = make_params("Think", 1, 5).into();
         engine.process(data).unwrap();
-        let stats = engine.compliance_stats();
-        assert_eq!(stats.consecutive_linear_thoughts, 1);
+        let stats = engine.usage_stats();
+        assert_eq!(stats.consecutive_linear_steps, 1);
         assert!(!stats.needs_branching);
         assert!(!stats.explore_count_used);
     }

@@ -1,4 +1,4 @@
-//! Integration tests for kp-sequential-thinking.
+//! Integration tests for kp-stepwise.
 //! No external API calls needed - tests the MCP server via JSON-RPC over stdin/stdout.
 
 use serde_json::{json, Value};
@@ -15,11 +15,11 @@ struct McpClient {
 
 impl McpClient {
     async fn new() -> Self {
-        let mut child = Command::new(env!("CARGO_BIN_EXE_kp-sequential-thinking"))
+        let mut child = Command::new(env!("CARGO_BIN_EXE_kp-stepwise"))
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
-            .env("DISABLE_THOUGHT_LOGGING", "true")
+            .env("DISABLE_STEP_LOGGING", "true")
             .spawn()
             .expect("Failed to start server");
 
@@ -118,21 +118,49 @@ async fn test_tools_list() {
     assert_eq!(tools.len(), 1, "Should have exactly 1 tool");
 
     let tool = &tools[0];
-    assert_eq!(tool["name"].as_str().unwrap(), "sequentialthinking");
+    assert_eq!(tool["name"].as_str().unwrap(), "stepwise_plan");
     // Should have inputSchema
     assert!(tool["inputSchema"].is_object(), "Should have inputSchema");
 }
 
 #[tokio::test]
-async fn test_basic_thought() {
+async fn test_legacy_param_names_accepted() {
+    // Pre-rename callers used thought/thoughtNumber/totalThoughts; serde
+    // aliases must keep accepting them even though the schema advertises
+    // the new names.
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Analyzing the problem structure",
+                "thought": "Legacy caller payload",
                 "thoughtNumber": 1,
-                "totalThoughts": 3
+                "totalThoughts": 3,
+                "nextThoughtNeeded": true
+            }),
+        )
+        .await;
+    assert!(!McpClient::is_error(&resp));
+    assert!(
+        !McpClient::is_tool_error(&resp),
+        "legacy param names should deserialize via aliases"
+    );
+
+    let parsed = McpClient::get_parsed(&resp);
+    assert_eq!(parsed["stepNumber"], 1);
+    assert_eq!(parsed["totalSteps"], 3);
+}
+
+#[tokio::test]
+async fn test_basic_step() {
+    let mut client = McpClient::new().await;
+    let resp = client
+        .tool_call(
+            "stepwise_plan",
+            json!({
+                "step": "Analyzing the problem structure",
+                "stepNumber": 1,
+                "totalSteps": 3
             }),
         )
         .await;
@@ -140,86 +168,86 @@ async fn test_basic_thought() {
     assert!(!McpClient::is_tool_error(&resp));
 
     let parsed = McpClient::get_parsed(&resp);
-    assert_eq!(parsed["thoughtNumber"], 1);
-    assert_eq!(parsed["totalThoughts"], 3);
-    assert_eq!(parsed["nextThoughtNeeded"], true);
-    assert_eq!(parsed["thoughtHistoryLength"], 1);
+    assert_eq!(parsed["stepNumber"], 1);
+    assert_eq!(parsed["totalSteps"], 3);
+    assert_eq!(parsed["nextStepNeeded"], true);
+    assert_eq!(parsed["stepCount"], 1);
 }
 
 #[tokio::test]
-async fn test_thought_chain() {
+async fn test_step_chain() {
     let mut client = McpClient::new().await;
 
-    // Thought 1
+    // Step 1
     let r1 = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "First: understand the problem",
-                "thoughtNumber": 1,
-                "totalThoughts": 3
+                "step": "First: understand the problem",
+                "stepNumber": 1,
+                "totalSteps": 3
             }),
         )
         .await;
     let p1 = McpClient::get_parsed(&r1);
-    assert_eq!(p1["thoughtHistoryLength"], 1);
+    assert_eq!(p1["stepCount"], 1);
 
-    // Thought 2
+    // Step 2
     let r2 = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Second: design the solution",
-                "thoughtNumber": 2,
-                "totalThoughts": 3
+                "step": "Second: design the solution",
+                "stepNumber": 2,
+                "totalSteps": 3
             }),
         )
         .await;
     let p2 = McpClient::get_parsed(&r2);
-    assert_eq!(p2["thoughtHistoryLength"], 2);
+    assert_eq!(p2["stepCount"], 2);
 
-    // Thought 3
+    // Step 3
     let r3 = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Third: implement",
-                "thoughtNumber": 3,
-                "totalThoughts": 3,
-                "nextThoughtNeeded": false
+                "step": "Third: implement",
+                "stepNumber": 3,
+                "totalSteps": 3,
+                "nextStepNeeded": false
             }),
         )
         .await;
     let p3 = McpClient::get_parsed(&r3);
-    assert_eq!(p3["thoughtHistoryLength"], 3);
-    assert_eq!(p3["nextThoughtNeeded"], false);
+    assert_eq!(p3["stepCount"], 3);
+    assert_eq!(p3["nextStepNeeded"], false);
 }
 
 #[tokio::test]
 async fn test_branching() {
     let mut client = McpClient::new().await;
 
-    // Linear thought first
+    // Linear step first
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Base analysis",
-                "thoughtNumber": 1,
-                "totalThoughts": 4
+                "step": "Base analysis",
+                "stepNumber": 1,
+                "totalSteps": 4
             }),
         )
         .await;
 
-    // Branch from thought 1
+    // Branch from step 1
     let r2 = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Alternative approach A",
-                "thoughtNumber": 2,
-                "totalThoughts": 4,
-                "branchFromThought": 1,
+                "step": "Alternative approach A",
+                "stepNumber": 2,
+                "totalSteps": 4,
+                "branchFromStep": 1,
                 "branchId": "approach-a"
             }),
         )
@@ -235,12 +263,12 @@ async fn test_branching() {
     // Another branch
     let r3 = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Alternative approach B",
-                "thoughtNumber": 3,
-                "totalThoughts": 4,
-                "branchFromThought": 1,
+                "step": "Alternative approach B",
+                "stepNumber": 3,
+                "totalSteps": 4,
+                "branchFromStep": 1,
                 "branchId": "approach-b"
             }),
         )
@@ -255,11 +283,11 @@ async fn test_confidence_low_guidance() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "I'm uncertain about the approach",
-                "thoughtNumber": 1,
-                "totalThoughts": 3,
+                "step": "I'm uncertain about the approach",
+                "stepNumber": 1,
+                "totalSteps": 3,
                 "confidence": 0.3
             }),
         )
@@ -278,11 +306,11 @@ async fn test_high_confidence_exit() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "The answer is clear now",
-                "thoughtNumber": 2,
-                "totalThoughts": 5,
+                "step": "The answer is clear now",
+                "stepNumber": 2,
+                "totalSteps": 5,
                 "confidence": 0.85
             }),
         )
@@ -304,18 +332,18 @@ async fn test_first_call_guidance() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Starting analysis",
-                "thoughtNumber": 1,
-                "totalThoughts": 5
+                "step": "Starting analysis",
+                "stepNumber": 1,
+                "totalSteps": 5
             }),
         )
         .await;
     let parsed = McpClient::get_parsed(&resp);
     assert!(
         parsed.get("firstCallGuidance").is_some(),
-        "First thought should include firstCallGuidance"
+        "First step should include firstCallGuidance"
     );
     let guidance = parsed["firstCallGuidance"].as_str().unwrap();
     assert!(
@@ -323,52 +351,52 @@ async fn test_first_call_guidance() {
         "First call guidance should contain decision tree"
     );
 
-    // Second thought should NOT have firstCallGuidance
+    // Second step should NOT have firstCallGuidance
     let resp2 = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Continuing",
-                "thoughtNumber": 2,
-                "totalThoughts": 5
+                "step": "Continuing",
+                "stepNumber": 2,
+                "totalSteps": 5
             }),
         )
         .await;
     let parsed2 = McpClient::get_parsed(&resp2);
     assert!(
         parsed2.get("firstCallGuidance").is_none(),
-        "Second thought should not have firstCallGuidance"
+        "Second step should not have firstCallGuidance"
     );
 }
 
 #[tokio::test]
-async fn test_compliance_tracking() {
+async fn test_usage_tracking() {
     let mut client = McpClient::new().await;
 
-    // Send 5 linear thoughts without branching
+    // Send 5 linear steps without branching
     for i in 1..=5 {
         let resp = client
             .tool_call(
-                "sequentialthinking",
+                "stepwise_plan",
                 json!({
-                    "thought": format!("Linear thought {}", i),
-                    "thoughtNumber": i,
-                    "totalThoughts": 8
+                    "step": format!("Linear step {}", i),
+                    "stepNumber": i,
+                    "totalSteps": 8
                 }),
             )
             .await;
 
         if i >= 4 {
             let parsed = McpClient::get_parsed(&resp);
-            let compliance = &parsed["compliance"];
+            let usage_stats = &parsed["usageStats"];
             assert!(
-                compliance["needsBranching"].as_bool().unwrap_or(false),
-                "After {} linear thoughts, needsBranching should be true",
+                usage_stats["needsBranching"].as_bool().unwrap_or(false),
+                "After {} linear steps, needsBranching should be true",
                 i
             );
             assert!(
-                compliance["consecutiveLinearThoughts"].as_u64().unwrap() >= 4,
-                "Should track consecutive linear thoughts"
+                usage_stats["consecutiveLinearSteps"].as_u64().unwrap() >= 4,
+                "Should track consecutive linear steps"
             );
         }
     }
@@ -379,11 +407,11 @@ async fn test_explore_mode() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Exploring alternatives",
-                "thoughtNumber": 1,
-                "totalThoughts": 5,
+                "step": "Exploring alternatives",
+                "stepNumber": 1,
+                "totalSteps": 5,
                 "continuationMode": "explore",
                 "exploreCount": 3,
                 "proposals": ["Use recursion", "Use iteration", "Use memoization"]
@@ -394,8 +422,8 @@ async fn test_explore_mode() {
     assert!(!McpClient::is_tool_error(&resp));
 
     let parsed = McpClient::get_parsed(&resp);
-    assert_eq!(parsed["nextThoughtNeeded"], true);
-    assert_eq!(parsed["thoughtHistoryLength"], 1);
+    assert_eq!(parsed["nextStepNeeded"], true);
+    assert_eq!(parsed["stepCount"], 1);
 }
 
 #[tokio::test]
@@ -403,11 +431,11 @@ async fn test_done_mode() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "The answer is 42",
-                "thoughtNumber": 2,
-                "totalThoughts": 5,
+                "step": "The answer is 42",
+                "stepNumber": 2,
+                "totalSteps": 5,
                 "continuationMode": "done",
                 "doneReason": "sufficient",
                 "confidence": 0.9
@@ -416,28 +444,28 @@ async fn test_done_mode() {
         .await;
     let parsed = McpClient::get_parsed(&resp);
     assert_eq!(
-        parsed["nextThoughtNeeded"], false,
-        "done mode should set nextThoughtNeeded=false"
+        parsed["nextStepNeeded"], false,
+        "done mode should set nextStepNeeded=false"
     );
 }
 
 #[tokio::test]
-async fn test_validation_empty_thought() {
+async fn test_validation_empty_step() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "",
-                "thoughtNumber": 1,
-                "totalThoughts": 3
+                "step": "",
+                "stepNumber": 1,
+                "totalSteps": 3
             }),
         )
         .await;
     // Should return tool error (isError=true) not protocol error
     assert!(
         McpClient::is_tool_error(&resp),
-        "Empty thought should return tool error"
+        "Empty step should return tool error"
     );
     let parsed = McpClient::get_parsed(&resp);
     assert!(
@@ -447,42 +475,42 @@ async fn test_validation_empty_thought() {
 }
 
 #[tokio::test]
-async fn test_validation_zero_thought_number() {
+async fn test_validation_zero_step_number() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Test",
-                "thoughtNumber": 0,
-                "totalThoughts": 3
+                "step": "Test",
+                "stepNumber": 0,
+                "totalSteps": 3
             }),
         )
         .await;
     assert!(
         McpClient::is_tool_error(&resp),
-        "Zero thoughtNumber should return tool error"
+        "Zero stepNumber should return tool error"
     );
 }
 
 #[tokio::test]
-async fn test_auto_adjust_total_thoughts() {
+async fn test_auto_adjust_total_steps() {
     let mut client = McpClient::new().await;
-    // thoughtNumber > totalThoughts should auto-adjust
+    // stepNumber > totalSteps should auto-adjust
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Went over estimate",
-                "thoughtNumber": 5,
-                "totalThoughts": 3
+                "step": "Went over estimate",
+                "stepNumber": 5,
+                "totalSteps": 3
             }),
         )
         .await;
     let parsed = McpClient::get_parsed(&resp);
     assert_eq!(
-        parsed["totalThoughts"], 5,
-        "totalThoughts should be adjusted to match thoughtNumber"
+        parsed["totalSteps"], 5,
+        "totalSteps should be adjusted to match stepNumber"
     );
 }
 
@@ -491,11 +519,11 @@ async fn test_search_query_passthrough() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Need more info about X",
-                "thoughtNumber": 1,
-                "totalThoughts": 3,
+                "step": "Need more info about X",
+                "stepNumber": 1,
+                "totalSteps": 3,
                 "searchQuery": "how does X work"
             }),
         )
@@ -516,28 +544,28 @@ async fn test_search_query_passthrough() {
 async fn test_revision() {
     let mut client = McpClient::new().await;
 
-    // Initial thought
+    // Initial step
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Initial analysis",
-                "thoughtNumber": 1,
-                "totalThoughts": 3
+                "step": "Initial analysis",
+                "stepNumber": 1,
+                "totalSteps": 3
             }),
         )
         .await;
 
-    // Revision of thought 1
+    // Revision of step 1
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Actually, my initial analysis was wrong because...",
-                "thoughtNumber": 2,
-                "totalThoughts": 3,
+                "step": "Actually, my initial analysis was wrong because...",
+                "stepNumber": 2,
+                "totalSteps": 3,
                 "isRevision": true,
-                "revisesThought": 1
+                "revisesStep": 1
             }),
         )
         .await;
@@ -545,7 +573,7 @@ async fn test_revision() {
     assert!(!McpClient::is_tool_error(&resp));
 
     let parsed = McpClient::get_parsed(&resp);
-    assert_eq!(parsed["thoughtHistoryLength"], 2);
+    assert_eq!(parsed["stepCount"], 2);
 }
 
 #[tokio::test]
@@ -553,11 +581,11 @@ async fn test_layer_abstraction() {
     let mut client = McpClient::new().await;
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Understanding the problem domain",
-                "thoughtNumber": 1,
-                "totalThoughts": 3,
+                "step": "Understanding the problem domain",
+                "stepNumber": 1,
+                "totalSteps": 3,
                 "layer": 1
             }),
         )
@@ -567,7 +595,7 @@ async fn test_layer_abstraction() {
 
     // Layer should be accepted without error
     let parsed = McpClient::get_parsed(&resp);
-    assert_eq!(parsed["thoughtNumber"], 1);
+    assert_eq!(parsed["stepNumber"], 1);
 }
 
 #[tokio::test]
@@ -577,11 +605,11 @@ async fn test_confidence_clamping() {
     // Confidence > 1.0 should be clamped
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Very confident",
-                "thoughtNumber": 1,
-                "totalThoughts": 2,
+                "step": "Very confident",
+                "stepNumber": 1,
+                "totalSteps": 2,
                 "confidence": 1.5
             }),
         )
@@ -599,34 +627,34 @@ async fn test_merge_mode() {
     // Create two branches first
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Base",
-                "thoughtNumber": 1,
-                "totalThoughts": 4
+                "step": "Base",
+                "stepNumber": 1,
+                "totalSteps": 4
             }),
         )
         .await;
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Branch A",
-                "thoughtNumber": 2,
-                "totalThoughts": 4,
-                "branchFromThought": 1,
+                "step": "Branch A",
+                "stepNumber": 2,
+                "totalSteps": 4,
+                "branchFromStep": 1,
                 "branchId": "merge-a"
             }),
         )
         .await;
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Branch B",
-                "thoughtNumber": 3,
-                "totalThoughts": 4,
-                "branchFromThought": 1,
+                "step": "Branch B",
+                "stepNumber": 3,
+                "totalSteps": 4,
+                "branchFromStep": 1,
                 "branchId": "merge-b"
             }),
         )
@@ -635,11 +663,11 @@ async fn test_merge_mode() {
     // Merge
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Combining insights from both branches",
-                "thoughtNumber": 4,
-                "totalThoughts": 4,
+                "step": "Combining insights from both branches",
+                "stepNumber": 4,
+                "totalSteps": 4,
                 "continuationMode": "merge"
             }),
         )
@@ -656,14 +684,14 @@ async fn test_merge_mode() {
 async fn test_subagent_spawn_hint_on_parallel_branch() {
     let mut client = McpClient::new().await;
 
-    // Base thought
+    // Base step
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Analyzing the problem",
-                "thoughtNumber": 1,
-                "totalThoughts": 5
+                "step": "Analyzing the problem",
+                "stepNumber": 1,
+                "totalSteps": 5
             }),
         )
         .await;
@@ -671,12 +699,12 @@ async fn test_subagent_spawn_hint_on_parallel_branch() {
     // Branch with parallel strategy and 3+ proposals → should trigger subagent hint
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Three approaches to explore independently",
-                "thoughtNumber": 2,
-                "totalThoughts": 5,
-                "branchFromThought": 1,
+                "step": "Three approaches to explore independently",
+                "stepNumber": 2,
+                "totalSteps": 5,
+                "branchFromStep": 1,
                 "branchId": "approach-a",
                 "branchStrategy": "parallel",
                 "proposals": [
@@ -707,14 +735,14 @@ async fn test_subagent_spawn_hint_on_parallel_branch() {
 async fn test_subagent_orchestration_hint_on_three_branches() {
     let mut client = McpClient::new().await;
 
-    // Base thought
+    // Base step
     let _ = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Analyzing the problem",
-                "thoughtNumber": 1,
-                "totalThoughts": 8
+                "step": "Analyzing the problem",
+                "stepNumber": 1,
+                "totalSteps": 8
             }),
         )
         .await;
@@ -723,26 +751,26 @@ async fn test_subagent_orchestration_hint_on_three_branches() {
     for (i, name) in ["branch-x", "branch-y", "branch-z"].iter().enumerate() {
         let _ = client
             .tool_call(
-                "sequentialthinking",
+                "stepwise_plan",
                 json!({
-                    "thought": format!("Exploring {}", name),
-                    "thoughtNumber": (i + 2) as u32,
-                    "totalThoughts": 8,
-                    "branchFromThought": 1,
+                    "step": format!("Exploring {}", name),
+                    "stepNumber": (i + 2) as u32,
+                    "totalSteps": 8,
+                    "branchFromStep": 1,
                     "branchId": name
                 }),
             )
             .await;
     }
 
-    // Non-merge thought should trigger subagent_orchestration hint
+    // Non-merge step should trigger subagent_orchestration hint
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Continuing analysis without merging",
-                "thoughtNumber": 5,
-                "totalThoughts": 8,
+                "step": "Continuing analysis without merging",
+                "stepNumber": 5,
+                "totalSteps": 8,
                 "continuationMode": "continue"
             }),
         )
@@ -771,8 +799,8 @@ async fn test_subagent_orchestration_suppressed_during_merge() {
 
     let _ = client
         .tool_call(
-            "sequentialthinking",
-            json!({"thought": "Base", "thoughtNumber": 1, "totalThoughts": 6}),
+            "stepwise_plan",
+            json!({"step": "Base", "stepNumber": 1, "totalSteps": 6}),
         )
         .await;
 
@@ -780,26 +808,26 @@ async fn test_subagent_orchestration_suppressed_during_merge() {
     for (i, name) in ["m-a", "m-b", "m-c"].iter().enumerate() {
         let _ = client
             .tool_call(
-                "sequentialthinking",
+                "stepwise_plan",
                 json!({
-                    "thought": format!("Branch {}", name),
-                    "thoughtNumber": (i + 2) as u32,
-                    "totalThoughts": 6,
-                    "branchFromThought": 1,
+                    "step": format!("Branch {}", name),
+                    "stepNumber": (i + 2) as u32,
+                    "totalSteps": 6,
+                    "branchFromStep": 1,
                     "branchId": name
                 }),
             )
             .await;
     }
 
-    // Merge thought should NOT trigger subagent_orchestration
+    // Merge step should NOT trigger subagent_orchestration
     let resp = client
         .tool_call(
-            "sequentialthinking",
+            "stepwise_plan",
             json!({
-                "thought": "Merging all branches",
-                "thoughtNumber": 5,
-                "totalThoughts": 6,
+                "step": "Merging all branches",
+                "stepNumber": 5,
+                "totalSteps": 6,
                 "continuationMode": "merge",
                 "mergeBranches": ["m-a", "m-b", "m-c"]
             }),

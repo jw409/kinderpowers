@@ -1,10 +1,10 @@
-# Self-Optimizing Thinking Pipeline — Design Document
+# Self-Optimizing Planning Pipeline — Design Document
 
 ## Prior Art
 
 Epic `game1-cght` (closed) implemented three components:
-1. **Scavenger parser** — harvests `var/sequential_thinking_logs/*.jsonl` into learning pipeline
-2. **PRIM rules** — extracts IF-THEN rules predicting correction likelihood from thinking patterns
+1. **Scavenger parser** — harvests `var/stepwise_logs/*.jsonl` into learning pipeline
+2. **PRIM rules** — extracts IF-THEN rules predicting correction likelihood from plan patterns
 3. **CMA-ES optimizer** — auto-tunes profile parameters (exploreCount, branchingThreshold, etc.) per model
 
 All three were Python, operating on the TypeScript server's JSONL output. The Rust port preserves the same JSONL format.
@@ -12,13 +12,13 @@ All three were Python, operating on the TypeScript server's JSONL output. The Ru
 ## Current State (v0.2)
 
 ```
-Thought In → Validate → Track Compliance → Log JSONL → Response Out
+Step In → Validate → Track Usage → Log JSONL → Response Out
                                               ↓                ↓
-                              var/sequential_thinking_logs/   DECIDE() decision tree
+                              var/stepwise_logs/   DECIDE() decision tree
                               {session}.jsonl                 (compressed, profile-adaptive)
 ```
 
-Branching + merge thought structure. 7 model profiles (Gemini Flash/Pro/catch-all,
+Branching + merge step structure. 7 model profiles (Gemini Flash/Pro/catch-all,
 DeepSeek, Grok, Claude, Llama/Nemotron). Compressed decision-tree guidance (~120 tokens).
 JSONL logging unchanged. No feedback loop yet.
 
@@ -34,7 +34,7 @@ See CONTRIBUTING.txt for the adaptive guidance loading roadmap (Phase 2-4).
 
 ```
 Session N:
-  kp-sequential-thinking → JSONL logs
+  kp-stepwise → JSONL logs
                                 ↓
 Between sessions:
   scavenger harvests logs
@@ -42,22 +42,22 @@ Between sessions:
   PRIM extracts rules
   CMA-ES optimizes profile params
                                 ↓
-  etc/sequential_thinking_profiles.json (updated)
+  etc/stepwise_profiles.json (updated)
                                 ↓
 Session N+1:
-  kp-sequential-thinking reads updated profiles
+  kp-stepwise reads updated profiles
 ```
 
 **What changes in the Rust server**: Nothing for the basic loop — the JSONL output format is already compatible. For advanced integration:
 - Add a `reload_profiles` MCP tool that hot-reloads profiles without restart
 - Add a `get_compliance_stats` MCP tool that returns session-level metrics for the optimizer
-- Add outcome correlation fields to JSONL: `session_id`, `thought_hash` for join keys
+- Add outcome correlation fields to JSONL: `session_id`, `step_hash` for join keys
 
 **What stays in Python**: The scavenger parser, PRIM extraction, and CMA-ES optimization. These are batch analytics — no reason to port to Rust.
 
-### Upgrade 2: DAG Thought Structures
+### Upgrade 2: DAG Step Structures
 
-**Problem**: Current model is linear chain + branches. Branches are parallel alternatives, but you can't express "thought C depends on both thought A and thought B" or "merge insights from branches X and Y into a single conclusion."
+**Problem**: Current model is linear chain + branches. Branches are parallel alternatives, but you can't express "step C depends on both step A and step B" or "merge insights from branches X and Y into a single conclusion."
 
 **Current structure**:
 ```
@@ -77,28 +77,28 @@ T1 → T2 ──→ T4 (depends on T2 + T3)
                   T5 (merge: T4 + T3c)
 ```
 
-**New fields on ThoughtData**:
+**New fields on StepData**:
 ```rust
-/// Thoughts this thought depends on (must all exist before this one)
-pub depends_on: Option<Vec<u32>>,  // thought numbers
+/// Steps this step depends on (must all exist before this one)
+pub depends_on: Option<Vec<u32>>,  // step numbers
 
-/// Merge mode: combine insights from specified thoughts
-pub merge_from: Option<Vec<u32>>,  // thought numbers to synthesize
+/// Merge mode: combine insights from specified steps
+pub merge_from: Option<Vec<u32>>,  // step numbers to synthesize
 ```
 
 **Validation changes**:
-- `depends_on` thoughts must exist in history
-- Cycle detection (no thought can depend on itself or a descendant)
-- `merge_from` triggers a synthesized context window containing only the specified thoughts
+- `depends_on` steps must exist in history
+- Cycle detection (no step can depend on itself or a descendant)
+- `merge_from` triggers a synthesized context window containing only the specified steps
 
 **Compliance changes**:
-- Track graph diameter (longest path) vs thought count (detect unnecessary linear chains)
-- Track fan-out (how many thoughts branch from a single point)
+- Track graph diameter (longest path) vs step count (detect unnecessary linear chains)
+- Track fan-out (how many steps branch from a single point)
 - Warn on "star topology" (everything depends on T1 — no intermediate reasoning)
 
 **Response changes**:
 - Include `dependency_graph` in response (adjacency list)
-- Include `ready_to_merge` — thoughts whose dependencies are all satisfied
+- Include `ready_to_merge` — steps whose dependencies are all satisfied
 - Include `orphaned_branches` — branches that were never merged back
 
 **Backward compatibility**: `depends_on` and `merge_from` are optional. Without them, behavior is identical to linear+branching. The DAG is implicit when these fields are used.
@@ -112,7 +112,7 @@ pub merge_from: Option<Vec<u32>>,  // thought numbers to synthesize
 **Proposed**: Confidence remains as a process signal (agents use it to decide when to branch), but the LEARNING system ignores confidence and uses outcome signals instead:
 
 **Outcome signals** (external ground truth):
-- Correction density: user corrections per N turns after thinking completes
+- Correction density: user corrections per N turns after planning completes
 - Acceptance rate: output used without modification
 - Re-prompting rate: user rephrased the request
 - Abandonment rate: session ended without completion
@@ -122,18 +122,18 @@ pub merge_from: Option<Vec<u32>>,  // thought numbers to synthesize
 - `explore_count` on decision points
 - Layer progression (L1→L2→L3 coverage)
 - Search integration frequency
-- DAG diameter vs thought count
+- DAG diameter vs step count
 
 **How it works**:
-1. Thinking server logs process metrics in JSONL (already does this)
+1. Planning server logs process metrics in JSONL (already does this)
 2. Session archive logs user messages (already does this via Claude Code)
-3. Scavenger joins on session_id: thinking patterns → user responses within N turns
+3. Scavenger joins on session_id: plan patterns → user responses within N turns
 4. PRIM extracts rules: "IF branch_rate < 0.1 AND explore_count = 1 THEN correction_rate > 0.4"
-5. CMA-ES optimizes profile params to minimize correction_rate while keeping thought_count reasonable
+5. CMA-ES optimizes profile params to minimize correction_rate while keeping step_count reasonable
 
 **What changes in the Rust server**:
 - Add `session_id` field to every JSONL log entry (already present)
-- Add `thinking_complete` event when `continuationMode = "done"` with aggregate stats
+- Add `plan_complete` event when `continuationMode = "done"` with aggregate stats
 - Add optional `outcome_feedback` tool: external system can report outcomes back
   ```
   outcome_feedback(session_id, correction_count, acceptance_rate)
@@ -151,8 +151,8 @@ pub merge_from: Option<Vec<u32>>,  // thought numbers to synthesize
 ### Phase 1: Plumbing (Rust changes, no optimizer)
 - Add `reload_profiles` tool
 - Add `get_compliance_stats` tool
-- Add `thinking_complete` JSONL event with aggregate stats
-- Add `depends_on` and `merge_from` fields to ThoughtData (DAG support)
+- Add `plan_complete` JSONL event with aggregate stats
+- Add `depends_on` and `merge_from` fields to StepData (DAG support)
 - Add cycle detection and dependency validation
 - Update compliance tracking for DAG metrics
 
@@ -163,15 +163,15 @@ pub merge_from: Option<Vec<u32>>,  // thought numbers to synthesize
 - Store process→outcome correlations
 
 ### Phase 3: PRIM Rules (Python, batch)
-- Extract thinking→outcome rules from correlated data
+- Extract plan→outcome rules from correlated data
 - Generate human-readable rules: "IF X THEN Y"
-- Write rules to `etc/thinking_rules.json`
+- Write rules to `etc/plan_rules.json`
 - Rust server reads rules at startup, uses them for enhanced compliance warnings
 
 ### Phase 4: CMA-ES Optimization (Python, batch)
 - Multi-objective optimization of profile params
-- Pareto frontier: minimize corrections, minimize thought count, maximize acceptance
-- Write optimized profiles to `etc/sequential_thinking_profiles.json`
+- Pareto frontier: minimize corrections, minimize step count, maximize acceptance
+- Write optimized profiles to `etc/stepwise_profiles.json`
 - A/B test: 10% of sessions use new profiles
 
 ### Phase 5: Real-Time Feedback (Rust)
@@ -183,7 +183,7 @@ pub merge_from: Option<Vec<u32>>,  // thought numbers to synthesize
 
 - **Not replacing the Python pipeline**: Batch analytics stays in Python. The Rust server is the data producer and profile consumer.
 - **Not building a full ML system**: PRIM + CMA-ES is the right level of sophistication. No neural nets, no gradient descent.
-- **Not BMAD**: The thinking pipeline is domain-agnostic. BMAD's role-based personas are a separate concern.
+- **Not BMAD**: The planning pipeline is domain-agnostic. BMAD's role-based personas are a separate concern.
 
 ## Dependencies
 

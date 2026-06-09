@@ -39,15 +39,15 @@ cd "$SCRIPT_DIR/github"
 cargo build --release 2>&1 | grep -E "Compiling kp-github|Finished|error" || true
 echo "  kp-github-mcp: $(du -h target/release/kp-github-mcp | cut -f1)"
 
-cd "$SCRIPT_DIR/sequential-thinking"
-cargo build --release 2>&1 | grep -E "Compiling kp-sequential|Finished|error" || true
-echo "  kp-sequential-thinking: $(du -h target/release/kp-sequential-thinking | cut -f1)"
+cd "$SCRIPT_DIR/stepwise"
+cargo build --release 2>&1 | grep -E "Compiling kp-stepwise|Finished|error" || true
+echo "  kp-stepwise: $(du -h target/release/kp-stepwise | cut -f1)"
 
 # Re-register (binaries are in the same path, so this just ensures config is correct)
 echo ""
 echo "[3/3] Verifying registration..."
 if command -v claude &>/dev/null; then
-  claude mcp list 2>/dev/null | grep -E "kp-github|kp-sequential-thinking" || echo "  WARNING: servers not registered. Run install.sh first."
+  claude mcp list 2>/dev/null | grep -E "kp-github|kp-stepwise" || echo "  WARNING: servers not registered. Run install.sh first."
 fi
 
 echo ""

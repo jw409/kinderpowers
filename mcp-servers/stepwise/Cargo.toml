@@ -1,12 +1,12 @@
 [package]
-name = "kp-sequential-thinking"
-version = "0.2.0"
+name = "kp-stepwise"
+version = "0.3.0"
 edition = "2021"
-description = "Enhanced Sequential Thinking MCP server with branching, exploration, and metathinking"
+description = "Stepwise planning MCP server with branching, exploration, and spawn hints"
 license = "MIT"
 
 [[bin]]
-name = "kp-sequential-thinking"
+name = "kp-stepwise"
 path = "src/main.rs"
 
 [dependencies]

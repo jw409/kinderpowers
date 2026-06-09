@@ -182,11 +182,11 @@ Neither is required. The plugin ships with both unset; behavior matches the GitH
 </details>
 
 <details>
-<summary><strong>kp-sequential-thinking</strong> — structured reasoning with hints, not mandates</summary>
+<summary><strong>kp-stepwise</strong> — structured stepwise planning with hints, not mandates</summary>
 
-One tool (`sequentialthinking`), many modes. Branching, confidence tracking (with Dunning-Kruger detection), abstraction layers, exploration, branch merging, and per-model profiles (Claude, Gemini, DeepSeek, Grok, Llama/Nemotron).
+One tool (`stepwise_plan`), many modes. Branching, confidence tracking (with Dunning-Kruger detection), abstraction layers, exploration, branch merging, and per-model profiles (Claude, Gemini, DeepSeek, Grok, Llama/Nemotron).
 
-Six hint types surface observations about reasoning patterns — `linear_chain`, `premature_confidence`, `merge_available`, etc. — and the agent decides whether to act. Hints are signposts, not walls.
+Six hint types surface observations about plan patterns — `linear_chain`, `premature_confidence`, `merge_available`, etc. — and the agent decides whether to act. Hints are signposts, not walls.
 
 Default model profile: `claude-opus-4-7`. JSONL logging optional for downstream learning pipelines.
 

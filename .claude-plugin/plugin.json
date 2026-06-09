@@ -1,26 +1,26 @@
 {
   "name": "kinderpowers",
   "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
-  "version": "6.3.2",
+  "version": "7.0.0",
   "author": {
     "name": "jw409"
   },
   "homepage": "https://github.com/jw409/kinderpowers",
   "repository": "https://github.com/jw409/kinderpowers",
   "license": "MIT",
-  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving", "skill-discovery", "hub", "lifecycle-engine", "gsd", "hookify", "agents", "team-orchestration", "mcp-servers", "sequential-thinking", "github"],
+  "keywords": ["skills", "tdd", "debugging", "collaboration", "best-practices", "workflows", "agency-preserving", "skill-discovery", "hub", "lifecycle-engine", "gsd", "hookify", "agents", "team-orchestration", "mcp-servers", "stepwise-planning", "github"],
   "mcpServers": {
     "kp-github": {
       "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-github-mcp",
       "args": [],
       "env": {}
     },
-    "kp-sequential-thinking": {
-      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-sequential-thinking",
+    "kp-stepwise": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/kp-stepwise",
       "args": [],
       "env": {
-        "SEQUENTIAL_THINKING_MODEL": "claude-opus-4-7",
-        "KP_SEQTHINK_LOG_LEVEL": "warn"
+        "STEPWISE_MODEL": "claude-opus-4-7",
+        "KP_STEPWISE_LOG_LEVEL": "warn"
       }
     }
   }

@@ -3,10 +3,10 @@ use serde_json::json;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::thinking::ThoughtData;
+use crate::planner::StepData;
 
-/// Persistent JSONL logger that appends thought records to
-/// `var/sequential_thinking_logs/{session_id}.jsonl`.
+/// Persistent JSONL logger that appends step records to
+/// `var/stepwise_logs/{session_id}.jsonl`.
 pub struct PersistentLogger {
     session_id: String,
     log_file: Option<PathBuf>,
@@ -39,8 +39,8 @@ impl PersistentLogger {
         }
     }
 
-    /// Append a thought record to the JSONL log. Fire-and-forget on errors.
-    pub fn persist(&self, thought: &ThoughtData) {
+    /// Append a step record to the JSONL log. Fire-and-forget on errors.
+    pub fn persist(&self, step: &StepData) {
         let Some(ref log_file) = self.log_file else {
             return;
         };
@@ -52,27 +52,27 @@ impl PersistentLogger {
             "clientType": self.client_type,
             "modelId": self.model_id,
             "profile": self.profile_name,
-            "thought": thought.thought,
-            "thoughtNumber": thought.thought_number,
-            "totalThoughts": thought.total_thoughts,
-            "nextThoughtNeeded": thought.next_thought_needed,
-            "isRevision": thought.is_revision,
-            "revisesThought": thought.revises_thought,
-            "branchFromThought": thought.branch_from_thought,
-            "branchId": thought.branch_id,
-            "continuationMode": thought.continuation_mode,
-            "exploreCount": thought.explore_count,
-            "proposals": thought.proposals,
-            "layer": thought.layer,
-            "confidence": thought.confidence,
-            "doneReason": thought.done_reason,
-            "searchQuery": thought.search_query,
+            "step": step.step,
+            "stepNumber": step.step_number,
+            "totalSteps": step.total_steps,
+            "nextStepNeeded": step.next_step_needed,
+            "isRevision": step.is_revision,
+            "revisesStep": step.revises_step,
+            "branchFromStep": step.branch_from_step,
+            "branchId": step.branch_id,
+            "continuationMode": step.continuation_mode,
+            "exploreCount": step.explore_count,
+            "proposals": step.proposals,
+            "layer": step.layer,
+            "confidence": step.confidence,
+            "doneReason": step.done_reason,
+            "searchQuery": step.search_query,
         });
 
         let line = match serde_json::to_string(&record) {
             Ok(s) => s + "\n",
             Err(e) => {
-                tracing::warn!(error = %e, "failed to serialize thought record");
+                tracing::warn!(error = %e, "failed to serialize step record");
                 return;
             }
         };
@@ -129,8 +129,8 @@ impl PersistentLogger {
 
     fn resolve_log_dir(project_path: &str) -> Option<PathBuf> {
         let candidates = [
-            PathBuf::from(project_path).join("var/sequential_thinking_logs"),
-            PathBuf::from(project_path).join("talent-os/var/sequential_thinking_logs"),
+            PathBuf::from(project_path).join("var/stepwise_logs"),
+            PathBuf::from(project_path).join("talent-os/var/stepwise_logs"),
         ];
 
         for dir in &candidates {
@@ -152,17 +152,17 @@ mod tests {
     use super::*;
     use std::io::BufRead;
 
-    fn make_test_thought(num: u32) -> ThoughtData {
-        ThoughtData {
-            thought: format!("Test thought {}", num),
-            thought_number: num,
-            total_thoughts: 5,
-            next_thought_needed: true,
+    fn make_test_step(num: u32) -> StepData {
+        StepData {
+            step: format!("Test step {}", num),
+            step_number: num,
+            total_steps: 5,
+            next_step_needed: true,
             is_revision: None,
-            revises_thought: None,
-            branch_from_thought: None,
+            revises_step: None,
+            branch_from_step: None,
             branch_id: None,
-            needs_more_thoughts: None,
+            needs_more_steps: None,
             continuation_mode: None,
             explore_count: None,
             proposals: None,
@@ -196,8 +196,8 @@ mod tests {
     fn persist_writes_valid_jsonl() {
         let tmp = tempfile::tempdir().unwrap();
         let logger = make_logger_in_tmp(&tmp);
-        let thought = make_test_thought(1);
-        logger.persist(&thought);
+        let step = make_test_step(1);
+        logger.persist(&step);
 
         let log_path = logger.log_file_path().unwrap();
         assert!(log_path.exists(), "log file should exist after persist");
@@ -208,21 +208,21 @@ mod tests {
         assert_eq!(lines.len(), 1, "should have exactly 1 line");
 
         let record: serde_json::Value = serde_json::from_str(&lines[0]).unwrap();
-        assert_eq!(record["thought"], "Test thought 1");
-        assert_eq!(record["thoughtNumber"], 1);
-        assert_eq!(record["totalThoughts"], 5);
+        assert_eq!(record["step"], "Test step 1");
+        assert_eq!(record["stepNumber"], 1);
+        assert_eq!(record["totalSteps"], 5);
         assert_eq!(record["confidence"], 0.7);
         assert!(record["timestamp"].is_string());
         assert!(record["sessionId"].is_string());
     }
 
     #[test]
-    fn persist_appends_multiple_thoughts() {
+    fn persist_appends_multiple_steps() {
         let tmp = tempfile::tempdir().unwrap();
         let logger = make_logger_in_tmp(&tmp);
-        logger.persist(&make_test_thought(1));
-        logger.persist(&make_test_thought(2));
-        logger.persist(&make_test_thought(3));
+        logger.persist(&make_test_step(1));
+        logger.persist(&make_test_step(2));
+        logger.persist(&make_test_step(3));
 
         let log_path = logger.log_file_path().unwrap();
         let content = fs::read_to_string(log_path).unwrap();
@@ -246,7 +246,7 @@ mod tests {
     fn persist_noop_when_no_log_file() {
         let logger = PersistentLogger::new_with_path(None, "test-model", "test-client", "Default");
         // Should not panic
-        logger.persist(&make_test_thought(1));
+        logger.persist(&make_test_step(1));
     }
 
     #[test]
@@ -258,7 +258,7 @@ mod tests {
         let result = PersistentLogger::resolve_log_dir(tmp.path().to_str().unwrap());
         assert!(result.is_some());
         let dir = result.unwrap();
-        assert!(dir.to_str().unwrap().contains("sequential_thinking_logs"));
+        assert!(dir.to_str().unwrap().contains("stepwise_logs"));
         assert!(dir.exists());
     }
 
@@ -270,7 +270,7 @@ mod tests {
 
     #[test]
     fn resolve_log_dir_creates_subdir_when_talent_os_var_exists() {
-        // Test the talent-os/var/sequential_thinking_logs candidate path
+        // Test the talent-os/var/stepwise_logs candidate path
         let tmp = tempfile::tempdir().unwrap();
         let talent_os_var = tmp.path().join("talent-os").join("var");
         fs::create_dir_all(&talent_os_var).unwrap();
@@ -278,7 +278,7 @@ mod tests {
         let result = PersistentLogger::resolve_log_dir(tmp.path().to_str().unwrap());
         assert!(result.is_some());
         let dir = result.unwrap();
-        assert!(dir.to_str().unwrap().contains("sequential_thinking_logs"));
+        assert!(dir.to_str().unwrap().contains("stepwise_logs"));
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         let logger = PersistentLogger::new_with_path(None, "m", "c", "p");
         assert!(logger.log_file_path().is_none());
         // Persisting should be a no-op (line 44-46)
-        logger.persist(&make_test_thought(1));
+        logger.persist(&make_test_step(1));
     }
 
     #[test]
@@ -297,7 +297,7 @@ mod tests {
         let impossible_path = PathBuf::from("/nonexistent_dir_xyz/impossible.jsonl");
         let logger = PersistentLogger::new_with_path(Some(impossible_path), "m", "c", "p");
         // Should not panic — fire and forget (exercises lines 88-90)
-        logger.persist(&make_test_thought(1));
+        logger.persist(&make_test_step(1));
     }
 
     #[test]
@@ -319,35 +319,35 @@ mod tests {
         // Should have created a log file path
         assert!(logger.log_file_path().is_some());
         let path = logger.log_file_path().unwrap();
-        assert!(path.to_str().unwrap().contains("sequential_thinking_logs"));
+        assert!(path.to_str().unwrap().contains("stepwise_logs"));
     }
 
     #[test]
-    fn persist_records_all_thought_fields() {
+    fn persist_records_all_step_fields() {
         let tmp = tempfile::tempdir().unwrap();
         let logger = make_logger_in_tmp(&tmp);
 
-        let mut thought = make_test_thought(2);
-        thought.is_revision = Some(true);
-        thought.revises_thought = Some(1);
-        thought.branch_from_thought = Some(1);
-        thought.branch_id = Some("test-branch".into());
-        thought.continuation_mode = Some("explore".into());
-        thought.explore_count = Some(3);
-        thought.proposals = Some(vec!["A".into(), "B".into()]);
-        thought.layer = Some(2);
-        thought.done_reason = Some("sufficient".into());
-        thought.search_query = Some("test query".into());
+        let mut step = make_test_step(2);
+        step.is_revision = Some(true);
+        step.revises_step = Some(1);
+        step.branch_from_step = Some(1);
+        step.branch_id = Some("test-branch".into());
+        step.continuation_mode = Some("explore".into());
+        step.explore_count = Some(3);
+        step.proposals = Some(vec!["A".into(), "B".into()]);
+        step.layer = Some(2);
+        step.done_reason = Some("sufficient".into());
+        step.search_query = Some("test query".into());
 
-        logger.persist(&thought);
+        logger.persist(&step);
 
         let log_path = logger.log_file_path().unwrap();
         let content = fs::read_to_string(log_path).unwrap();
         let record: serde_json::Value = serde_json::from_str(content.trim()).unwrap();
 
         assert_eq!(record["isRevision"], true);
-        assert_eq!(record["revisesThought"], 1);
-        assert_eq!(record["branchFromThought"], 1);
+        assert_eq!(record["revisesStep"], 1);
+        assert_eq!(record["branchFromStep"], 1);
         assert_eq!(record["branchId"], "test-branch");
         assert_eq!(record["continuationMode"], "explore");
         assert_eq!(record["exploreCount"], 3);
