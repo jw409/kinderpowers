@@ -30,6 +30,23 @@ INIT=$(node "$HOME/.claude/get-shit-done/bin/gsd-tools.cjs" state load 2>/dev/nu
 Track whether `.planning/` exists — some routes require it, others don't.
 </step>
 
+<step name="classify_complexity">
+**Estimate task size first — it disambiguates "build" intents.**
+
+Before matching intent, classify how much the task touches. This mirrors a deliberate
+size-routing step (small work should not be forced through the heavyweight phase lifecycle):
+
+| Size | Signal | Bias toward |
+|------|--------|-------------|
+| **small** | 1–2 files, self-contained, clear (typo, config, single function, obvious fix) | `/gsd:quick` |
+| **medium** | 3–5 files, one subsystem, some design needed | `/gsd:plan-phase` or `/gsd:add-phase` |
+| **large** | 6+ files, cross-cutting, migration, redesign, unclear scope | `/gsd:add-phase` (full discuss→plan→execute) |
+
+State the estimated size in the routing display below. When intent alone is ambiguous between
+`/gsd:quick` and `/gsd:add-phase`, let the size estimate break the tie. Size **biases** the
+route; an explicit user request (e.g. "plan phase 4") still wins.
+</step>
+
 <step name="route">
 **Match intent to command.**
 
@@ -76,6 +93,7 @@ Which approach fits better?
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 **Input:** {first 80 chars of $ARGUMENTS}
+**Estimated size:** {small | medium | large}
 **Routing to:** {chosen command}
 **Reason:** {one-line explanation}
 ```
@@ -95,6 +113,7 @@ After invoking the command, stop. The dispatched command handles everything from
 
 <success_criteria>
 - [ ] Input validated (not empty)
+- [ ] Task size estimated (small/medium/large) and shown in routing display
 - [ ] Intent matched to exactly one GSD command
 - [ ] Ambiguity resolved via user question (if needed)
 - [ ] Project existence checked for routes that require it

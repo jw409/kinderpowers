@@ -174,6 +174,20 @@ After agents return:
 3. **Run full suite** - Verify all fixes work together
 4. **Spot check** - Agents can make systematic errors
 
+## Hand-fired Task() vs. the Workflow tool
+
+The dispatch above is **model-driven**: *you* decide to fire N `Task()` calls, wait, and collect. That works when the fan-out is emergent — you discovered 3 unrelated failures and want them investigated now.
+
+But when the shape is **known in advance** and needs **no user interaction mid-run** (always N reviewers, always these 4 mappers, always find→verify→synthesize), hand-firing is fragile: the model can forget to batch the calls, mis-judge dependencies, or drop an agent and never notice. Encode it as a deterministic **Workflow-tool** script instead — `agent()`/`parallel()`/`pipeline()` give you concurrency caps, token budgets, and resume-on-crash that model judgment can't guarantee.
+
+| Use hand-fired `Task()` | Use the Workflow tool |
+|-------------------------|------------------------|
+| Shape emerges at runtime | Shape known before starting |
+| One-off, this conversation | Repeatable, worth shipping |
+| Next step depends on last result | Independent fan-out + verify + synthesize |
+
+See kinderpowers:orchestration-primitives for the decision rule, and `workflows/` for shipped examples.
+
 ## Real-World Impact
 
 From debugging session (2025-10-03):
