@@ -59,6 +59,12 @@ Deterministic counterpart to the `multi-perspective-review` agent / `kinderpower
 Best for reviewing a diff or a set of changed files where you want the find→verify→synthesize
 guarantee in code rather than re-enacted by the orchestrator each run.
 
+### `stall-watchdog-probe.workflow.js`
+Manual diagnostic (not a production workflow). Characterizes the harness stall watchdog by
+running the same agent at different `stallMs` values. Used to produce
+[`docs/workflow-stall-watchdog.md`](../docs/workflow-stall-watchdog.md); keep it for re-verifying
+the watchdog's behavior on a new Claude Code version.
+
 ## Authoring notes
 
 - Every script begins with a pure-literal `export const meta = {...}` (name, description, phases).
@@ -69,14 +75,10 @@ guarantee in code rather than re-enacted by the orchestrator each run.
 - `agent(..., { agentType })` reuses a registered kinderpowers subagent (e.g. `gsd-codebase-mapper`);
   `{ schema }` forces structured output so the script gets validated data, not prose to parse.
 
-## The 180s stall watchdog
+## The stall watchdog
 
-Each `agent()` step runs under a harness **stall watchdog**: ~180000ms of no stream progress → the agent is killed and retried, and after 6 attempts the whole workflow aborts with `agent stalled on all 6 attempts (no progress for 180000ms each)`. The error names no step — find the culprit in the run's `subagents/workflows/` transcript dir.
+Each `agent()` step runs under a harness **stream watchdog**: ~180000ms of no stream progress → the agent is killed and retried, and after ~6 attempts the run aborts with `agent stalled on all 6 attempts (no progress for 180000ms each)`. The error names no step — find the culprit in the run's `subagents/workflows/<runId>/` transcript dir.
 
-The trap is an agent that emits **one large artifact between tool calls** (synthesize → write a whole design doc; build a big module in a single shot). Trimming the *input* doesn't help — it's output-generation time between progress events.
+**It's an idle/overload phenomenon, not an output-length one.** We probed it (full writeup + the reusable probe in [`docs/workflow-stall-watchdog.md`](../docs/workflow-stall-watchdog.md)): continuous token generation does *not* trip it, and neither does a 30s byte-silent tool call. Streaming activity resets the clock, so a real stall means a genuine byte-silent gap longer than the timeout — a severe API/overload pause or a hung stream.
 
-Two defenses, in order of preference:
-1. **Decompose** so the agent makes frequent tool calls — one short `Write` per section, chunked code writes, or prefer a `{ schema }` return over "write the entire doc". Split a big build agent into several smaller `pipeline()` stages.
-2. **Raise the timeout** for a genuinely long step: `agent(prompt, { stallMs: 600000 })` (per-agent), or set `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` in your settings.json `env` block (session-wide; a hook can't change an in-flight watchdog). Useful when API latency/overload eats into the 180s budget before generation even starts.
-
-This is harness behavior (verified in the Claude Code binary), not something kinderpowers controls — but the `stallMs` opt and env override are usable today.
+So **don't decompose agents "to dodge the watchdog"** — that fixes a cause that doesn't exist; the shipped scripts set no `stallMs`. If you actually hit a stall, raise it session-wide via `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` in settings.json `env` (a hook can't change an in-flight watchdog). A per-agent `agent(prompt, { stallMs })` field exists in the binary but we could not confirm it's honored — treat as unverified.
