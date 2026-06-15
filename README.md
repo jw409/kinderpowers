@@ -149,6 +149,21 @@ Full lifecycle with atomic commits at every task boundary. You review at phase b
 
 ---
 
+## Skills vs commands vs agents vs workflows
+
+Four ways to extend the agent, easily conflated. The difference is **who decides the control flow** and **where the work runs**:
+
+| Primitive | What it is | Control flow | Runs in |
+|-----------|-----------|--------------|---------|
+| **Skill** | A doc that loads into the agent's context and changes how *it* behaves | The model follows it | Your conversation |
+| **Slash command** | A saved recipe the agent expands and executes (e.g. `/kinderpowers:gsd:*`) | The model executes the steps | Your conversation |
+| **Subagent** | A fresh context with its own tools that does a scoped job and returns a result | The model decides when to spawn | An isolated context |
+| **Dynamic workflow** | A deterministic JS script that fans out subagents (`agent()`/`parallel()`/`pipeline()`) | **Code** — written once, executed by the runtime | A background runtime |
+
+Rule of thumb: when the *shape* of multi-agent work is known up front and needs no mid-run input, encode it as a **dynamic workflow** — you get deterministic fan-out, concurrency caps, token budgets, and resume-on-crash that a hand-spawned set of subagents can't guarantee. When the next step depends on the last, or a human approves between steps, keep it a **slash command**. kinderpowers ships example workflow scripts in [`workflows/`](workflows/), and the full decision rule (plus hooks, the fifth primitive) lives in the `orchestration-primitives` skill.
+
+---
+
 ## MCP servers
 
 Two Rust-native servers ship with the plugin. Pre-built binaries for Linux x86_64 and macOS arm64 — no Rust toolchain required on install.

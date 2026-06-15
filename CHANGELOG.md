@@ -1,5 +1,24 @@
 # Changelog
 
+## [7.1.0] — 2026-06-15
+
+### Added
+
+- **Workflow-tool orchestration — a new primitive alongside skills, subagents, and slash commands.** Until now every bit of multi-agent orchestration in kinderpowers was *model-driven*: a slash command asks the orchestrator to remember to spawn N agents, wait, and collect — the dependency analysis, fan-out, and verification are the model's judgment re-enacted each run (see the completion-signal fallback logic in `execute-phase` for what that fragility costs). This release introduces deterministic **Workflow-tool** scripts, where the orchestration shape is *code*.
+  - **New skill `orchestration-primitives`** (`skills/orchestration-primitives/SKILL.md`) — the taxonomy that was missing: skill vs. subagent vs. slash command vs. hook vs. the Workflow tool, on two axes (who decides control flow, where it runs), plus a decision flowchart for when to reach for a Workflow script instead of hand-firing `Task()` calls. Core rule: *when the shape of the work is known before you start, encode it as code, not as model judgment.*
+  - **`skills/dispatching-parallel-agents`** gains a "Hand-fired Task() vs. the Workflow tool" section; **`skills/team-orchestration`** gains a "Codify into" pointer. Both cross-reference `orchestration-primitives`.
+  - **Two shipped Workflow scripts** in the new `workflows/` directory, invoked via `Workflow({ scriptPath: "${CLAUDE_PLUGIN_ROOT}/workflows/<name>.workflow.js" })` (plugins don't auto-register named workflows, so they run by path):
+    - `map-codebase.workflow.js` — deterministic counterpart to `/gsd:map-codebase`: `parallel()` fan-out of the 4 `gsd-codebase-mapper` agents (tech/arch/quality/concerns) writing the 7 `.planning/codebase/` docs, then a verifier agent confirms each exists and is non-empty (scripts have no filesystem access, so disk checks live in a spawned agent).
+    - `multi-perspective-review.workflow.js` — deterministic counterpart to the `multi-perspective-review` agent: a `pipeline()` of N independent lenses (CONTRACT, EDGE CASE, RESILIENCE, EMPATHY, MAINTAINER) where each finding is **adversarially verified** by a skeptic agent before it counts, then synthesized into consensus + severity + verdict. Findings start verifying the moment each lens returns rather than at a barrier.
+    - `workflows/README.md` documents invocation, the non-interactive constraint (no `AskUserQuestion`/checkpoints — keep interactive flows as slash commands, push the leaves into Workflows), and authoring notes (pure-literal `meta`, no fs/`Date.now()`/`Math.random()`, prefer `pipeline()` over a barrier, and the **stream stall watchdog** — see the dedicated tech note below).
+  - **`README.md` → "Skills vs commands vs agents vs workflows"** — a top-level comparison table (control flow × where it runs) and a rule of thumb, pointing at `orchestration-primitives`.
+  - **`docs/workflow-stall-watchdog.md` + `workflows/stall-watchdog-probe.workflow.js`** — investigation of the harness Workflow stall watchdog. Probed empirically (`v2.1.177`): it's a ~180s no-**stream**-progress timeout (≈6 retries, then abort), and it is **not** triggered by long output generation or normal tool use — continuous generation and a 30s byte-silent tool call both survived a nominal 5s timeout. So the shipped scripts deliberately set **no** `stallMs`; a real stall means a genuine byte-silent gap (API/overload pause). If you hit one, raise `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` (settings.json `env`). The per-agent `agent({ stallMs })` field exists in the binary but its effect on the Workflow path is unverified. (Corrects an earlier hand-off claim that long single-shot generation trips it / that decomposition is the fix.)
+
+### Changed
+
+- **`gsd-executor` auto-loads the relevant kinderpowers process skill** rather than only project-local `.claude/skills/`. TDD tasks pull `test-driven-development`, pre-commit/pre-done pulls `verification-before-completion`, and a failing test pulls `systematic-debugging` — closing the gap where principle skills were available but never reached unless the plan named them.
+- **`/gsd:do` now estimates task size (small/medium/large) before routing** and shows it in the routing display. Small/self-contained work biases toward `/gsd:quick`; cross-cutting work biases toward the full `/gsd:add-phase` lifecycle. Size breaks the tie when intent alone is ambiguous between quick and phase routes; an explicit user request still wins.
+
 ## [7.0.0] — 2026-06-09
 
 ### Changed (BREAKING)

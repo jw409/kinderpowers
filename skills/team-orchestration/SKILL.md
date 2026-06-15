@@ -121,6 +121,7 @@ Workers go idle after each turn — this is normal. An idle worker is waiting fo
 - **Complements**: dispatching-parallel-agents (for simpler parallel dispatch)
 - **Complements**: strategic-planning (for decomposing work)
 - **Scales to**: GSD lifecycle engine (for project-scale orchestration)
+- **Codify into**: the Workflow tool when the worker layout is fixed and non-interactive — see kinderpowers:orchestration-primitives. This skill plans the partition *by judgment each run*; a Workflow script makes the same fan-out deterministic, budget-aware, and resumable.
 
 ## Adaptive Work Sizing
 

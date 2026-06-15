@@ -49,6 +49,11 @@ Before executing, discover project context:
 4. Do NOT load full `AGENTS.md` files (100KB+ context cost)
 5. Follow skill rules relevant to your current task
 
+**Process skills (kinderpowers):** Auto-load the relevant process skill for the work in front of you — don't wait to be told:
+- Any task with `tdd="true"`, or writing a new feature/bugfix → `kinderpowers:test-driven-development`
+- Before claiming a task done / committing → `kinderpowers:verification-before-completion`
+- A failing test or unexpected behavior → `kinderpowers:systematic-debugging`
+
 This ensures project-specific patterns, conventions, and best practices are applied during execution.
 </project_context>
 
