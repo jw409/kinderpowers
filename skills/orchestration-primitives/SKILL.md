@@ -52,6 +52,7 @@ digraph choose {
 - **Trying to make an interactive flow a Workflow.** Workflows run in the background with no user prompts. Keep the interactive spine (GSD discuss/plan/execute) as slash commands; push only the non-interactive *leaves* (mapping, review fan-out, verification sweeps) into Workflows.
 - **Confusing "slash command" with "Workflow."** A file under `gsd/workflows/*.md` is a slash-command recipe the model executes — not a `Workflow`-tool script. The Workflow tool means deterministic JS via `agent()`/`parallel()`/`pipeline()`.
 - **Writing a hook to change reasoning.** Hooks are deterministic shell at lifecycle events; they can't make judgment calls. Use a skill for that.
+- **A Workflow agent that emits one huge artifact in a single shot.** Each `agent()` step has a ~180s no-progress stall watchdog (6 retries, then the workflow aborts). A "synthesize → write the whole doc" or "build the whole module" agent trips it. Decompose into tool-call-frequent units, or raise `agent(prompt, { stallMs })` / `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS`. See `workflows/README.md` → "The 180s stall watchdog".
 
 ## Shipped examples
 

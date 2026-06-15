@@ -68,3 +68,15 @@ guarantee in code rather than re-enacted by the orchestrator each run.
   results at once.
 - `agent(..., { agentType })` reuses a registered kinderpowers subagent (e.g. `gsd-codebase-mapper`);
   `{ schema }` forces structured output so the script gets validated data, not prose to parse.
+
+## The 180s stall watchdog
+
+Each `agent()` step runs under a harness **stall watchdog**: ~180000ms of no stream progress → the agent is killed and retried, and after 6 attempts the whole workflow aborts with `agent stalled on all 6 attempts (no progress for 180000ms each)`. The error names no step — find the culprit in the run's `subagents/workflows/` transcript dir.
+
+The trap is an agent that emits **one large artifact between tool calls** (synthesize → write a whole design doc; build a big module in a single shot). Trimming the *input* doesn't help — it's output-generation time between progress events.
+
+Two defenses, in order of preference:
+1. **Decompose** so the agent makes frequent tool calls — one short `Write` per section, chunked code writes, or prefer a `{ schema }` return over "write the entire doc". Split a big build agent into several smaller `pipeline()` stages.
+2. **Raise the timeout** for a genuinely long step: `agent(prompt, { stallMs: 600000 })` (per-agent), or set `CLAUDE_ASYNC_AGENT_STALL_TIMEOUT_MS` in your settings.json `env` block (session-wide; a hook can't change an in-flight watchdog). Useful when API latency/overload eats into the 180s budget before generation even starts.
+
+This is harness behavior (verified in the Claude Code binary), not something kinderpowers controls — but the `stallMs` opt and env override are usable today.
