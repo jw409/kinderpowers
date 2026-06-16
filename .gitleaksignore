@@ -1,0 +1,6 @@
+# gitleaks false positives (one fingerprint per line: commit:file:rule:line)
+#
+# Public RFC 6455 WebSocket example key ("the sample nonce", dGhlIHNhbXBsZSBub25jZQ==)
+# used as a test vector in computeAcceptKey. Not a credential. The file was deleted
+# from HEAD; this only surfaces on a full-history scan.
+9c98e018732f4dcdddb7f12d6066503960544f0e:tests/brainstorm-server/ws-protocol.test.js:generic-api-key:53
