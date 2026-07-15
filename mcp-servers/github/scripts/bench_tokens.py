@@ -101,6 +101,7 @@ for label, tool, args, path in [
 # Branch tracking: the same compare, three ways. Raw baseline is the full
 # compare payload you'd otherwise pull to learn ahead/behind.
 print("-" * 53)
+print("# branch tracking: work AVOIDED vs a full compare, not same-payload compression")
 cmp_path = f"/repos/{OWNER}/{REPO}/compare/trunk~30...trunk"
 raw_cmp = gh_api(cmp_path)
 row("compare(default)", mcp_call("github_repos_compare",

@@ -453,6 +453,10 @@ async fn test_branch_status_is_compact_and_correct() {
     let av: Value = serde_json::from_str(McpClient::get_text(&ahead)).expect("valid json");
     assert_eq!(av["merged_into_base"], json!(false), "trunk is ahead of trunk~30: {av}");
     assert!(av["ahead_by"].as_u64().unwrap_or(0) >= 1, "expected commits ahead: {av}");
+    // Ref names must survive compression — regression guard for the pipeline
+    // eating "base"/"head" as ref-objects (hence base_ref/head_ref).
+    assert_eq!(av["base_ref"], json!("trunk~30"), "base_ref dropped by compressor: {av}");
+    assert_eq!(av["head_ref"], json!("trunk"), "head_ref dropped by compressor: {av}");
 
     let bs_len = McpClient::get_text(&ahead).len();
     let cmp_len = McpClient::get_text(

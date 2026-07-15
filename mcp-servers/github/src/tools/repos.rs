@@ -133,9 +133,12 @@ pub async fn branch_status(
         .cloned()
         .unwrap_or(Value::Null);
 
+    // Named base_ref/head_ref (not base/head): the generic compressor flattens
+    // any "base"/"head" key as a GitHub ref *object*, which silently drops a
+    // plain string. base_ref/head_ref pass through untouched (same as prs).
     Ok(serde_json::json!({
-        "base": base_ref,
-        "head": branch,
+        "base_ref": base_ref,
+        "head_ref": branch,
         "status": take("status"),
         "ahead_by": take("ahead_by"),
         "behind_by": take("behind_by"),
