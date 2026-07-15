@@ -1,5 +1,15 @@
 # Changelog
 
+## [7.2.0] — 2026-07-15
+
+### Added
+
+- **`github_branch_status` — a compressed branch-tracking primitive for kp-github, and the enforced benchmark that proves the compression is real.** kp-github's value is entirely its compression ratio, but until now that ratio was a README estimate (~7×) guarded only by a char-based test asserting `>3×` on a single endpoint — a regression that halved compression would have sailed through. This release makes the claim measurable and adds the one primitive the server was missing for branch/worktree relevance.
+  - **New tool `github_branch_status`** (`mcp-servers/github`) — answers "is this branch merged / ahead / behind its base?" with a bounded verdict (`status`, `ahead_by`, `behind_by`, `total_commits`, key SHAs, and a derived `merged_into_base`) instead of a full `compare`'s `commits[]` / `files[]` arrays. Measured **~156 tokens vs ~52,000** for a 30-commit divergence (~1200×). `base` defaults to the repository's default branch. `merged_into_base` is set for fast-forward / rebase / merge-commit merges (the base already contains the branch); it is deliberately **not** set for squash-merges, which leave the branch's commits absent from base — detect those via a PR's `merged_at` (`github_prs_search head:<branch>`). The two signals are complementary and together cover whether a branch is still live.
+  - **`test_compression_floors`** replaces the weak `test_compression_ratio`: per-endpoint byte-ratio floors (`issues_list ≥4×`, `prs_list ≥8×`, `compare ≥3×`) measured against `gh api` on a public repo, so a compression regression fails the live suite. Byte ratio tracks token ratio ~1:1 because the compression is structural (dropped fields), not tokenizer-dependent.
+  - **`scripts/bench_tokens.py`** — the reproducible true-token report (tiktoken, `gh api` baseline, public `cli/cli`), including the branch-tracking rows (`compare` default 3.8× → `branch_status` ~1200×). Measured today: reads 6–15× (≈11× blended across read endpoints).
+- **New skill `worktree-census`** (`skills/worktree-census/SKILL.md`) — the create → finish → **census** gap in the worktree family: `using-git-worktrees` creates, `finishing-a-development-branch` finishes one, and `worktree-census` is the fleet-wide GC that finds the branches nobody finished. It joins local worktree state (`git worktree list`) against remote truth — `github_prs_list` (bulk, one call per repo), `github_branch_status` for the no-PR residue, and `github_prs_search head:<branch>` for squash-merges — then proposes safe cleanup. Discovers repo identity from `git remote` (no host or repo assumptions) and never auto-removes.
+
 ## [7.1.0] — 2026-06-15
 
 ### Added
