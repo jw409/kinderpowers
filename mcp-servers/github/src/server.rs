@@ -886,6 +886,25 @@ pub struct CompareParams {
 }
 
 #[derive(Debug, Deserialize, JsonSchema)]
+pub struct BranchStatusParams {
+    /// Repository owner
+    pub owner: String,
+    /// Repository name
+    pub repo: String,
+    /// Branch to check (the compare "head")
+    pub branch: String,
+    /// Base to compare against. Defaults to the repository's default branch.
+    #[serde(default)]
+    pub base: Option<String>,
+    /// Fields to include in output
+    #[serde(default)]
+    pub fields: Option<Vec<String>>,
+    /// Output format: json, table, text
+    #[serde(default)]
+    pub format: Option<String>,
+}
+
+#[derive(Debug, Deserialize, JsonSchema)]
 pub struct ReleaseCreateParams {
     /// Repository owner
     pub owner: String,
@@ -1553,6 +1572,22 @@ impl KpGithubServer {
         Ok(CallToolResult::success(vec![Content::text(output)]))
     }
 
+    /// Compressed branch-vs-base status: is this branch merged / ahead / behind
+    /// its base? Returns the verdict plus a derived `merged_into_base` without
+    /// the verbose commits/files a full compare carries — the cheap primitive
+    /// for deciding whether a branch (or its on-disk worktree) is still
+    /// relevant. `base` defaults to the repo's default branch. Note:
+    /// `merged_into_base` catches ff/rebase/merge-commit merges, not
+    /// squash-merges — pair with a PR's `merged_at` (`github_prs_search
+    /// head:<branch>`) for those.
+    #[rmcp::tool(name = "github_branch_status")]
+    async fn github_branch_status(&self, Parameters(p): Parameters<BranchStatusParams>) -> Result<CallToolResult, McpError> {
+        let result = tools::repos::branch_status(&self.client, &p.owner, &p.repo, &p.branch, p.base.as_deref()).await
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        let output = self.compress_and_format(result, p.fields, p.format);
+        Ok(CallToolResult::success(vec![Content::text(output)]))
+    }
+
     // ==================== Releases (additional) ====================
 
     /// Create a new release
@@ -1612,7 +1647,7 @@ impl ServerHandler for KpGithubServer {
                 name: "kp-github-mcp".into(),
                 title: Some("Token-Compressed GitHub MCP Server".into()),
                 version: env!("CARGO_PKG_VERSION").into(),
-                description: Some("65-tool GitHub MCP server with 10-40x token compression via field projection, smart formatting, and 5-stage compression pipeline. Reqwest HTTP primary, gh CLI fallback.".into()),
+                description: Some("66-tool GitHub MCP server with 10-40x token compression via field projection, smart formatting, and 5-stage compression pipeline. Reqwest HTTP primary, gh CLI fallback.".into()),
                 icons: None,
                 website_url: None,
             },
