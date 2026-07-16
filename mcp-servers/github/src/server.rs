@@ -9,6 +9,7 @@ use rmcp::{ErrorData as McpError, ServerHandler, ServiceExt};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use serde_json::Value;
+use std::io::Write;
 use std::sync::Arc;
 
 use crate::compress::{compress, CompressConfig, OutputFormat};
@@ -32,6 +33,8 @@ const GLOBAL_TOOL_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 pub struct KpGithubServer {
     client: Arc<GithubClient>,
     tool_router: ToolRouter<Self>,
+    /// Opt-in usage sink (`KP_GITHUB_USAGE_LOG`). `None` = disabled, zero overhead.
+    usage_log: Option<Arc<std::sync::Mutex<std::fs::File>>>,
 }
 
 impl KpGithubServer {
@@ -39,6 +42,7 @@ impl KpGithubServer {
         Self {
             client: Arc::new(GithubClient::new(token)),
             tool_router: Self::tool_router(),
+            usage_log: Self::open_usage_log(),
         }
     }
 
@@ -47,6 +51,54 @@ impl KpGithubServer {
         Self {
             client: Arc::new(client),
             tool_router: Self::tool_router(),
+            usage_log: None,
+        }
+    }
+
+    /// Open the opt-in usage log named by `KP_GITHUB_USAGE_LOG` (append mode).
+    /// Absent/empty env or an unopenable path disables logging without failing
+    /// startup — usage telemetry must never be load-bearing.
+    fn open_usage_log() -> Option<Arc<std::sync::Mutex<std::fs::File>>> {
+        let path = std::env::var("KP_GITHUB_USAGE_LOG").ok().filter(|s| !s.is_empty())?;
+        match std::fs::OpenOptions::new().create(true).append(true).open(&path) {
+            Ok(f) => Some(Arc::new(std::sync::Mutex::new(f))),
+            Err(e) => {
+                tracing::warn!("KP_GITHUB_USAGE_LOG open failed for {path}: {e}");
+                None
+            }
+        }
+    }
+
+    /// Append one JSONL usage record. Logs call *shape* (which args were passed,
+    /// whether field-projection was used) and *output size* — never arg values,
+    /// repo names, queries, or bodies — so the log is safe to consume and share.
+    /// Best-effort: a write failure never affects the tool call.
+    #[allow(clippy::too_many_arguments)]
+    fn write_usage(
+        &self,
+        tool: &str,
+        arg_keys: Vec<String>,
+        has_fields: bool,
+        has_format: bool,
+        limit: Option<i64>,
+        out_bytes: usize,
+        outcome: &str,
+        dur_ms: u128,
+    ) {
+        let Some(log) = &self.usage_log else { return };
+        let rec = serde_json::json!({
+            "ts": Utc::now().to_rfc3339(),
+            "tool": tool,
+            "arg_keys": arg_keys,
+            "has_fields": has_fields,
+            "has_format": has_format,
+            "limit": limit,
+            "out_bytes": out_bytes,
+            "outcome": outcome,
+            "dur_ms": dur_ms as u64,
+        });
+        if let Ok(mut f) = log.lock() {
+            let _ = writeln!(f, "{rec}");
         }
     }
 
@@ -1613,16 +1665,42 @@ impl ServerHandler for KpGithubServer {
         context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let tool_name = request.name.to_string();
+        let start = std::time::Instant::now();
+        // Capture call shape *before* `request` moves into the context — only
+        // when logging is enabled, so it stays zero-overhead when off.
+        let shape = self.usage_log.as_ref().map(|_| {
+            let args = request.arguments.as_ref();
+            let keys: Vec<String> = args.map(|m| m.keys().cloned().collect()).unwrap_or_default();
+            let has = |k: &str| args.map(|m| m.contains_key(k)).unwrap_or(false);
+            let limit = args.and_then(|m| m.get("limit")).and_then(|v| v.as_i64());
+            (keys, has("fields"), has("format"), limit)
+        });
+
         let tcc = rmcp::handler::server::tool::ToolCallContext::new(self, request, context);
-        match tokio::time::timeout(GLOBAL_TOOL_TIMEOUT, self.tool_router.call(tcc)).await {
-            Ok(res) => res,
-            Err(_) => Err(McpError::internal_error(
-                format!(
-                    "kp-github tool '{tool_name}' exceeded the {GLOBAL_TOOL_TIMEOUT:?} global timeout and was aborted"
-                ),
-                None,
-            )),
+        let (res, outcome) = match tokio::time::timeout(GLOBAL_TOOL_TIMEOUT, self.tool_router.call(tcc)).await {
+            Ok(Ok(ct)) => (Ok(ct), "ok"),
+            Ok(Err(e)) => (Err(e), "error"),
+            Err(_) => (
+                Err(McpError::internal_error(
+                    format!("kp-github tool '{tool_name}' exceeded the {GLOBAL_TOOL_TIMEOUT:?} global timeout and was aborted"),
+                    None,
+                )),
+                "timeout",
+            ),
+        };
+
+        if let Some((keys, has_fields, has_format, limit)) = shape {
+            // Serialized result size — a consistent proxy for output payload;
+            // computed only when logging is on.
+            let out_bytes = res
+                .as_ref()
+                .ok()
+                .and_then(|ct| serde_json::to_string(ct).ok())
+                .map(|s| s.len())
+                .unwrap_or(0);
+            self.write_usage(&tool_name, keys, has_fields, has_format, limit, out_bytes, outcome, start.elapsed().as_millis());
         }
+        res
     }
 
     async fn list_tools(
