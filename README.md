@@ -5,16 +5,25 @@
 
 ---
 
-## How you actually use this
+## ⚡ MCP servers
 
-You type two things to install, then you just work. The rest is automatic.
+Two Rust-native MCP servers sit at the core of kinderpowers — pre-built for Linux x86_64 and macOS arm64, no Rust toolchain required on install.
+
+- **kp-github** — a full superset of the official GitHub plugin that returns **~11× fewer tokens** (blended across read endpoints), and now *proves* it: a reproducible `bench_tokens.py` report plus a `test_compression_floors` live test that fails CI on any compression regression. Ships the `branch_status` "is this branch still live?" primitive, opt-in usage telemetry, and env-driven commit-author identity.
+- **kp-stepwise** — one `stepwise_plan` tool with branching, confidence tracking (Dunning-Kruger detection), abstraction layers, and per-model profiles. Six hint types surface plan-shape observations and the agent decides whether to act — signposts, not walls.
 
 ```bash
 claude plugin marketplace add jw409/kinderpowers
 claude plugin install kinderpowers
 ```
 
-On your next session start, Claude Code injects the `using-kinderpowers` orientation skill into context. From that point on, the agent surfaces relevant skills (via the `Skill` tool) based on what you're actually doing — you don't name them by hand. Write a failing test, `test-driven-development` loads. Start debugging, `systematic-debugging` loads. Claim work is done, `verification-before-completion` loads and asks for the test output.
+Full tool surface, benchmark methodology, and configuration for both servers live in the [MCP servers reference](#mcp-servers-reference) below.
+
+---
+
+## How you actually use this
+
+Those two commands are the whole setup — then you just work. On your next session start, Claude Code injects the `using-kinderpowers` orientation skill into context. From that point on, the agent surfaces relevant skills (via the `Skill` tool) based on what you're actually doing — you don't name them by hand. Write a failing test, `test-driven-development` loads. Start debugging, `systematic-debugging` loads. Claim work is done, `verification-before-completion` loads and asks for the test output.
 
 That's the entry surface. Everything below is reference.
 
@@ -164,12 +173,12 @@ Rule of thumb: when the *shape* of multi-agent work is known up front and needs 
 
 ---
 
-## MCP servers
+## MCP servers reference
 
-Two Rust-native servers ship with the plugin. Pre-built binaries for Linux x86_64 and macOS arm64 — no Rust toolchain required on install.
+Full tool surface, benchmark methodology, and configuration for the two servers featured at the top.
 
 <details>
-<summary><strong>kp-github</strong> — ~7× fewer tokens than the official GitHub plugin</summary>
+<summary><strong>kp-github</strong> — ~11× fewer tokens than the official GitHub plugin, CI-enforced</summary>
 
 The official Claude Code GitHub plugin returns raw API responses. Listing 5 issues burns ~7,700 tokens on avatar URLs, node IDs, and empty arrays. kp-github runs a 5-stage compression pipeline and returns ~1,100 tokens for the same query.
 
