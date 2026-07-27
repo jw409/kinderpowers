@@ -214,11 +214,21 @@ Neither is required. The plugin ships with both unset; behavior matches the GitH
 <details>
 <summary><strong>kp-stepwise</strong> — structured stepwise planning with hints, not mandates</summary>
 
-One tool (`stepwise_plan`), many modes. Branching, confidence tracking (with Dunning-Kruger detection), abstraction layers, exploration, branch merging, and per-model profiles (Claude, Gemini, DeepSeek, Grok, Llama/Nemotron).
+One tool (`stepwise_plan`), many modes. Branching, confidence tracking (with Dunning-Kruger detection), abstraction layers, exploration, branch merging, ordered multi-turn checkpoints, isolated room/channel state, and per-model profiles (OpenAI Sol/reasoning, Claude, Gemini, DeepSeek, Grok, Llama/Nemotron).
 
 Six hint types surface observations about plan patterns — `linear_chain`, `premature_confidence`, `merge_available`, etc. — and the agent decides whether to act. Hints are signposts, not walls.
 
-Default model profile: `claude-opus-4-7`. JSONL logging optional for downstream learning pipelines.
+For Codex with Sol, register the server with the model profile explicitly:
+
+```bash
+codex mcp add kp-stepwise --env STEPWISE_MODEL=gpt-5.6-sol -- "$PWD/mcp-servers/bin/kp-stepwise"
+```
+
+Every call requires a `channelId`. Parallel Claude subagents must receive different channel IDs; agents collaborating on the same task may share a `roomId`. `stepNumber`, branches, confidence counters, and hints are isolated per `(roomId, channelId)`, so every new channel starts at step 1. If `roomId` is omitted, the MCP host session is used.
+
+Each response echoes `sessionId`, `roomId`, `channelId`, current `logMode`, and channel-local `expectedNextStep`. Optional `turnId`, `checkpointKind`, `evidence`, `openQuestions`, and `nextAction` fields keep the decision trail useful across turns without turning it into a narrated scratchpad.
+
+Local JSONL logging uses `KP_STEPWISE_LOG_MODE=full|metadata|off` (default `full` when a project `var/` directory is available). Channel logs live at `var/stepwise_logs/{roomId}/channels/{channelId}.jsonl`. Metadata mode preserves audit structure without checkpoint content.
 
 </details>
 
@@ -229,6 +239,7 @@ Default model profile: `claude-opus-4-7`. JSONL logging optional for downstream 
 - **[superpowers](https://github.com/obra/superpowers)** by Jesse Vincent — craft philosophy, skill format, scanner, hook system
 - **[get-shit-done](https://github.com/gsd-build/get-shit-done)** by TÂCHES — lifecycle engine, commands, agents, workflows
 - **[hookify](https://github.com/QuantGeekDev/hookify)** by Diego Perez — enforcement rule format, Claude Code hook framework
+- **[agent-message-queue](https://github.com/avivsinai/agent-message-queue)** by Aviv Sinai — explicit local session routing and ownership patterns that informed kp-stepwise room/channel isolation
 - **[jw409](https://github.com/jw409)** — progression model, agency-preserving philosophy, council-mode review, MCP servers
 
 ## License

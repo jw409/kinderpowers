@@ -22,11 +22,25 @@ description: Use when facing complex decisions, debugging mysteries, or architec
 
 **Key insight**: This provides EXTERNALIZED PLAN STRUCTURE (logging, branches, coordination), not analysis itself. Use it when you need a visible, reviewable decision trail.
 
+For reasoning models such as OpenAI Sol, do not turn that decision trail into a narrated scratchpad. Let the model work normally between calls and add a checkpoint only when the workflow gains a conclusion, evidence, revision, decision, result, or handoff. A checkpoint should contain only externally reviewable work state.
+
+## Multi-turn continuity
+
+- Set `channelId` on every call. It is the independent planner lane; give parallel agents distinct channel IDs through their orchestrator.
+- Set `roomId` when several agents belong to one task or phase. If omitted, the MCP host session is the room.
+- Keep `stepNumber` channel-local and monotonic. Every new channel starts at 1; use that channel's returned `expectedNextStep` for its next call.
+- Set `turnId` to a stable caller-defined identifier when a user/assistant turn contains one or more checkpoints.
+- Use `checkpointKind`, `evidence`, `openQuestions`, and `nextAction` to carry reviewable state into later turns.
+- Use `(roomId, channelId)` as the plan-state join key. `sessionId` identifies the MCP host process for auditing; in Codex, `CODEX_THREAD_ID` supplies it automatically and `STEPWISE_SESSION_ID` can override it.
+- Never pipeline dependent checkpoints within one channel. Different channels may proceed in parallel.
+
+Local JSONL logging is controlled by `KP_STEPWISE_LOG_MODE=full|metadata|off` (default `full`). Logs are written to `var/stepwise_logs/{roomId}/channels/{channelId}.jsonl`. `metadata` retains timing, routing, structure, and presence flags but omits checkpoint text, evidence, proposals, questions, next action, and search query.
+
 ## Parameters (caller controls)
 
 | Parameter | Default | Range | Description |
 |-----------|---------|-------|-------------|
-| `min_steps` | 6 | 3-20 | Minimum step chain length for complex problems |
+| `min_steps` | adaptive | 1-20 | Minimum checkpoint count; reasoning models should prefer sparse, meaningful checkpoints |
 | `branch_style` | liberal | conservative, liberal, exhaustive | How aggressively to branch |
 | `explore_width` | 4 | 2-7 | Default explore_count when widening |
 | `self_checks` | true | true/false | Run the four self-checks at layer 1 |
@@ -68,7 +82,13 @@ Start with `continuation_mode: "explore"` and `explore_count: 4`:
 
 ```
 Step 1:
-  "Analyzing the problem. Four approaches emerge..."
+  roomId: "eval-repair"
+  channelId: "core"
+  step: "Three viable approaches remain after repository inspection."
+  turnId: "turn-1"
+  checkpointKind: "observation"
+  evidence: ["src/server.rs", "baseline MCP transcript"]
+  nextAction: "Compare the three approaches against the acceptance criteria."
   continuation_mode: "explore"
   explore_count: 4
   proposals: [
@@ -193,6 +213,8 @@ The kp-stepwise server surfaces non-prescriptive hints. You decide what to act o
 
 When the server surfaces a `subagent_spawn_available` or `subagent_orchestration` hint, the `spawn_strategy` parameter controls the response:
 
+Before spawning, assign each worker a unique `channelId` and include the shared `roomId` in its prompt. For example: core=`core`, implementation worker=`opus-gold-type`, replay worker=`sonnet-corpus-replay`. `branchId` is only a branch label inside one channel; it is never a substitute for channel isolation.
+
 ### none (default)
 
 Ignore spawn hints. All exploration happens within the current planning session. Use when:
@@ -236,6 +258,10 @@ Spawn subagents in layers. Layer 1 explores, reports to layer 2 synthesizer. Use
 - Using `continuation_mode: "done"` before exploring alternatives
 - Setting `explore_count: 1` or `2` (minimum useful is 3-4)
 - **Spawning without strategy** -- if you spawn subagents, set spawn_strategy explicitly. Default "none" means hints are informational only.
+- **Sharing a channel across parallel agents** -- this merges their ordering, branches, and confidence heuristics. Assign one channel per independently running agent.
+- **Treating `branchId` as agent isolation** -- branches are scoped inside a channel and do not create independent planner state.
+- Logging a stream of speculative internal narration instead of meaningful external checkpoints
+- Reusing or skipping `stepNumber` within a channel; use that channel's `expectedNextStep` and retry rejected out-of-order calls
 
 ## Example: Debug Mystery Bug
 

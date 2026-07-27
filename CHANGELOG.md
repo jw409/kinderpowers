@@ -1,5 +1,29 @@
 # Changelog
 
+## [7.3.0] — 2026-07-27
+
+### Fixed
+
+- **kp-stepwise no longer shares one planner state across Claude's core agent and every subagent.** The MCP server previously owned one process-global `PlanEngine`. A subagent's first call therefore inherited the parent's `stepCount`, linear-chain count, branches, confidence heuristics, and monotonic `stepNumber`; two parallel subagents could reject or distort each other's checkpoints. `branchId` did not isolate them because branch tracking happened inside that same global engine.
+  - `stepwise_plan` now requires a caller-selected `channelId`; `roomId` is optional and defaults to the MCP host session.
+  - Engine state is keyed by `(roomId, channelId)`, with an independently locked engine per channel. Parallel agents in different channels can both start at `stepNumber: 1`; ordering, branches, confidence counters, merges, and hints remain channel-local.
+  - `branchId` remains a branch label inside one channel and is explicitly documented as unsuitable for agent isolation.
+  - Route IDs are validated before any engine or log state is created.
+
+### Added
+
+- **Room/channel inspection and persistence for kp-stepwise v0.5.0.**
+  - Responses echo `sessionId`, `roomId`, `channelId`, `logMode`, and channel-local `expectedNextStep`.
+  - Resources are explicitly addressed as `stepwise://rooms/{roomId}/channels` and `stepwise://rooms/{roomId}/channels/{channelId}/{steps|branches|stats|session}`; the ambiguous process-global `sessions/current` resources are removed.
+  - JSONL checkpoints are routed to `var/stepwise_logs/{roomId}/channels/{channelId}.jsonl` and include both routing fields.
+  - The Claude-facing stepwise skill assigns unique channels to parallel workers and keeps dependent checkpoints sequential only within a channel.
+- **Inspectable sparse workflow checkpoints and OpenAI profiles.** kp-stepwise now carries stable turn IDs, checkpoint kinds, evidence, open questions, next actions, ordered checkpoint enforcement, `full|metadata|off` logging, and dedicated OpenAI Sol/reasoning profiles.
+
+### Verification
+
+- 113 Rust unit tests and 26 MCP JSON-RPC integration tests pass, including pipelined first calls from two channels in one room and channel-local heuristic assertions.
+- `cargo clippy --all-targets -- -D warnings`, release build, and a live replay against the shipped Linux binary pass.
+
 ## [7.2.0] — 2026-07-15
 
 ### Added
