@@ -14,6 +14,28 @@ if [ -d "$legacy_skills_dir" ]; then
     warning_message="\n\n<important-reminder>IN YOUR FIRST REPLY AFTER SEEING THIS MESSAGE YOU MUST TELL THE USER:⚠️ **WARNING:** Custom skills in ~/.config/superpowers/skills will not be read. kinderpowers uses Claude Code's native skills system. Move custom skills to ~/.claude/skills instead. To make this message go away, remove ~/.config/superpowers/skills</important-reminder>"
 fi
 
+# Read project-specific nudges from .kinderpowers.json in CWD
+nudges_context=""
+if [ -f "${PWD}/.kinderpowers.json" ]; then
+    nudges=$(python3 - "${PWD}/.kinderpowers.json" 2>/dev/null <<'PYEOF'
+import json, sys
+try:
+    with open(sys.argv[1]) as f:
+        cfg = json.load(f)
+    nudges = cfg.get("nudges", [])
+    if isinstance(nudges, str):
+        nudges = [nudges]
+    if nudges:
+        print("\n".join("- " + str(n) for n in nudges))
+except Exception:
+    pass
+PYEOF
+)
+    if [ -n "$nudges" ]; then
+        nudges_context="\n\n<project-nudges>\nThis project has configured the following reminders:\n${nudges}\n</project-nudges>"
+    fi
+fi
+
 # Read using-kinderpowers content
 using_kinderpowers_content=$(cat "${PLUGIN_ROOT}/skills/using-kinderpowers/SKILL.md" 2>&1 || echo "Error reading using-kinderpowers skill")
 
@@ -32,7 +54,8 @@ escape_for_json() {
 
 using_kinderpowers_escaped=$(escape_for_json "$using_kinderpowers_content")
 warning_escaped=$(escape_for_json "$warning_message")
-session_context="<EXTREMELY_IMPORTANT>\nYou are running with kinderpowers — agency-preserving skills for Claude Code.\n\n**Below is the full content of your 'kinderpowers:using-kinderpowers' skill — your introduction to how skills work. For all other skills, use the 'Skill' tool:**\n\n${using_kinderpowers_escaped}\n\n${warning_escaped}\n</EXTREMELY_IMPORTANT>"
+nudges_escaped=$(escape_for_json "$nudges_context")
+session_context="<EXTREMELY_IMPORTANT>\nYou are running with kinderpowers — agency-preserving skills for Claude Code.\n\n**Below is the full content of your 'kinderpowers:using-kinderpowers' skill — your introduction to how skills work. For all other skills, use the 'Skill' tool:**\n\n${using_kinderpowers_escaped}\n\n${warning_escaped}${nudges_escaped}\n</EXTREMELY_IMPORTANT>"
 
 # Output context injection as JSON.
 # Cursor hooks expect additional_context.
