@@ -1,3 +1,9 @@
 [submodule "specs/toon-format"]
 	path = specs/toon-format
 	url = https://github.com/toon-format/spec.git
+[submodule "mcp-servers/stepwise"]
+	path = mcp-servers/stepwise
+	url = https://github.com/jw409/kp-stepwise.git
+[submodule "mcp-servers/github"]
+	path = mcp-servers/github
+	url = https://github.com/jw409/kp-github.git

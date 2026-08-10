@@ -321,7 +321,7 @@
       <feature>Field projection (fields param) and output format control (json/table/text)</feature>
       <feature>reqwest HTTP primary (0.5s), gh CLI fallback</feature>
     </features>
-    <install>cd mcp-servers/github &amp;&amp; cargo build --release</install>
+    <install>git submodule update --init mcp-servers/github &amp;&amp; cd mcp-servers/github &amp;&amp; cargo build --release</install>
     <register>claude mcp add kp-github --transport stdio -- ./target/release/kp-github-mcp</register>
     <coverage>484 unit + 23 integration tests, 97% line coverage</coverage>
   </server>
@@ -340,7 +340,7 @@
       <feature>Inspectable room/channel JSONL workflow logging with full, metadata, and off modes</feature>
       <feature>Brenner "Third Alternative" and Four Self-Checks in first-call guidance</feature>
     </features>
-    <install>cd mcp-servers/stepwise &amp;&amp; cargo build --release</install>
+    <install>git submodule update --init mcp-servers/stepwise &amp;&amp; cd mcp-servers/stepwise &amp;&amp; cargo build --release</install>
     <register>claude mcp add kp-stepwise --transport stdio -- ./target/release/kp-stepwise</register>
     <coverage>Room/channel isolation, ordering, logging, and live MCP behavior covered by unit and integration tests</coverage>
     <env>
