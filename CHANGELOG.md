@@ -1,5 +1,25 @@
 # Changelog
 
+## [7.4.0] — 2026-08-11
+
+### Changed
+
+- **The MCP servers now live in their own repos**, each carrying its own source, pre-built binaries, tests, and release tags: [jw409/kp-stepwise](https://github.com/jw409/kp-stepwise) and [jw409/kp-github](https://github.com/jw409/kp-github). They mount here as submodules at the same `mcp-servers/{stepwise,github}` paths, so `install.sh` and `upgrade.sh` are unchanged. Either server can now be used on its own without taking the rest of kinderpowers.
+  - Binaries ship from the repo that holds their source rather than from this one, so a binary cannot drift from the source claiming to have produced it, and cutting a server release touches one repo. Each server repo rebuilds and commits its own `bin/` on a `v*` tag; this repo's `build-mcp-servers.yml` is removed.
+  - `mcp-servers/bin/<name>` remains the platform wrapper `plugin.json` points at, but resolves into the submodule. **The submodules are therefore required at runtime, not just to build** — an install that skips them gets two dead MCP servers. Claude Code clones marketplaces with `--recurse-submodules`, so normal installs are unaffected; a hand-rolled `git clone` without submodules is not. The wrapper says exactly that and exits 1 rather than failing on a missing path.
+
+### Added
+
+- **`setup.sh` installs selectable modules** instead of one fixed three-step sequence: `--list`, `--with`, `--without`, `--only`. `kinderpowers` (hookify rules + agent outcome logger) and `gsd` remain the defaults; an unknown module id exits 2 rather than silently installing nothing.
+- **Two opt-in third-party skill libraries**, neither vendored and neither installed by default:
+  - `--with mattpocock-skills` — [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock (MIT), installed through its own marketplace entry.
+  - `--with task-observer` — [rebelytics/one-skill-to-rule-them-all](https://github.com/rebelytics/one-skill-to-rule-them-all) by Eoghan Henn (**CC BY 4.0**, not MIT), cloned to `~/.kinderpowers/vendor` and symlinked into `~/.claude/skills` so its `LICENSE.txt` and history stay intact and CC BY content is never mixed into this MIT repo.
+  - Both are analyzed — including where they overlap or disagree with what kinderpowers already ships — in the README appendix and `KINDERPOWERS.xml`'s `<recommended>` block.
+
+### Fixed
+
+- **`setup.sh` could not register the agent outcome logger on a fresh machine** when the GSD step did not run first. Writing `~/.claude/settings.json` depended on the GSD step having created `~/.claude` as a side effect; with modules independently selectable that ordering no longer held, so `--only kinderpowers` failed on a clean home directory. The directory is now created once before any module runs.
+
 ## [7.3.0] — 2026-07-27
 
 ### Fixed

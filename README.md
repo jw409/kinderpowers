@@ -9,6 +9,8 @@
 
 Two Rust-native MCP servers sit at the core of kinderpowers — pre-built for Linux x86_64 and macOS arm64, no Rust toolchain required on install.
 
+Each lives in its own repo — **[kp-github](https://github.com/jw409/kp-github)** and **[kp-stepwise](https://github.com/jw409/kp-stepwise)** — carrying its own source, binaries, tests, and release tags, and mounted here as a submodule. Use either one on its own without taking the rest of kinderpowers.
+
 - **kp-github** — a full superset of the official GitHub plugin that returns **~11× fewer tokens** (blended across read endpoints), and now *proves* it: a reproducible `bench_tokens.py` report plus a `test_compression_floors` live test that fails CI on any compression regression. Ships the `branch_status` "is this branch still live?" primitive, opt-in usage telemetry, and env-driven commit-author identity.
 - **kp-stepwise** — one `stepwise_plan` tool with branching, confidence tracking (Dunning-Kruger detection), abstraction layers, and per-model profiles. Six hint types surface plan-shape observations and the agent decides whether to act — signposts, not walls.
 

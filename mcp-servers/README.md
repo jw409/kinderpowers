@@ -33,18 +33,8 @@ git submodule update --init mcp-servers/stepwise   # or mcp-servers/github
 cd mcp-servers/stepwise && cargo test
 ```
 
-**While either source repo is private,** `.gitmodules` records an HTTPS URL that
-an anonymous clone cannot reach, so the init above fails with `Repository not
-found`. Override the URL locally (this does not touch `.gitmodules`):
-
-```sh
-git submodule init mcp-servers/stepwise
-git config submodule."mcp-servers/stepwise".url git@github.com:jw409/kp-stepwise.git
-git submodule update mcp-servers/stepwise
-```
-
-The HTTPS URL is kept as the recorded one because it is what works for everyone
-once the repos are public.
+Both repos are public and `.gitmodules` records HTTPS URLs, so this needs no
+credentials.
 
 ## Releasing
 
