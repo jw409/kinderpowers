@@ -356,6 +356,35 @@
      RECOMMENDED: Companion tools that make kinderpowers better
      ═══════════════════════════════════════════════════════════════ -->
 <recommended note="Not dependencies — kinderpowers works without these. But they amplify it.">
+  <skill-library name="mattpocock-skills" url="https://github.com/mattpocock/skills"
+                 license="MIT" author="Matt Pocock"
+                 install="./setup.sh --with mattpocock-skills">
+    <description>Small, composable engineering skills split by trigger (user-invoked
+      orchestration vs model-invoked). Distinct pieces: grilling skills that interrogate
+      intent before work, a shared-vocabulary CONTEXT.md, and a to-spec/to-tickets/implement
+      pipeline.</description>
+    <why>Overlaps kinderpowers on tdd, diagnosing-bugs, code-review, research, and
+      codebase-design. Install to REPLACE or compare that layer, not to stack on it —
+      two skills competing for one trigger is worse than either alone.</why>
+    <tension>Its README argues against lifecycle frameworks by name, GSD among them. Both
+      projects chase agency preservation; they disagree on whether a lifecycle engine is a
+      signpost or a wall. Read it with that open, not resolved.</tension>
+  </skill-library>
+
+  <skill-library name="task-observer" url="https://github.com/rebelytics/one-skill-to-rule-them-all"
+                 license="CC-BY-4.0" author="Eoghan Henn (rebelytics)"
+                 install="./setup.sh --with task-observer">
+    <description>Meta-skill that observes working sessions, turns corrections and stated
+      preferences into proposed skill edits, records cross-cutting principles, and observes
+      itself. Recommends only; never edits skills directly.</description>
+    <why>In-session judgement-driven counterpart to hooks/agent-outcome-logger.py, which
+      records outcomes deterministically after the fact. One notices "you corrected me the
+      same way three times"; the other produces a log you can count. They compose.</why>
+    <license-note>CC BY 4.0, not MIT: attribution and indicating changes are required. The
+      install module clones it to ~/.kinderpowers/vendor and symlinks into ~/.claude/skills
+      rather than vendoring, keeping CC BY content out of this MIT repo.</license-note>
+  </skill-library>
+
   <tool name="beads" url="https://github.com/jw409/beads" install="pipx install beads-cli">
     <description>Dolt-powered issue tracker for multi-session work. Persistent memory across
       conversation compaction. Dependencies, blockers, priorities. The kinderpowers beads skill

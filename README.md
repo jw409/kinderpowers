@@ -234,6 +234,29 @@ Local JSONL logging uses `KP_STEPWISE_LOG_MODE=full|metadata|off` (default `full
 
 ---
 
+## Install modules
+
+`setup.sh` installs in selectable modules rather than one fixed sequence:
+
+```bash
+./setup.sh                        # defaults: kinderpowers + gsd
+./setup.sh --list                 # every module, and whether it's a default
+./setup.sh --without gsd          # skip a default
+./setup.sh --with task-observer   # add an opt-in module
+./setup.sh --only kinderpowers    # exactly these
+```
+
+| Module | Default | What it wires |
+| --- | --- | --- |
+| `kinderpowers` | yes | Hookify enforcement rules, agent outcome logger hook |
+| `gsd` | yes | GSD lifecycle runtime at `~/.claude/get-shit-done` |
+| `mattpocock-skills` | no | Third-party, see appendix |
+| `task-observer` | no | Third-party, see appendix |
+
+The third-party modules are opt-in and neither is vendored: each invokes its
+upstream installer, so the code arrives from its own author, updates on their
+cadence, and keeps its own license.
+
 ## Credits
 
 - **[superpowers](https://github.com/obra/superpowers)** by Jesse Vincent — craft philosophy, skill format, scanner, hook system
@@ -242,9 +265,79 @@ Local JSONL logging uses `KP_STEPWISE_LOG_MODE=full|metadata|off` (default `full
 - **[agent-message-queue](https://github.com/avivsinai/agent-message-queue)** by Aviv Sinai — explicit local session routing and ownership patterns that informed kp-stepwise room/channel isolation
 - **[jw409](https://github.com/jw409)** — progression model, agency-preserving philosophy, council-mode review, MCP servers
 
+Two adjacent libraries kinderpowers does *not* derive from, but ships opt-in
+install modules for, are analyzed in the [appendix](#appendix-adjacent-skill-libraries).
+
 ## License
 
 MIT — see LICENSE.
+
+
+## Appendix: adjacent skill libraries
+
+Two outside libraries worth knowing about, installable as opt-in modules above.
+Neither is part of the default install: both overlap kinderpowers' own skills,
+and installing everything at once buys duplicate skills competing for the same
+trigger rather than more capability.
+
+### mattpocock/skills — Matt Pocock, MIT
+
+<https://github.com/mattpocock/skills> — *"Skills for Real Engineers. Straight
+from my .agents directory."*
+
+A deliberately small, composable skill set organized by who can trigger it
+(user-invoked orchestration skills vs. model-invoked ones), aimed at four
+failure modes: misalignment on intent, verbose agent output, code that doesn't
+work, and codebases decaying into a ball of mud. Notable pieces with no
+kinderpowers equivalent: the **grilling** skills (`grill-me`, `grill-with-docs`)
+that interrogate your intent *before* work starts, a shared-vocabulary
+`CONTEXT.md`, and a `to-spec` → `to-tickets` → `implement` pipeline.
+
+**Where it collides.** Its README argues explicitly against heavier frameworks —
+naming GSD among them — on the grounds that they "take away your control."
+Kinderpowers ships a GSD derivative, so that disagreement is live, and it is
+about mechanism rather than values: both are chasing the agency-preserving goal
+this repo calls *signposts, not walls*; they disagree on whether a lifecycle
+engine is a signpost or a wall. Worth reading with that tension in mind rather
+than resolving it by fiat.
+
+Its `tdd`, `diagnosing-bugs`, `code-review`, `research`, and `codebase-design`
+skills cover ground kinderpowers already covers with `test-driven-development`,
+`systematic-debugging`, `adversarial-review`, `research-extraction`, and
+`architecture`. Install it to *replace* that layer or to compare approaches —
+not to stack on top of it.
+
+Install through **one** path only (the marketplace plugin and the skills.sh copy
+duplicate every skill if both are present); the module uses
+`claude plugin install mattpocock-skills`. Run `/setup-matt-pocock-skills` once
+per repository afterward.
+
+### rebelytics/one-skill-to-rule-them-all — Eoghan Henn, CC BY 4.0
+
+<https://github.com/rebelytics/one-skill-to-rule-them-all>
+
+A single meta-skill, `task-observer`, that runs alongside normal sessions and
+watches them: it flags recurring patterns as candidate new skills, turns
+corrections and stated preferences into proposed edits to existing skills, and
+records cross-cutting principles that later skills get checked against. It
+observes itself too, and it only ever *recommends* — it does not modify skills
+directly.
+
+**Where it fits.** It is the in-session, judgement-driven counterpart to
+kinderpowers' `hooks/agent-outcome-logger.py`, which records agent outcomes
+deterministically after the fact. One notices *"you corrected me the same way
+three times"*; the other produces a log you can count. They compose rather than
+compete. Its own README carries an honest caveat: the overhead pays off at
+scale, and a small skill library may be better served by built-in memory and
+direct editing.
+
+**License differs from everything else here.** CC BY 4.0, not MIT — reuse and
+adaptation are fine, including commercially, but attribution to the author and
+a link to the source are required, and changes must be indicated. That is also
+why the module clones it to `~/.kinderpowers/vendor/task-observer` and symlinks
+it into `~/.claude/skills/` instead of vendoring the files: a pristine clone
+keeps `LICENSE.txt` and history intact, and keeps CC BY 4.0 content from being
+mixed into this MIT repo.
 
 ---
 
