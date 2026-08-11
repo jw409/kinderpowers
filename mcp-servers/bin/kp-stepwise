@@ -1,9 +1,17 @@
 #!/bin/sh
-# Platform-detecting wrapper for kp-stepwise
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Platform-detecting wrapper for kp-stepwise.
+# The binaries live in the server's own repo (submodule at mcp-servers/stepwise),
+# which is where its source lives too. Run
+#   git submodule update --init mcp-servers/stepwise
+# if this path is missing.
+SRC_DIR="$(cd "$(dirname "$0")/../stepwise" 2>/dev/null && pwd)"
+if [ -z "$SRC_DIR" ]; then
+    echo "mcp-servers/stepwise is not checked out. Run: git submodule update --init mcp-servers/stepwise" >&2
+    exit 1
+fi
 case "$(uname -s)-$(uname -m)" in
-    Linux-x86_64)   exec "$SCRIPT_DIR/linux-x86_64/kp-stepwise" "$@" ;;
-    Darwin-arm64)   exec "$SCRIPT_DIR/macos-arm64/kp-stepwise" "$@" ;;
+    Linux-x86_64)   exec "$SRC_DIR/bin/linux-x86_64/kp-stepwise" "$@" ;;
+    Darwin-arm64)   exec "$SRC_DIR/bin/macos-arm64/kp-stepwise" "$@" ;;
     Darwin-x86_64)  echo "macOS Intel not supported. Build from source or use Rosetta." >&2; exit 1 ;;
     *) echo "Unsupported platform: $(uname -s)-$(uname -m). Build from source: cd mcp-servers/stepwise && cargo build --release" >&2; exit 1 ;;
 esac

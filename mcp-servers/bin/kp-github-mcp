@@ -1,9 +1,17 @@
 #!/bin/sh
-# Platform-detecting wrapper for kp-github-mcp
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Platform-detecting wrapper for kp-github-mcp.
+# The binaries live in the server's own repo (submodule at mcp-servers/github),
+# which is where its source lives too. Run
+#   git submodule update --init mcp-servers/github
+# if this path is missing.
+SRC_DIR="$(cd "$(dirname "$0")/../github" 2>/dev/null && pwd)"
+if [ -z "$SRC_DIR" ]; then
+    echo "mcp-servers/github is not checked out. Run: git submodule update --init mcp-servers/github" >&2
+    exit 1
+fi
 case "$(uname -s)-$(uname -m)" in
-    Linux-x86_64)   exec "$SCRIPT_DIR/linux-x86_64/kp-github-mcp" "$@" ;;
-    Darwin-arm64)   exec "$SCRIPT_DIR/macos-arm64/kp-github-mcp" "$@" ;;
+    Linux-x86_64)   exec "$SRC_DIR/bin/linux-x86_64/kp-github-mcp" "$@" ;;
+    Darwin-arm64)   exec "$SRC_DIR/bin/macos-arm64/kp-github-mcp" "$@" ;;
     Darwin-x86_64)  echo "macOS Intel not supported. Build from source or use Rosetta." >&2; exit 1 ;;
     *) echo "Unsupported platform: $(uname -s)-$(uname -m). Build from source: cd mcp-servers/github && cargo build --release" >&2; exit 1 ;;
 esac

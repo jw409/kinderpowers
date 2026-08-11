@@ -1,26 +1,30 @@
 # MCP servers
 
-Two Rust MCP servers ship with the plugin. Their **sources live in their own
-repos**, mounted here as submodules; their **pre-built binaries stay in this
-repo**, committed under `bin/`.
+Two Rust MCP servers ship with the plugin. Each one's **source and its
+pre-built binaries both live in its own repo**, mounted here as a submodule.
+This directory holds only the platform wrappers that `plugin.json` points at.
 
-| Path | Repo | MCP server name | Binary |
+| Path | Repo | MCP server name | Wrapper |
 | --- | --- | --- | --- |
 | `stepwise/` | [jw409/kp-stepwise](https://github.com/jw409/kp-stepwise) | `kp-stepwise` | `bin/kp-stepwise` |
 | `github/` | [jw409/kp-github](https://github.com/jw409/kp-github) | `kp-github` | `bin/kp-github-mcp` |
 
-## Why the binaries stay here
+`bin/<name>` detects the platform and execs
+`../<server>/bin/<platform>/<binary>` inside the submodule. If the submodule
+isn't checked out it says so and exits 1, rather than failing on a missing path.
 
-`.claude-plugin/plugin.json` points each server at
-`${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/<name>`, and Claude Code installs a
-plugin by cloning its marketplace. Keeping the binaries in this repo means an
-install needs **no submodule access at all** — the submodules are a *build-time*
-dependency, not a runtime one. Only someone rebuilding a server needs them
-checked out.
+## Consequence: the submodules are required to run, not just to build
 
-That split is deliberate: it decouples "can I run the plugin" from "can I read
-the server sources", so the two repos can have their own visibility and release
-cadence without the plugin install depending on either.
+`plugin.json` points each server at `${CLAUDE_PLUGIN_ROOT}/mcp-servers/bin/<name>`,
+and that wrapper now resolves into the submodule. **A plugin install that skips
+submodules gets two dead MCP servers.** Claude Code clones marketplaces with
+`--recurse-submodules`, so a normal install is fine — but both server repos have
+to be reachable by whoever is installing.
+
+Keeping each binary next to the source that produced it is the point: one repo,
+one server, one release. Nothing has to be copied across a repo boundary to cut
+a version, and a binary can never drift from the source it claims to be built
+from.
 
 ## Working on a server
 
@@ -40,12 +44,13 @@ git submodule update mcp-servers/stepwise
 ```
 
 The HTTPS URL is kept as the recorded one because it is what works for everyone
-once the repos are public. Nothing about a plugin *install* depends on this —
-only rebuilding does.
+once the repos are public.
 
-Commit and push source changes **in the submodule repo**; then bump the pointer
-here in a separate commit. `install.sh` and `upgrade.sh` build out of these same
-paths and need no changes — they prefer `bin/` and fall back to `cargo build`.
+## Releasing
 
-Binaries are refreshed by `.github/workflows/build-mcp-servers.yml` on an
-`mcp-v*` tag, which commits the rebuilt `bin/` back to `main`.
+Binaries are rebuilt by each server repo's own `build-binaries.yml` on a `v*`
+tag, which commits the refreshed `bin/` back to that repo's `main`. Then bump
+the submodule pointer here. This repo no longer builds server binaries — the
+former `build-mcp-servers.yml` was removed in favour of the per-repo workflows.
+
+`install.sh` and `upgrade.sh` build out of these same paths and need no changes.
