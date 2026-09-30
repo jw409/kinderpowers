@@ -5,6 +5,11 @@
 
 ---
 
+> [!NOTE]
+> **Archived.** kinderpowers — and superpowers, the project it grew out of — is no longer necessary in the Opus 5.5 / Astra era. The models now do natively what these skills were built to scaffold: verify before claiming done, branch when uncertain, ask before deleting. This repo is preserved as a historical artifact. It is not maintained, and nothing here is expected to keep working.
+
+---
+
 ## ⚡ MCP servers
 
 Two Rust-native MCP servers sit at the core of kinderpowers — pre-built for Linux x86_64 and macOS arm64, no Rust toolchain required on install.
