@@ -6,183 +6,44 @@
 ---
 
 > [!NOTE]
-> **Archived.** kinderpowers — and superpowers, the project it grew out of — is no longer necessary in the Opus 5.5 / Astra era. The models now do natively what these skills were built to scaffold: verify before claiming done, branch when uncertain, ask before deleting. This repo is preserved as a historical artifact. It is not maintained, and nothing here is expected to keep working.
+> **The skills layer is archived; the MCP servers are not.**
+> kinderpowers — and superpowers, the project it grew out of — is no longer necessary in the
+> Opus 5.5 / Astra era. The models now do natively what those skills were built to scaffold:
+> verify before claiming done, branch when uncertain, ask before deleting. The skills, agents,
+> commands, and lifecycle engine are preserved as a historical artifact in
+> [`archive/`](archive/) and are no longer loaded.
+>
+> **This repo is now the marketplace URL for the packages that are still maintained** — the
+> Rust MCP servers below.
 
 ---
 
-## ⚡ MCP servers
-
-Two Rust-native MCP servers sit at the core of kinderpowers — pre-built for Linux x86_64 and macOS arm64, no Rust toolchain required on install.
-
-Each lives in its own repo — **[kp-github](https://github.com/jw409/kp-github)** and **[kp-stepwise](https://github.com/jw409/kp-stepwise)** — carrying its own source, binaries, tests, and release tags, and mounted here as a submodule. Use either one on its own without taking the rest of kinderpowers.
-
-- **kp-github** — a full superset of the official GitHub plugin that returns **~11× fewer tokens** (blended across read endpoints), and now *proves* it: a reproducible `bench_tokens.py` report plus a `test_compression_floors` live test that fails CI on any compression regression. Ships the `branch_status` "is this branch still live?" primitive, opt-in usage telemetry, and env-driven commit-author identity.
-- **kp-stepwise** — one `stepwise_plan` tool with branching, confidence tracking (Dunning-Kruger detection), abstraction layers, and per-model profiles. Six hint types surface plan-shape observations and the agent decides whether to act — signposts, not walls.
+## 📦 Packages
 
 ```bash
 claude plugin marketplace add jw409/kinderpowers
-claude plugin install kinderpowers
 ```
 
-Full tool surface, benchmark methodology, and configuration for both servers live in the [MCP servers reference](#mcp-servers-reference) below.
+| Package | What it is |
+| --- | --- |
+| **kp-github** | A full superset of the official GitHub plugin that returns **~11× fewer tokens** (blended across read endpoints), and *proves* it: a reproducible `bench_tokens.py` report plus a `test_compression_floors` live test that fails CI on any compression regression. Ships the `branch_status` "is this branch still live?" primitive, opt-in usage telemetry, and env-driven commit-author identity. — [jw409/kp-github](https://github.com/jw409/kp-github) |
+| **kp-stepwise** | One `stepwise_plan` tool with branching, confidence tracking (Dunning-Kruger detection), abstraction layers, per-model profiles, and isolated room/channel state. Six hint types surface plan-shape observations and the agent decides whether to act — signposts, not walls. — [jw409/kp-stepwise](https://github.com/jw409/kp-stepwise) |
+| **kinderpowers** | The original plugin entry. Now ships the two MCP servers above and nothing else; kept so existing installs keep working. |
 
----
+Both servers are Rust-native and ship pre-built for Linux x86_64 and macOS arm64 — no Rust
+toolchain required on install.
 
-## How you actually use this
-
-Those two commands are the whole setup — then you just work. On your next session start, Claude Code injects the `using-kinderpowers` orientation skill into context. From that point on, the agent surfaces relevant skills (via the `Skill` tool) based on what you're actually doing — you don't name them by hand. Write a failing test, `test-driven-development` loads. Start debugging, `systematic-debugging` loads. Claim work is done, `verification-before-completion` loads and asks for the test output.
-
-That's the entry surface. Everything below is reference.
-
-<details>
-<summary><strong>Optional slash commands</strong> — invoke when you want the lifecycle engine, not just the skills</summary>
-
-```
-/kinderpowers:gsd:quick "<task>"        # one task, atomic commits, no ceremony
-/kinderpowers:gsd:new-project           # initialize from scratch with discovery
-/kinderpowers:gsd:autonomous            # run remaining phases end-to-end
-/kinderpowers:gsd:next                  # auto-route to the next logical step
-/kinderpowers:gsd:help                  # full GSD command landscape
-```
-
-These come from the bundled **get-shit-done** lifecycle engine. Use them when you want structured phases (roadmap → plan → execute → ship) rather than ad-hoc skill invocations.
-
-</details>
-
-<details>
-<summary><strong>Optional enforcement (opt-in, not default)</strong> — turn skill recommendations into hard gates</summary>
-
-After install, clone this repo and run `./setup.sh` to install three hookify rules as strict enforcement:
-
-- **verification-required** — blocks "done" claims without evidence in the transcript
-- **discovery-before-creation** — warns before creating files without search evidence
-- **brainstorm-before-build** — warns before writing 100+ lines without design discussion
-
-Rules ship disabled. setup.sh symlinks them into `~/.claude/hookify/rules/` where hookify can enable them. Without hookify, skills remain recommendations.
-
-</details>
-
----
-
-## Signposts, not walls
-
-The philosophy in one paragraph. A wall stops you at every intersection; a signpost names the hazard and adds the distance of the detour, then yields to your judgment. Every kinderpowers skill is a signpost — it documents the cost of skipping and hands control back to you. Agents guided by walls become brittle and learn to evade. Agents guided by signposts stay accountable because they keep their agency.
-
-The scanner (`scanner.py`) enforces this mechanically: compulsion language (`MUST`, `NEVER`, `NOT NEGOTIABLE` without documented exceptions) is flagged on every skill edit. Strong recommendations — which are fine — carry a `Skip cost:` line that names what you lose.
-
----
-
-## The progression model
-
-Kinderpowers grows with the agent. You don't learn more commands; more of the system kicks in automatically as your work gets bigger.
-
-```mermaid
-graph LR
-    L1["<b>L1: Coding Assistant</b><br/>TDD · debug · verify<br/><i>auto-injects on file edits</i>"]
-    L2["<b>L2: Agentic Worker</b><br/>plan · remember · isolate<br/><i>auto-injects on multi-step work</i>"]
-    L3["<b>L3: Team Orchestrator</b><br/>dispatch · review · integrate<br/><i>auto-injects on parallel tasks</i>"]
-    L4["<b>L4: Dark Factory</b><br/>roadmap → plan → execute → ship<br/><i>invoked via /kinderpowers:gsd:*</i>"]
-    L1 --> L2 --> L3 --> L4
-    style L1 fill:#e8f5e9,stroke:#4caf50
-    style L2 fill:#e3f2fd,stroke:#2196f3
-    style L3 fill:#fff3e0,stroke:#ff9800
-    style L4 fill:#fce4ec,stroke:#e91e63
-```
-
-<details>
-<summary>🧑‍💻 <strong>L1 — Solo dev fixing a bug</strong></summary>
-
-You edit a test file. `test-driven-development` surfaces. You claim the fix is done. `verification-before-completion` asks for test output.
-
-**Without kinderpowers:**
-```
-You:   "Fix the date parsing bug"
-Agent: "I've updated line 47 to use Date.parse()."
-You:   "Did you run the tests?"
-Agent: "The logic looks correct."
-You:   *runs tests* — 3 failures, timezone handling broke
-```
-
-**With kinderpowers:**
-```
-You:   "Fix the date parsing bug"
-Agent: Reproduced: test_parse_iso_date fails with '2024-03-15T10:00:00Z'
-       Root cause: Date.parse() returns local time, not UTC
-       Fix: new Date(str).toISOString() preserves timezone
-       $ npm test -- --grep 'date'
-       PASS  ✓ test_parse_iso_date (3ms)
-             ✓ test_timezone_preservation (2ms)  ← new
-```
-
-The agent didn't get smarter. It got disciplined.
-
-</details>
-
-<details>
-<summary>🛠️ <strong>L2 — Feature spanning multiple sessions</strong></summary>
-
-You start a feature Friday, context compacts, you resume Monday. `remembering-conversations` surfaces on resume. `beads` keeps the work graph alive across sessions. `using-git-worktrees` isolates your in-flight branch so the main tree is safe.
-
-**Without kinderpowers:**
-```
-Mon: "Where was I on the refactor?"
-Agent: *reads three files, guesses*
-```
-
-**With kinderpowers:**
-```
-Mon: "Where was I on the refactor?"
-Agent: Beads shows 3 of 7 tasks done. Blocker on task 4 (awaiting
-       auth decision from you). Worktree at .worktrees/auth-refactor
-       is clean. Main branch unchanged. Ready to continue at task 5
-       once blocker resolves.
-```
-
-</details>
-
-<details>
-<summary>🧑‍🏫 <strong>L3 — Refactor across five modules</strong></summary>
-
-You ask for a parallel refactor. `dispatching-parallel-agents` loads. `team-orchestration` partitions the work into non-overlapping file domains. `multi-perspective-review` spawns lens agents (Edge Case, Contract, Resilience) to review the merged result.
-
-The agent spawns five workers with bounded scopes, collects results, and runs council-mode review before claiming done. You review once at the integration boundary.
-
-</details>
-
-<details>
-<summary>🏭 <strong>L4 — Ship a feature end-to-end</strong></summary>
-
-```bash
-/kinderpowers:gsd:new-project       # discovery, PROJECT.md, roadmap
-/kinderpowers:gsd:plan-phase 01     # PLAN.md with verification loop
-/kinderpowers:gsd:execute-phase 01  # atomic commits, checkpoints
-/kinderpowers:gsd:ship              # PR, review, merge prep
-```
-
-Full lifecycle with atomic commits at every task boundary. You review at phase boundaries. Hookify rules (if enabled) refuse to let a phase close without verification evidence.
-
-</details>
-
----
-
-## Skills vs commands vs agents vs workflows
-
-Four ways to extend the agent, easily conflated. The difference is **who decides the control flow** and **where the work runs**:
-
-| Primitive | What it is | Control flow | Runs in |
-|-----------|-----------|--------------|---------|
-| **Skill** | A doc that loads into the agent's context and changes how *it* behaves | The model follows it | Your conversation |
-| **Slash command** | A saved recipe the agent expands and executes (e.g. `/kinderpowers:gsd:*`) | The model executes the steps | Your conversation |
-| **Subagent** | A fresh context with its own tools that does a scoped job and returns a result | The model decides when to spawn | An isolated context |
-| **Dynamic workflow** | A deterministic JS script that fans out subagents (`agent()`/`parallel()`/`pipeline()`) | **Code** — written once, executed by the runtime | A background runtime |
-
-Rule of thumb: when the *shape* of multi-agent work is known up front and needs no mid-run input, encode it as a **dynamic workflow** — you get deterministic fan-out, concurrency caps, token budgets, and resume-on-crash that a hand-spawned set of subagents can't guarantee. When the next step depends on the last, or a human approves between steps, keep it a **slash command**. kinderpowers ships example workflow scripts in [`workflows/`](workflows/), and the full decision rule (plus hooks, the fifth primitive) lives in the `orchestration-primitives` skill.
+> [!IMPORTANT]
+> The servers' source *and* their pre-built binaries live in their own repos, mounted here as
+> submodules under `mcp-servers/`. The wrappers `plugin.json` points at resolve into those
+> submodules, so **an install that skips submodules gets two dead MCP servers.** See
+> [`mcp-servers/README.md`](mcp-servers/README.md).
 
 ---
 
 ## MCP servers reference
 
-Full tool surface, benchmark methodology, and configuration for the two servers featured at the top.
+Full tool surface, benchmark methodology, and configuration for the two servers listed above.
 
 <details>
 <summary><strong>kp-github</strong> — ~11× fewer tokens than the official GitHub plugin, CI-enforced</summary>
@@ -241,28 +102,33 @@ Local JSONL logging uses `KP_STEPWISE_LOG_MODE=full|metadata|off` (default `full
 
 ---
 
-## Install modules
 
-`setup.sh` installs in selectable modules rather than one fixed sequence:
+---
 
-```bash
-./setup.sh                        # defaults: kinderpowers + gsd
-./setup.sh --list                 # every module, and whether it's a default
-./setup.sh --without gsd          # skip a default
-./setup.sh --with task-observer   # add an opt-in module
-./setup.sh --only kinderpowers    # exactly these
-```
+## History
 
-| Module | Default | What it wires |
-| --- | --- | --- |
-| `kinderpowers` | yes | Hookify enforcement rules, agent outcome logger hook |
-| `gsd` | yes | GSD lifecycle runtime at `~/.claude/get-shit-done` |
-| `mattpocock-skills` | no | Third-party, see appendix |
-| `task-observer` | no | Third-party, see appendix |
+kinderpowers began as a fork of [superpowers](https://github.com/obra/superpowers) and grew
+into something broader: a skills library, the [get-shit-done](https://github.com/gsd-build/get-shit-done)
+lifecycle engine, enforcement hooks, a council-mode review system, and a progression model for
+handing an agent more rope as it earned it. The organizing idea was that an agent keeps its
+agency best when guidance is phrased as an invitation with a documented cost — a signpost —
+rather than a wall. A linter (`archive/scanner.py`) existed purely to keep the skill text from
+drifting into compulsion language.
 
-The third-party modules are opt-in and neither is vendored: each invokes its
-upstream installer, so the code arrives from its own author, updates on their
-cadence, and keeps its own license.
+Along the way it accumulated two Rust MCP servers, which turned out to be the part with the
+longest shelf life. **7.4.0** split their source and binaries into their own repos
+([kp-github](https://github.com/jw409/kp-github), [kp-stepwise](https://github.com/jw409/kp-stepwise)),
+mounted here as submodules.
+
+Then the premise expired. The behaviors the skills enforced — verify before claiming done,
+branch when uncertain, ask before deleting, don't confuse a passing build for a working
+feature — are things Opus 5.5 does without being told. Scaffolding that was load-bearing in
+2025 became redundant, and redundant scaffolding in an agent's context is a cost, not a
+safety net.
+
+So the skills layer moved to [`archive/`](archive/), preserved because the reasoning is worth
+reading rather than because it is expected to run. What's left at the root is what still earns
+its place: the servers, and the marketplace that serves them.
 
 ## Credits
 
@@ -272,85 +138,6 @@ cadence, and keeps its own license.
 - **[agent-message-queue](https://github.com/avivsinai/agent-message-queue)** by Aviv Sinai — explicit local session routing and ownership patterns that informed kp-stepwise room/channel isolation
 - **[jw409](https://github.com/jw409)** — progression model, agency-preserving philosophy, council-mode review, MCP servers
 
-Two adjacent libraries kinderpowers does *not* derive from, but ships opt-in
-install modules for, are analyzed in the [appendix](#appendix-adjacent-skill-libraries).
-
 ## License
 
 MIT — see LICENSE.
-
-
-## Appendix: adjacent skill libraries
-
-Two outside libraries worth knowing about, installable as opt-in modules above.
-Neither is part of the default install: both overlap kinderpowers' own skills,
-and installing everything at once buys duplicate skills competing for the same
-trigger rather than more capability.
-
-### mattpocock/skills — Matt Pocock, MIT
-
-<https://github.com/mattpocock/skills> — *"Skills for Real Engineers. Straight
-from my .agents directory."*
-
-A deliberately small, composable skill set organized by who can trigger it
-(user-invoked orchestration skills vs. model-invoked ones), aimed at four
-failure modes: misalignment on intent, verbose agent output, code that doesn't
-work, and codebases decaying into a ball of mud. Notable pieces with no
-kinderpowers equivalent: the **grilling** skills (`grill-me`, `grill-with-docs`)
-that interrogate your intent *before* work starts, a shared-vocabulary
-`CONTEXT.md`, and a `to-spec` → `to-tickets` → `implement` pipeline.
-
-**Where it collides.** Its README argues explicitly against heavier frameworks —
-naming GSD among them — on the grounds that they "take away your control."
-Kinderpowers ships a GSD derivative, so that disagreement is live, and it is
-about mechanism rather than values: both are chasing the agency-preserving goal
-this repo calls *signposts, not walls*; they disagree on whether a lifecycle
-engine is a signpost or a wall. Worth reading with that tension in mind rather
-than resolving it by fiat.
-
-Its `tdd`, `diagnosing-bugs`, `code-review`, `research`, and `codebase-design`
-skills cover ground kinderpowers already covers with `test-driven-development`,
-`systematic-debugging`, `adversarial-review`, `research-extraction`, and
-`architecture`. Install it to *replace* that layer or to compare approaches —
-not to stack on top of it.
-
-Install through **one** path only (the marketplace plugin and the skills.sh copy
-duplicate every skill if both are present); the module uses
-`claude plugin install mattpocock-skills`. Run `/setup-matt-pocock-skills` once
-per repository afterward.
-
-### rebelytics/one-skill-to-rule-them-all — Eoghan Henn, CC BY 4.0
-
-<https://github.com/rebelytics/one-skill-to-rule-them-all>
-
-A single meta-skill, `task-observer`, that runs alongside normal sessions and
-watches them: it flags recurring patterns as candidate new skills, turns
-corrections and stated preferences into proposed edits to existing skills, and
-records cross-cutting principles that later skills get checked against. It
-observes itself too, and it only ever *recommends* — it does not modify skills
-directly.
-
-**Where it fits.** It is the in-session, judgement-driven counterpart to
-kinderpowers' `hooks/agent-outcome-logger.py`, which records agent outcomes
-deterministically after the fact. One notices *"you corrected me the same way
-three times"*; the other produces a log you can count. They compose rather than
-compete. Its own README carries an honest caveat: the overhead pays off at
-scale, and a small skill library may be better served by built-in memory and
-direct editing.
-
-**License differs from everything else here.** CC BY 4.0, not MIT — reuse and
-adaptation are fine, including commercially, but attribution to the author and
-a link to the source are required, and changes must be indicated. That is also
-why the module clones it to `~/.kinderpowers/vendor/task-observer` and symlinks
-it into `~/.claude/skills/` instead of vendoring the files: a pristine clone
-keeps `LICENSE.txt` and history intact, and keeps CC BY 4.0 content from being
-mixed into this MIT repo.
-
----
-
-**Canonical manifest:** [KINDERPOWERS.xml](KINDERPOWERS.xml) — machine-readable catalog of skills, agents, commands, MCP servers, invariants, and references. Agents ingesting this repo should read that file, not this one.
-
-```bash
-claude plugin marketplace add jw409/kinderpowers
-claude plugin install kinderpowers
-```

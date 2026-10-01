@@ -1,13 +1,51 @@
 {
   "name": "kinderpowers",
-  "description": "An operating system for AI agents — philosophy, lifecycle engine, workers, and enforcement",
+  "description": "Rust-native MCP servers for Claude Code: compressed GitHub reads and structured stepwise planning",
   "owner": {
     "name": "jw409"
   },
   "plugins": [
     {
+      "name": "kp-github",
+      "description": "Token-compressed GitHub MCP server — a full superset of the official GitHub plugin returning ~11x fewer tokens, with a CI-enforced compression floor, the branch_status primitive, and opt-in usage telemetry",
+      "author": { "name": "jw409" },
+      "homepage": "https://github.com/jw409/kp-github",
+      "license": "MIT",
+      "source": {
+        "source": "github",
+        "repo": "jw409/kp-github"
+      },
+      "mcpServers": {
+        "kp-github": {
+          "command": "${CLAUDE_PLUGIN_ROOT}/bin/kp-github-mcp",
+          "args": [],
+          "env": {}
+        }
+      }
+    },
+    {
+      "name": "kp-stepwise",
+      "description": "Structured stepwise planning MCP server — branching, confidence tracking with Dunning-Kruger detection, abstraction layers, per-model profiles, and isolated room/channel state. Hints are signposts, not walls",
+      "author": { "name": "jw409" },
+      "homepage": "https://github.com/jw409/kp-stepwise",
+      "license": "MIT",
+      "source": {
+        "source": "github",
+        "repo": "jw409/kp-stepwise"
+      },
+      "mcpServers": {
+        "kp-stepwise": {
+          "command": "${CLAUDE_PLUGIN_ROOT}/bin/kp-stepwise",
+          "args": [],
+          "env": {
+            "KP_STEPWISE_LOG_LEVEL": "warn"
+          }
+        }
+      }
+    },
+    {
       "name": "kinderpowers",
-      "description": "Agency-preserving workflow skills, lifecycle engine, enforcement rules, and optional MCP servers for AI agents",
+      "description": "Both MCP servers in one plugin (kp-github + kp-stepwise). The original entry, kept so existing installs keep working; the agency-preserving skills layer it used to ship is archived",
       "version": "7.4.0",
       "source": "./",
       "author": {
