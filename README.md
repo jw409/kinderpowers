@@ -34,9 +34,10 @@ Both servers are Rust-native and ship pre-built for Linux x86_64 and macOS arm64
 toolchain required on install.
 
 > [!IMPORTANT]
-> The servers' source *and* their pre-built binaries live in their own repos, mounted here as
-> submodules under `mcp-servers/`. The wrappers `plugin.json` points at resolve into those
-> submodules, so **an install that skips submodules gets two dead MCP servers.** See
+> For the combined **kinderpowers** plugin, server source and pre-built binaries are
+> submodules under `mcp-servers/`. Its wrappers require those submodules at runtime.
+> The standalone **kp-github** and **kp-stepwise** marketplace entries load directly
+> from their respective server repositories. See
 > [`mcp-servers/README.md`](mcp-servers/README.md).
 
 ---
@@ -76,6 +77,15 @@ Two opt-in env knobs control this:
 - Set `KP_GITHUB_REQUIRE_AUTHOR=1` (or `true`/`yes`) to refuse any commit attempt that can't resolve an author from args or env — useful for shared deployments that want to guarantee no commit ever falls back to the OAuth identity.
 
 Neither is required. The plugin ships with both unset; behavior matches the GitHub API default until you opt in.
+
+**Developer events (optional).** The `github_events` client supports registering,
+reading, and explicitly acknowledging PR approval, merge, and CI failure listeners.
+Select a stored GitHub account with `KP_GITHUB_ACCOUNT`; a developer events profile
+adds the operator's consumer endpoint and the developer's Google account. Account
+selection stays within the MCP process. See [consumer setup](mcp-servers/README.md#github-developer-events)
+for the shared GCS/bundle configuration and an MCP environment example. Production
+delivery requires the operator's receiver API and verified identity mapping; the
+client does not provide a hosted receiver for arbitrary open source adopters.
 
 </details>
 

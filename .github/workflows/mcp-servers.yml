@@ -5,10 +5,15 @@ on:
     branches: [main]
     paths:
       - 'mcp-servers/**'
+      - '.github/workflows/mcp-servers.yml'
   pull_request:
     branches: [main]
     paths:
       - 'mcp-servers/**'
+      - '.github/workflows/mcp-servers.yml'
+
+env:
+  RUST_MIN_STACK: 16777216
 
 jobs:
   test-stepwise:
@@ -59,7 +64,16 @@ jobs:
 
       - name: Test kp-github-mcp
         working-directory: mcp-servers/github
-        run: cargo test
+        run: cargo test --locked
+
+      - name: Test account and events setup helpers
+        run: python3 -m unittest discover -s mcp-servers/github/tests -p 'test_*.py'
+
+      - name: Test consumer wrappers and installer
+        run: python3 -m unittest discover -s mcp-servers/tests -p 'test_*.py'
+
+      - name: Smoke packaged GitHub wrapper
+        run: python3 mcp-servers/github/tests/smoke_consumer.py --binary mcp-servers/bin/kp-github-mcp --source-root mcp-servers/github
 
       - name: Build release
         working-directory: mcp-servers/github
@@ -77,5 +91,5 @@ jobs:
       - name: Verify gsd-tools loads from any cwd
         run: |
           cd /tmp
-          node "$GITHUB_WORKSPACE/gsd/bin/gsd-tools.cjs" current-timestamp
+          node "$GITHUB_WORKSPACE/archive/gsd/bin/gsd-tools.cjs" current-timestamp
           echo "gsd-tools loads correctly from arbitrary cwd"

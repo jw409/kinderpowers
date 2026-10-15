@@ -1,115 +1,109 @@
 #!/bin/bash
 set -euo pipefail
 
-# kp-mcp-servers installer
-# Builds and registers both MCP servers with Claude Code
-
+# Prepare the pinned MCP servers and register missing Claude Code entries.
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-RUST_MIN_STACK=16777216
-export RUST_MIN_STACK
+KP_ROOT="$(dirname "$SCRIPT_DIR")"
+export RUST_MIN_STACK="${RUST_MIN_STACK:-16777216}"
 FORCE_BUILD=0
+SKIP_REGISTER=0
 
-# Parse flags
 for arg in "$@"; do
   case "$arg" in
     --build) FORCE_BUILD=1 ;;
-    *) echo "Unknown flag: $arg"; exit 1 ;;
+    --no-register) SKIP_REGISTER=1 ;;
+    --help) echo "Usage: $0 [--build] [--no-register]"; exit 0 ;;
+    *) echo "Unknown flag: $arg" >&2; exit 1 ;;
   esac
 done
 
-echo "=== kp-mcp-servers installer ==="
-echo ""
+echo "Preparing the MCP server commits pinned by this checkout..."
+git -C "$KP_ROOT" submodule update --init -- mcp-servers/github mcp-servers/stepwise
 
-if ! command -v claude &>/dev/null; then
-  echo "WARNING: claude CLI not found — will build but skip registration"
+if ! command -v claude >/dev/null 2>&1; then
+  echo "Claude CLI is unavailable; registration commands will be printed."
   SKIP_REGISTER=1
-else
-  SKIP_REGISTER=0
 fi
 
-# Platform detection for pre-built binaries
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-ARCH="$(uname -m)"
-case "$OS" in
-  linux)  PLATFORM_DIR="linux-${ARCH}" ;;
-  darwin) PLATFORM_DIR="macos-${ARCH}" ;;
-  *)      PLATFORM_DIR="" ;;
+case "$(uname -s)-$(uname -m)" in
+  Linux-x86_64) PLATFORM_DIR="linux-x86_64" ;;
+  Darwin-arm64) PLATFORM_DIR="macos-arm64" ;;
+  *) PLATFORM_DIR="" ;;
 esac
 
-PREBUILT_DIR="$SCRIPT_DIR/bin/${PLATFORM_DIR}"
+prepare_binary() {
+  local repo="$1" binary="$2" wrapper="$3"
+  local source_dir="$SCRIPT_DIR/$repo"
+  local prebuilt="$source_dir/bin/$PLATFORM_DIR/$binary"
+  local built="$source_dir/target/release/$binary"
 
-# Try pre-built binaries first
-if [ "$FORCE_BUILD" = "0" ] && [ -n "$PLATFORM_DIR" ] && [ -d "$PREBUILT_DIR" ]; then
-  PREBUILT_GITHUB="$PREBUILT_DIR/kp-github-mcp"
-  PREBUILT_STEPWISE="$PREBUILT_DIR/kp-stepwise"
+  if [ "$FORCE_BUILD" = "0" ] && [ -n "$PLATFORM_DIR" ] && [ -x "$prebuilt" ]; then
+    if [ ! -x "$SCRIPT_DIR/bin/$wrapper" ]; then
+      echo "ERROR: missing executable wrapper: $SCRIPT_DIR/bin/$wrapper" >&2
+      return 1
+    fi
+    echo "Using $repo's pinned $PLATFORM_DIR binary." >&2
+    printf '%s\n' "$SCRIPT_DIR/bin/$wrapper"
+    return
+  fi
 
-  if [ -x "$PREBUILT_GITHUB" ] && [ -x "$PREBUILT_STEPWISE" ]; then
-    echo "Found pre-built binaries for ${PLATFORM_DIR}"
-    GITHUB_BIN="$PREBUILT_GITHUB"
-    STEPWISE_BIN="$PREBUILT_STEPWISE"
-    echo "  kp-github-mcp:          $(du -h "$GITHUB_BIN" | cut -f1)"
-    echo "  kp-stepwise: $(du -h "$STEPWISE_BIN" | cut -f1)"
-    echo "  (use --build to force cargo build)"
-    echo ""
+  if ! command -v cargo >/dev/null 2>&1; then
+    echo "ERROR: $binary needs a source build, but cargo is unavailable. Install Rust or use a supported pre-built platform." >&2
+    return 1
+  fi
+  echo "Building $binary from its pinned source..." >&2
+  if ! (cd "$source_dir" && cargo build --locked --release >&2); then
+    echo "ERROR: $binary build failed; an existing binary will not be treated as a successful build." >&2
+    return 1
+  fi
+  if [ ! -x "$built" ]; then
+    echo "ERROR: cargo succeeded without producing an executable at $built" >&2
+    return 1
+  fi
+  printf '%s\n' "$built"
+}
+
+GITHUB_BIN="$(prepare_binary github kp-github-mcp kp-github-mcp)"
+STEPWISE_BIN="$(prepare_binary stepwise kp-stepwise kp-stepwise)"
+
+registration_command() {
+  local name="$1" binary="$2" mode="$3"
+  local command_args=(claude mcp add "$name" --transport stdio)
+  if [ "$name" = "kp-github" ]; then
+    if [ -n "${KP_GITHUB_ACCOUNT:-}" ]; then
+      command_args+=(--env "KP_GITHUB_ACCOUNT=$KP_GITHUB_ACCOUNT")
+    fi
+    if [ -n "${KP_GITHUB_EVENTS_CONFIG:-}" ]; then
+      command_args+=(--env "KP_GITHUB_EVENTS_CONFIG=$KP_GITHUB_EVENTS_CONFIG")
+    fi
+  fi
+  command_args+=(-- "$binary")
+  if [ "$mode" = "print" ]; then
+    printf '  '
+    printf '%q ' "${command_args[@]}"
+    printf '\n'
   else
-    echo "Pre-built binaries incomplete for ${PLATFORM_DIR}, falling back to cargo build"
-    FORCE_BUILD=1
+    "${command_args[@]}"
   fi
-else
-  FORCE_BUILD=1
-fi
-
-if [ "$FORCE_BUILD" = "1" ]; then
-  # Check prerequisites
-  if ! command -v cargo &>/dev/null; then
-    echo "ERROR: cargo not found. Install Rust: https://rustup.rs"
-    exit 1
-  fi
-
-  # Build kp-github-mcp (subshell preserves cwd)
-  echo "[1/4] Building kp-github-mcp..."
-  ( cd "$SCRIPT_DIR/github" && cargo build --release 2>&1 | grep -E "Compiling|Finished|error|warning" | tail -20 ) || true
-  GITHUB_BIN="$SCRIPT_DIR/github/target/release/kp-github-mcp"
-  if [ ! -f "$GITHUB_BIN" ]; then
-    echo "ERROR: kp-github-mcp build failed"
-    exit 1
-  fi
-  echo "  Built: $GITHUB_BIN ($(du -h "$GITHUB_BIN" | cut -f1))"
-
-  # Build kp-stepwise (subshell preserves cwd)
-  echo "[2/4] Building kp-stepwise..."
-  ( cd "$SCRIPT_DIR/stepwise" && cargo build --release 2>&1 | grep -E "Compiling|Finished|error|warning" | tail -20 ) || true
-  STEPWISE_BIN="$SCRIPT_DIR/stepwise/target/release/kp-stepwise"
-  if [ ! -f "$STEPWISE_BIN" ]; then
-    echo "ERROR: kp-stepwise build failed"
-    exit 1
-  fi
-  echo "  Built: $STEPWISE_BIN ($(du -h "$STEPWISE_BIN" | cut -f1))"
-fi
+}
 
 if [ "$SKIP_REGISTER" = "1" ]; then
-  echo ""
-  echo "Binaries ready. Register manually with:"
-  echo "  claude mcp add kp-github --transport stdio -- $GITHUB_BIN"
-  echo "  claude mcp add kp-stepwise --transport stdio -- $STEPWISE_BIN"
+  echo "Binaries ready. To register them manually:"
+  registration_command kp-github "$GITHUB_BIN" print
+  registration_command kp-stepwise "$STEPWISE_BIN" print
   exit 0
 fi
 
-# Register with Claude Code
-echo "[3/4] Registering kp-github-mcp..."
-claude mcp remove kp-github 2>/dev/null || true
-claude mcp add kp-github --transport stdio -- "$GITHUB_BIN" 2>&1
+register_if_missing() {
+  local name="$1" binary="$2"
+  if claude mcp get "$name" >/dev/null 2>&1; then
+    echo "Existing $name registration preserved, including its account and profile environment."
+    echo "Prepared command: $binary"
+  else
+    registration_command "$name" "$binary" run
+  fi
+}
 
-echo "[4/4] Registering kp-stepwise..."
-claude mcp remove kp-stepwise 2>/dev/null || true
-claude mcp add kp-stepwise --transport stdio -- "$STEPWISE_BIN" 2>&1
-
-echo ""
-echo "=== Done ==="
-echo "kp-github-mcp:          63 tools, 4 resources"
-echo "kp-stepwise: 1 tool (stepwise_plan)"
-echo ""
-echo "Restart Claude Code or run /mcp to connect."
-echo ""
-echo "Optional: disable the official GitHub plugin:"
-echo "  In settings.json, set \"github@claude-plugins-official\": false"
+register_if_missing kp-github "$GITHUB_BIN"
+register_if_missing kp-stepwise "$STEPWISE_BIN"
+echo "Restart your MCP host to load the prepared binaries."
